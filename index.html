@@ -41,8 +41,14 @@ code,pre{font-family:var(--font-mono)}
 .sidebar{
   width:300px;flex:0 0 300px;background:var(--surface);border-left:1px solid var(--border);
   padding:16px max(16px,env(safe-area-inset-left,0px)) 24px 16px;position:sticky;top:0;
-  height:100vh;overflow-y:auto;scrollbar-width:thin;
+  height:100vh;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;
+  transition:width .22s ease, padding .22s ease, opacity .18s ease;
 }
+.sidebar.collapsed{
+  width:0;flex:0 0 0;padding-left:0;padding-right:0;opacity:0;pointer-events:none;border-left:none;
+}
+.sidebar-toggle-btn{display:flex}
+@media (max-width:860px){ .sidebar-toggle-btn{display:none} }
 .brand{display:flex;align-items:center;gap:10px;margin-bottom:6px}
 .brand .mark{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--link));display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--accent-fg);font-family:var(--font-mono);font-size:14px;flex:none}
 .brand .name{font-family:var(--font-head);font-weight:700;font-size:17px}
@@ -191,7 +197,8 @@ details .inner{padding:0 14px 14px}
     <div class="topbar">
       <button class="iconbtn menu-btn" id="menuBtn" aria-label="মেনু">☰</button>
       <div class="title" id="topTitle">ভূমিকা</div>
-      <button class="iconbtn" id="themeBtn" aria-label="থিম পরিবর্তন" title="ডার্ক/লাইট">◐</button>
+      <button class="iconbtn sidebar-toggle-btn" id="sidebarToggleBtn" aria-label="সাইডবার সংকুচিত/প্রসারিত করুন" title="সাইডবার লুকান/দেখান">⇤</button>
+  <button class="iconbtn" id="themeBtn" aria-label="থিম পরিবর্তন" title="ডার্ক/লাইট">◐</button>
       <button class="iconbtn" id="printBtn" aria-label="প্রিন্ট" title="প্রিন্ট-ফ্রেন্ডলি ভিউ">⎙</button>
     </div>
     <div class="content" id="content"><section class="chapter active" id="ch00">
@@ -2458,6 +2465,23 @@ document.getElementById('themeBtn').addEventListener('click',()=>{
 const sidebar=document.getElementById('sidebar'), scrim=document.getElementById('scrim');
 document.getElementById('menuBtn').addEventListener('click',()=>{ sidebar.classList.add('open'); scrim.classList.add('show'); });
 scrim.addEventListener('click',()=>{ sidebar.classList.remove('open'); scrim.classList.remove('show'); });
+
+/* ===================== Sidebar collapse (desktop) ===================== */
+const sidebarToggleBtn=document.getElementById('sidebarToggleBtn');
+function applySidebarCollapsed(collapsed){
+  sidebar.classList.toggle('collapsed', collapsed);
+  if(sidebarToggleBtn) sidebarToggleBtn.textContent = collapsed ? '⇥' : '⇤';
+}
+let sidebarCollapsed=false;
+try{ sidebarCollapsed = localStorage.getItem('sqli_sidebar_collapsed')==='1'; }catch(e){}
+applySidebarCollapsed(sidebarCollapsed);
+if(sidebarToggleBtn){
+  sidebarToggleBtn.addEventListener('click',()=>{
+    sidebarCollapsed=!sidebarCollapsed;
+    applySidebarCollapsed(sidebarCollapsed);
+    try{ localStorage.setItem('sqli_sidebar_collapsed', sidebarCollapsed?'1':'0'); }catch(e){}
+  });
+}
 
 /* ===================== Progress tracking ===================== */
 function getDone(){ try{ return JSON.parse(localStorage.getItem('sqli_done')||'{}'); }catch(e){ return {}; } }
