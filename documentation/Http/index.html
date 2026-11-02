@@ -49,10 +49,25 @@ img{max-width:100%}
 
 .main{flex:1 1 auto;min-width:0;margin-left:300px;transition:margin-left .25s ease;display:flex;flex-direction:column;min-height:100vh}
 .main.full{margin-left:0}
-.topbar{
-  position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:10px;
-  background:rgba(10,14,20,.88);backdrop-filter:blur(8px);
-  border-bottom:1px solid var(--border);padding:10px 16px;
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(10,14,20,.88);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 16px;
+}
+
+.backbtn {
+    position: absolute;
+    right: 16px;
+    padding: 0 14px;
+    gap: 6px;
+    margin-left: 0;
 }
 .topbar .title{font-size:14px;color:var(--fg-muted);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
 .iconbtn,.backbtn{appearance:none;border:1px solid var(--border);background:var(--surface);color:var(--fg);height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;font-family:var(--font-body);font-size:13px;text-decoration:none}
