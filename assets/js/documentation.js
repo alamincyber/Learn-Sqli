@@ -8,7 +8,7 @@
   var DOCS = [
     {
       title: 'Web Fundamental',
-      short: 'Http',
+      short: 'Web Fundamentals',
       url: '/documentation/Http/',
       description: ''
     },
