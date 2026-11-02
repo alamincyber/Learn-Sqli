@@ -1,1 +1,76 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Learning-path</title>
+  <meta name="description" content="Beginner থেকে Bug Bounty ও Career Preparation পর্যন্ত ১০টি Stage-এর ধাপে ধাপে সাইবার সিকিউরিটি শেখার রোডম্যাপ।">
+  <meta name="theme-color" content="#070d17">
+  <link rel="canonical" href="https://learn.alamincyber.com/learning-path/">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&amp;display=swap">
+  <link rel="stylesheet" href="/assets/css/style.css">
+  <script>document.documentElement.classList.add('js');</script>
+</head>
+<body>
+  <a class="skip-link" href="#main">মূল কনটেন্টে যান</a>
+  <header class="site-header">
+    <div class="container nav-wrap">
+      <a class="brand" href="/">Learn cyber security</a>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-nav" aria-label="মেনু খুলুন">
+        <span class="bar"></span><span class="bar"></span><span class="bar"></span>
+      </button>
+      <nav id="primary-nav" class="primary-nav" aria-label="প্রধান নেভিগেশন">
+        <ul>
+          <li><a href="/">Home</a></li>
+          <li><a href="/documentation/">Documentation</a></li>
+          <li><a href="/learning-path/" aria-current="page">Learning-path</a></li>
+          <li><a href="/about/">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
 
+  <main id="main">
+    <section class="page-header fade-in">
+      <div class="container">
+        <h1>Learning-path</h1>
+        <p>১০টি Stage-এর ধাপে ধাপে সাইবার সিকিউরিটি শেখার রোডম্যাপ। প্রতিটি Stage-এ আছে উদ্দেশ্য, বিষয়, রিসোর্স, অনুশীলন, Mini Project ও Checklist। Checkbox চিহ্নিত করে আপনার অগ্রগতি দেখুন।</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="progress-panel">
+          <div class="progress-row">
+            <strong id="overall-text">মোট অগ্রগতি: ০%</strong>
+            <button class="reset-btn" type="button" id="reset-progress">প্রগ্রেস রিসেট (Reset Progress)</button>
+          </div>
+          <div class="progress-bar" id="overall-bar" role="progressbar" aria-label="মোট অগ্রগতি" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span></div>
+          <p id="storage-note" hidden style="margin:12px 0 0;color:var(--warn)">আপনার ব্রাউজারে অগ্রগতি সংরক্ষণ করা যাচ্ছে না। পেজ রিফ্রেশ করলে অগ্রগতি মুছে যেতে পারে।</p>
+          <p style="margin:12px 0 0;color:var(--muted);font-size:0.95rem">আপনার অগ্রগতি শুধু এই ব্রাউজারে সংরক্ষিত হয়; কোনো সার্ভারে পাঠানো হয় না।</p>
+        </div>
+        
+        <div id="stages">
+          <noscript>
+            <div class="notice">
+              <p>এই পেজের Stage ও Checklist দেখতে JavaScript চালু করতে হবে। বিকল্পভাবে <a href="/documentation/">Documentation</a> পেজ থেকে পড়া শুরু করতে পারেন। ক্রম: Computer ও Internet Fundamentals → Linux ও Networking → Web Development Fundamentals → Web Security Fundamentals → Burp Suite ও Manual Testing → Common Web Vulnerabilities → API Security → Bug Bounty Methodology → Advanced Specialization → Portfolio ও Career Preparation।</p>
+            </div>
+          </noscript>
+        </div>
+        
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>© <span id="copyright-year">2025-2026</span> Learn cyber security | Al Amin. All Rights Reserved> Cybersecurity Enthusiast | Bug Hunter | Future Red Teamer</p>
+      <p>এই ওয়েবসাইটের শিক্ষামূলক উপকরণ কেবল আইনসম্মত ও অনুমোদিত নিরাপত্তা শিক্ষা, পরীক্ষা এবং গবেষণার উদ্দেশ্যে ব্যবহার করুন।</p>
+    </div>
+  </footer>
+  <script src="/assets/js/main.js" defer></script>
+  <script src="/assets/js/learning-path.js" defer></script>
+</body>
+</html>
