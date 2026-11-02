@@ -1,1 +1,118 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Documentation</title>
+  <meta name="description" content="SQL Injection, XSS, CSRF সহ গুরুত্বপূর্ণ Cyber Security Topic-এর বাংলা ডকুমেন্টেশন।">
+  <meta name="theme-color" content="#070d17">
+  <link rel="canonical" href="https://learn.alamincyber.com/documentation/">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&amp;display=swap">
+  <link rel="stylesheet" href="/assets/css/style.css">
+  <script>document.documentElement.classList.add('js');</script>
+</head>
+<body>
+  <a class="skip-link" href="#main">মূল কনটেন্টে যান</a>
+  <header class="site-header">
+    <div class="container nav-wrap">
+      <a class="brand" href="/">Learn cyber security</a>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-nav" aria-label="মেনু খুলুন">
+        <span class="bar"></span><span class="bar"></span><span class="bar"></span>
+      </button>
+      <nav id="primary-nav" class="primary-nav" aria-label="প্রধান নেভিগেশন">
+        <ul>
+          <li><a href="/">Home</a></li>
+          <li><a href="/documentation/" aria-current="page">Documentation</a></li>
+          <li><a href="/learning-path/">Learning-path</a></li>
+          <li><a href="/about/">About</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
 
+  <nav class="doc-nav" aria-label="ডকুমেন্টেশন তালিকা">
+    <div class="container">
+      <h1 class="doc-nav-title">Documentation List </h1>
+      <ul class="doc-nav-list" id="doc-nav-list">
+        <li><a href="/documentation/Http/" title="Http, Ip, Dns">Http,Ip,Dns</a></li>
+        <li><a href="/documentation/Sqli/" title="SQL Injection">SQLi</a></li>
+        <li><a href="/documentation/Xss/" title="Cross-Site Scripting">XSS</a></li>
+        <li><a href="/documentation/Csrf/" title="Cross-Site Request Forgery">CSRF</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main id="main">
+    <section class="page-header fade-in">
+      <div class="container">
+        <h1>সাইবার সিকিউরিটি ডকুমেন্টেশন</h1>
+        <p>গুরুত্বপূর্ণ Cyber Security Topic সম্পর্কে বাংলায় বিস্তারিত জানুন। প্রতিটি Documentation-এ ধারণা, কাজ করার পদ্ধতি, নিরাপদ Lab Practice, সম্ভাব্য প্রভাব এবং প্রতিরোধের কৌশল শেখার সুযোগ থাকবে।</p>
+      </div>
+    </section>
+<!--
+    <section class="section" aria-labelledby="topics-title">
+      <div class="container">
+        <div class="section-head">
+          <h2 id="topics-title">প্রকাশিত Documentation</h2>
+          <p>নিচের যেকোনো বিষয়ে ক্লিক করে পড়া শুরু করুন।</p>
+        </div>
+        <div class="grid cols-3" id="doc-cards">
+          <article class="card">
+            <span class="tag">SQLi</span>
+            <h3><a class="card-link" href="/documentation/Sqli/">SQL Injection</a></h3>
+            <p>ডাটাবেস কোয়েরিতে ব্যবহারকারীর ইনপুট ভুলভাবে মেশানোর ফলে সৃষ্ট ঝুঁকি, তার প্রভাব এবং Parameterized Query দিয়ে প্রতিরোধ।</p>
+          </article>
+          <article class="card">
+            <span class="tag">XSS</span>
+            <h3><a class="card-link" href="/documentation/Xss/">Cross-Site Scripting</a></h3>
+            <p>ওয়েব পেজে অনিরাপদভাবে ইনপুট দেখানোর কারণে ব্রাউজারে স্ক্রিপ্ট চলার ঝুঁকি এবং Output Encoding ও CSP দিয়ে প্রতিরোধ।</p>
+          </article>
+          <article class="card">
+            <span class="tag">CSRF</span>
+            <h3><a class="card-link" href="/documentation/Csrf/">Cross-Site Request Forgery</a></h3>
+            <p>লগইন করা ব্যবহারকারীর ব্রাউজার দিয়ে তার অজান্তে অনুরোধ পাঠানোর ঝুঁকি এবং CSRF Token ও SameSite Cookie দিয়ে প্রতিরোধ।</p>
+          </article>
+        </div>
+      </div>
+    </section>
+  -->
+    <section class="section alt" aria-labelledby="why-doc-title">
+      <div class="container">
+        <div class="section-head">
+          <h2 id="why-doc-title">Documentation কেন পড়বে?</h2>
+          <p>কেবল Payload মুখস্থ করলে নতুন পরিস্থিতিতে আটকে যেতে হয়। বিষয়টি বুঝে শিখলে সেটি যেকোনো পরিস্থিতিতে কাজে লাগে।</p>
+        </div>
+        <div class="grid cols-2">
+          <article class="card"><h3>Payload নয়, Vulnerability বোঝা</h3><p>শুধু Payload মুখস্থ না করে Vulnerability-টি আসলে কী তা বোঝা জরুরি।</p></article>
+          <article class="card"><h3>কেন কাজ করে</h3><p>একটি Vulnerability কেন কাজ করে তা বুঝলে নতুন পরিস্থিতিতেও সঠিকভাবে চিন্তা করা যায়।</p></article>
+          <article class="card"><h3>Input ও Validation</h3><p>User-controlled Input কী এবং Server-side Validation কেন প্রয়োজন, তা পরিষ্কার হয়।</p></article>
+          <article class="card"><h3>Request ও Response বিশ্লেষণ</h3><p>অনুরোধ ও উত্তর পড়ে সমস্যার জায়গা খুঁজে বের করার দক্ষতা তৈরি হয়।</p></article>
+          <article class="card"><h3>Impact বোঝা</h3><p>দুর্বলতাটি বাস্তবে কী ক্ষতি করতে পারে তা ব্যাখ্যা করতে পারা যায়।</p></article>
+          <article class="card"><h3>Secure Coding ও Remediation</h3><p>কীভাবে নিরাপদ কোড লিখতে হয় ও সমস্যা ঠিক করতে হয় তা শেখা যায়।</p></article>
+          <article class="card"><h3>ভালো Vulnerability Report</h3><p>পরিষ্কার ও কার্যকর রিপোর্ট লেখার দক্ষতা তৈরি হয়।</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="future-title">
+      <div class="container">
+        <div class="section-head">
+          <h2 id="future-title">নতুন Documentation যোগ করার পরিকল্পনা</h2>
+          <p>এই ডকুমেন্টেশন ধীরে ধীরে বাড়ানো হবে। প্রতিটি নতুন বিষয় আলাদা ফোল্ডারে  তৈরি হবে এবং এই পেজের তালিকায় যুক্ত হবে।</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>© <span id="copyright-year">2025-2026</span> Learn cyber security | Al Amin. All Rights Reserved> Cybersecurity Enthusiast | Bug Hunter | Future Red Teamer</p>
+      <p>এই ওয়েবসাইটের শিক্ষামূলক উপকরণ কেবল আইনসম্মত ও অনুমোদিত নিরাপত্তা শিক্ষা, পরীক্ষা এবং গবেষণার উদ্দেশ্যে ব্যবহার করুন।</p>
+    </div>
+  </footer>
+  <script src="/assets/js/main.js" defer></script>
+  <script src="/assets/js/documentation.js" defer></script>
+</body>
+</html>
