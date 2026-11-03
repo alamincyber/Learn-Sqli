@@ -13,6 +13,12 @@
       description: ''
     },
     {
+      title: 'Web Application',
+      short: 'Web Application',
+      url: '/documentation/web/',
+      description: ''
+    }
+    {
       title: 'SQL Injection',
       short: 'SQLi',
       url: '/documentation/Sqli/',
