@@ -1,1 +1,1369 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Web Application</title>
+<meta name="description" content="বাংলায় সম্পূর্ণ Web Application শেখার ডকুমেন্টেশন — Client-Server আর্কিটেকচার, Frontend/Backend, Database, API, Authentication, আধুনিক ডেভেলপমেন্ট ওয়ার্কফ্লো ও সিকিউরিটি ওভারভিউ।">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tiro+Bangla&family=Hind+Siliguri:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0e14; --surface:#111722; --surface-2:#161d2a; --border:#263044;
+  --fg:#e7edf5; --fg-muted:#93a3bd; --accent:#ff5c5c; --accent-fg:#1a0505;
+  --accent-2:#f5a524; --danger:#ff6b6b; --code-bg:#0d1117; --code-fg:#d7e0ea;
+  --link:#5bc2e8; --shadow:0 4px 18px rgba(0,0,0,.45); color-scheme:dark;
+  --font-head:'Tiro Bangla','Noto Serif Bengali',serif;
+  --font-body:'Hind Siliguri','Noto Sans Bengali',sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);line-height:1.8;margin:0;min-height:100vh}
+h1,h2,h3,h4{font-family:var(--font-head);line-height:1.35;color:var(--fg)}
+a{color:var(--link)}
+code,pre{font-family:var(--font-mono)}
+::selection{background:var(--accent);color:var(--accent-fg)}
+img{max-width:100%}
 
+/* ---- App shell ---- */
+.app{display:flex;min-height:100vh}
+.sidebar{
+  width:300px;flex:0 0 300px;background:var(--surface);border-right:1px solid var(--border);
+  padding:16px 14px 24px;position:fixed;top:0;left:0;bottom:0;overflow-y:auto;
+  scrollbar-width:thin;z-index:30;transition:transform .25s ease;
+}
+.sidebar.collapsed{transform:translateX(-100%)}
+.brand{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.brand .mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--accent),#b91c1c);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-family:var(--font-mono);font-size:13px;flex:none}
+.brand .name{font-family:var(--font-head);font-weight:700;font-size:17px}
+.tagline{font-size:12px;color:var(--fg-muted);margin:0 0 16px}
+.sidebar-section-label{font-size:11px;letter-spacing:.06em;color:var(--fg-muted);margin:16px 0 6px;padding:0 6px;text-transform:uppercase}
+.toc{list-style:none;margin:0;padding:0}
+.toc a{display:flex;align-items:center;gap:9px;text-decoration:none;color:var(--fg);padding:9px 10px;border-radius:8px;font-size:14px}
+.toc a .num{font-family:var(--font-mono);font-size:11px;color:var(--fg-muted);flex:none;width:20px}
+.toc a:hover{background:var(--surface-2)}
+.toc a.active{background:var(--accent);color:var(--accent-fg);font-weight:600}
+.toc a.active .num{color:var(--accent-fg)}
+.sidebar-footer{margin-top:22px;padding-top:14px;border-top:1px solid var(--border);font-size:11px;color:var(--fg-muted)}
+
+.main{flex:1 1 auto;min-width:0;margin-left:300px;transition:margin-left .25s ease;display:flex;flex-direction:column;min-height:100vh}
+.main.full{margin-left:0}
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(10,14,20,.88);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 16px;
+}
+
+.backbtn {
+    position: absolute;
+    right: 16px;
+    padding: 0 14px;
+    gap: 6px;
+    margin-left: 0;
+}
+.topbar .title{font-size:14px;color:var(--fg-muted);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
+.iconbtn,.backbtn{appearance:none;border:1px solid var(--border);background:var(--surface);color:var(--fg);height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;font-family:var(--font-body);font-size:13px;text-decoration:none}
+.iconbtn{width:36px}
+.backbtn{padding:0 14px;gap:6px}
+.backbtn:hover,.iconbtn:hover{background:var(--surface-2);border-color:var(--accent)}
+.hamburger{display:none}
+.collapse-btn{display:none}
+@media (min-width:861px){.collapse-btn{display:flex}}
+
+.content{padding:30px 22px 90px;max-width:860px;margin:0 auto;width:100%;flex:1}
+.breadcrumb{font-size:12px;color:var(--fg-muted);margin-bottom:10px}
+.breadcrumb a{color:var(--fg-muted);text-decoration:none}
+.breadcrumb a:hover{color:var(--link)}
+
+.chapter{display:none}
+.chapter.active{display:block;animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.chapter>.eyebrow{font-family:var(--font-mono);font-size:12px;color:var(--accent);letter-spacing:.04em}
+.chapter>h1{font-size:30px;margin:4px 0 6px}
+.chapter>.sub{color:var(--fg-muted);font-size:15.5px;margin:0 0 18px}
+
+h2{font-size:22px;margin-top:40px;border-bottom:1px solid var(--border);padding-bottom:9px}
+h3{font-size:17.5px;margin-top:26px;color:var(--accent)}
+p{margin:12px 0}
+ul,ol{padding-left:22px;margin:12px 0}
+li{margin:6px 0}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13.5px;display:block;overflow-x:auto}
+table thead{background:var(--surface-2)}
+th,td{border:1px solid var(--border);padding:9px 11px;text-align:left}
+th{font-family:var(--font-head)}
+
+.callout{border-radius:10px;padding:14px 16px;margin:18px 0;border:1px solid var(--border);background:var(--surface);display:flex;gap:10px}
+.callout .ic{flex:none;font-size:17px}
+.callout.warn{border-color:#f5a52455;background:rgba(245,165,36,.08)}
+.callout.danger{border-color:#ef444455;background:rgba(239,68,68,.1)}
+.callout.info{border-color:#5bc2e855;background:rgba(91,194,232,.08)}
+.callout.legal{border-color:var(--accent);background:rgba(255,92,92,.08)}
+.callout p{margin:0}
+
+.codeblock{position:relative;margin:16px 0;border-radius:10px;overflow:hidden;border:1px solid var(--border)}
+.codeblock .cb-head{display:flex;justify-content:space-between;align-items:center;background:var(--surface-2);padding:7px 11px;font-size:11.5px;color:var(--fg-muted);font-family:var(--font-mono)}
+.codeblock pre{margin:0;padding:14px;background:var(--code-bg);color:var(--code-fg);overflow-x:auto;font-size:13px;line-height:1.65;max-width:100%}
+.copy-btn{appearance:none;border:1px solid var(--border);background:var(--surface);color:var(--fg);font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer;font-family:var(--font-body)}
+.copy-btn:hover{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.copy-btn.copied{background:#22c55e;color:#06240f;border-color:#22c55e}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+@media (max-width:700px){.grid2,.grid3{grid-template-columns:1fr}}
+.card{border:1px solid var(--border);border-radius:10px;padding:14px;background:var(--surface)}
+.card h4{margin:0 0 8px;font-size:14px}
+
+details{border:1px solid var(--border);border-radius:10px;margin:14px 0;background:var(--surface)}
+details summary{cursor:pointer;padding:12px 14px;font-weight:600;list-style:none}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:"▸ ";color:var(--accent)}
+details[open] summary::before{content:"▾ "}
+details .inner{padding:0 14px 14px}
+
+.exercise{border:1px dashed var(--accent);border-radius:10px;padding:14px 16px;margin:18px 0;background:rgba(255,92,92,.05)}
+.exercise h4{margin:0 0 6px;font-size:14px;color:var(--accent)}
+
+.qa{border-top:1px dashed var(--border);margin-top:28px;padding-top:14px}
+.qa ol{padding-left:20px}
+
+.summary-box{background:var(--surface-2);border-radius:10px;padding:14px 16px;margin:26px 0;border:1px solid var(--border)}
+.summary-box h4{margin:0 0 6px;font-size:13px;color:var(--fg-muted);text-transform:uppercase;letter-spacing:.04em;font-family:var(--font-body)}
+
+.pager{display:flex;justify-content:space-between;gap:12px;margin-top:40px;border-top:1px solid var(--border);padding-top:18px;flex-wrap:wrap}
+.pager a{flex:1;min-width:140px;border:1px solid var(--border);border-radius:10px;padding:13px 15px;text-decoration:none;color:var(--fg);font-size:13.5px;background:var(--surface)}
+.pager a:hover{border-color:var(--accent)}
+.pager a span{display:block;color:var(--fg-muted);font-size:11px;margin-bottom:3px}
+.pager a.next{text-align:right}
+.pager a.single{flex:none;margin-left:auto}
+
+.landing-hero{text-align:center;padding:30px 0 10px}
+.landing-hero .mark-xl{width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,var(--accent),#b91c1c);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-family:var(--font-mono);font-size:22px;margin:0 auto 16px}
+.next-chapter-cta{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:var(--accent-fg);text-decoration:none;font-weight:700;padding:14px 26px;border-radius:12px;font-size:16px;margin-top:20px}
+.next-chapter-cta:hover{filter:brightness(1.08)}
+.cta-center{text-align:center;margin:30px 0}
+
+.notfound{text-align:center;padding:70px 20px}
+.notfound h1{font-size:60px;margin:0}
+
+.scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:25}
+.scrim.show{display:block}
+
+footer.site-footer{text-align:center;font-size:12px;color:var(--fg-muted);padding:22px;border-top:1px solid var(--border)}
+
+@media (max-width:860px){
+  .sidebar{transform:translateX(-100%);width:85%;max-width:320px;box-shadow:var(--shadow)}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-left:0}
+  .hamburger{display:flex}
+  .collapse-btn{display:none}
+  table{font-size:12.5px}
+  .grid3{grid-template-columns:1fr}
+}
+@media print{
+  .sidebar,.topbar,.pager,.copy-btn{display:none!important}
+  .chapter{display:block!important}
+  .main{margin-left:0}
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="scrim" id="scrim"></div>
+
+  <aside class="sidebar" id="sidebar" aria-label="অধ্যায় নেভিগেশন">
+    <div class="brand"><div class="mark">WEB</div><div class="name">Web Application Documentation</div></div>
+    <p class="tagline">বাংলায় সম্পূর্ণ ওয়েব অ্যাপ্লিকেশন গাইড — ভিত্তি থেকে আধুনিক ডেভেলপমেন্ট পর্যন্ত</p>
+    <div class="sidebar-section-label">সূচিপত্র</div>
+    <ul class="toc" id="toc"></ul>
+    <div class="sidebar-footer">© learn.alamincyber.com — শুধুমাত্র শিক্ষামূলক উদ্দেশ্যে</div>
+  </aside>
+
+  <div class="main" id="mainWrap">
+    <div class="topbar">
+      <button class="iconbtn hamburger" id="hamburgerBtn" aria-label="মেনু খুলুন/বন্ধ করুন" aria-expanded="false">☰</button>
+      <button class="iconbtn collapse-btn" id="collapseBtn" aria-label="সাইডবার টগল করুন" title="সাইডবার টগল করুন">⟨⟩</button>
+      <a class="backbtn" id="backBtn" href="https://learn.alamincyber.com/documentation/" aria-label="ডকুমেন্টেশন ইনডেক্সে ফিরে যান">← Back</a>
+      <div class="title" id="topTitle">Web Application Documentation</div>
+    </div>
+
+    <div class="content" id="content">
+      <div class="breadcrumb" id="breadcrumb"></div>
+      <div id="chapters">
+
+<section class="chapter" id="landing" data-route="">
+  <div class="landing-hero">
+    <div class="mark-xl">WEB</div>
+    <div class="eyebrow" style="justify-content:center;display:flex">Learn Cyber Security · Documentation</div>
+    <h1 style="font-size:34px">ওয়েব অ্যাপ্লিকেশন ডকুমেন্টেশন</h1>
+    <p class="sub" style="max-width:640px;margin:0 auto">বাংলাদেশের শিক্ষার্থীদের জন্য তৈরি, সম্পূর্ণ বাংলায় লেখা একটি Basic থেকে Advanced পর্যন্ত ওয়েব অ্যাপ্লিকেশন শেখার গাইড — একটি ওয়েব অ্যাপ্লিকেশন ঠিক কী, কীভাবে এটি কাজ করে, এর আর্কিটেকচার, উপাদান এবং আধুনিক ডেভেলপমেন্ট ওয়ার্কফ্লো — ১৫টি অধ্যায়ে সাজানো।</p>
+  </div>
+
+  <h2>ওয়েব অ্যাপ্লিকেশন নিয়ে সংক্ষিপ্ত কথা</h2>
+  <p>আমরা প্রতিদিন যে Facebook, Gmail, YouTube, ই-কমার্স সাইট বা ব্যাংকিং পোর্টাল ব্যবহার করি, এর প্রতিটিই একেকটি <strong>ওয়েব অ্যাপ্লিকেশন</strong>। অথচ অনেকেই "ওয়েবসাইট" আর "ওয়েব অ্যাপ্লিকেশন"-কে গুলিয়ে ফেলেন, এবং এর ভেতরে ঠিক কী কী উপাদান মিলে একটি অ্যাপ্লিকেশন তৈরি করে — Frontend, Backend, Database, API, Server, Authentication — তা পরিষ্কারভাবে জানেন না। অথচ এই ভিত্তিটা শক্ত না হলে, ডেভেলপমেন্ট হোক বা সিকিউরিটি (যেমন XSS, CSRF, SQL Injection) — কোনোটাই ভালোভাবে বোঝা সম্ভব নয়।</p>
+  <p>এই ডকুমেন্টেশনে ধাপে ধাপে দেখানো হয়েছে — ওয়েব অ্যাপ্লিকেশন কী ও কীভাবে এর বিবর্তন হয়েছে, Client-Server আর্কিটেকচার ও Request-Response চক্র, Frontend ও Backend-এর ভূমিকা, Database ও Data Persistence, API ও কমিউনিকেশন, ওয়েব অ্যাপের বিভিন্ন ধরন (Static, SPA, SSR, PWA), Web Server ও Hosting, Authentication/Authorization, Session ও Token-based Auth, আর্কিটেকচার প্যাটার্ন (MVC, Microservices), আধুনিক ডেভেলপমেন্ট ওয়ার্কফ্লো এবং সবশেষে একটি সিকিউরিটি ওভারভিউ।</p>
+
+  <div class="callout info">
+    <div class="ic">💡</div>
+    <div>
+      <p><strong>কেন এই ডকুমেন্টেশন গুরুত্বপূর্ণ:</strong> এটি একটি <em>foundational</em> ডকুমেন্টেশন — এখানে কোনো আক্রমণ-কৌশল শেখানো হয়নি। বরং এটি learn.alamincyber.com-এর XSS, CSRF ও SQL Injection ডকুমেন্টেশনগুলোর পূর্বশর্ত (prerequisite) — কারণ একটি ওয়েব অ্যাপ্লিকেশন ঠিক কীভাবে কাজ করে তা না জানলে, সেই অ্যাপ্লিকেশনের দুর্বলতা কোথায় থাকতে পারে তা বোঝা সম্ভব নয়।</p>
+    </div>
+  </div>
+
+  <h2>কীভাবে পড়বেন</h2>
+  <div class="grid3">
+    <div class="card"><h4>🟢 শুরু (১–৫)</h4><p>ওয়েব অ্যাপ কী, Client-Server মডেল, Frontend/Backend fundamentals, এবং Database।</p></div>
+    <div class="card"><h4>🟡 মধ্যবর্তী (৬–১০)</h4><p>API ও কমিউনিকেশন, অ্যাপের ধরন, Web Server/Hosting, Authentication, Session ও Token।</p></div>
+    <div class="card"><h4>🔴 প্রয়োগ (১১–১৫)</h4><p>আর্কিটেকচার প্যাটার্ন, আধুনিক ডেভেলপমেন্ট ওয়ার্কফ্লো, সিকিউরিটি ওভারভিউ, অনুশীলনী ও চিট শিট/FAQ।</p></div>
+  </div>
+
+  <div class="cta-center">
+    <a class="next-chapter-cta" href="/chapter01">অধ্যায় ০১ শুরু করুন — ওয়েব অ্যাপ্লিকেশন কী ও কেন →</a>
+  </div>
+</section>
+
+<section class="chapter" id="notfound" data-route="__notfound__">
+  <div class="notfound">
+    <h1>404</h1>
+    <h2 style="border:none">এই অধ্যায়টি খুঁজে পাওয়া যায়নি</h2>
+    <p class="sub">আপনি যে chapter URL-এ যেতে চেয়েছেন, তা এই ডকুমেন্টেশনে নেই। অনুগ্রহ করে নিচের বাটন ব্যবহার করে ডকুমেন্টেশন ইনডেক্সে ফিরে যান অথবা সাইডবার থেকে একটি অধ্যায় বেছে নিন।</p>
+    <div class="cta-center">
+      <a class="next-chapter-cta" href="https://learn.alamincyber.com/documentation/">ডকুমেন্টেশন ইনডেক্সে ফিরুন</a>
+    </div>
+  </div>
+</section>
+
+<section class="chapter" id="chapter01">
+  <div class="eyebrow">অধ্যায় ০১ · ভিত্তি</div>
+  <h1>ওয়েব অ্যাপ্লিকেশন কী ও কেন (Web Application Fundamentals)</h1>
+  <p class="sub">ওয়েব অ্যাপ্লিকেশন আসলে কী, ওয়েবসাইট থেকে এটি কীভাবে আলাদা, এবং কেন আধুনিক ইন্টারনেটের প্রায় সবকিছুই এখন "অ্যাপ্লিকেশন" — এই অধ্যায়ে সেই ভিত্তিটা তৈরি হবে।</p>
+
+  <h2>ওয়েব অ্যাপ্লিকেশনের সংজ্ঞা</h2>
+  <p><strong>সংজ্ঞা:</strong> একটি <strong>ওয়েব অ্যাপ্লিকেশন</strong> হলো এমন একটি সফটওয়্যার, যা ব্রাউজারের মাধ্যমে চলে, ইন্টারনেট/নেটওয়ার্কের উপর নির্ভর করে, এবং ইউজারের সাথে <em>ইন্টারঅ্যাক্টিভভাবে</em> ডেটা আদান-প্রদান করে — যেমন লগইন করা, ফর্ম পূরণ করা, কমেন্ট করা, পণ্য কেনা, বা রিয়েল-টাইম চ্যাট করা। সাধারণ অর্থে, ব্যবহারকারীর ইনপুট অনুযায়ী ডায়নামিকভাবে কনটেন্ট তৈরি ও ডেটাবেসে সংরক্ষণ করতে সক্ষম যেকোনো ওয়েব-ভিত্তিক সিস্টেমই একটি ওয়েব অ্যাপ্লিকেশন।</p>
+
+  <h2>ওয়েবসাইট বনাম ওয়েব অ্যাপ্লিকেশন</h2>
+  <p>এই দুটি টার্ম প্রায়ই একসাথে ব্যবহৃত হয়, কিন্তু টেকনিক্যালি এদের মধ্যে একটি গুরুত্বপূর্ণ পার্থক্য আছে।</p>
+  <table>
+    <thead><tr><th>বৈশিষ্ট্য</th><th>ওয়েবসাইট (Website)</th><th>ওয়েব অ্যাপ্লিকেশন (Web Application)</th></tr></thead>
+    <tbody>
+      <tr><td>উদ্দেশ্য</td><td>তথ্য প্রদর্শন (informational)</td><td>কাজ সম্পাদন (interactive/functional)</td></tr>
+      <tr><td>কনটেন্ট</td><td>সাধারণত static বা মাঝে মাঝে আপডেট হয়</td><td>ইউজার-নির্দিষ্ট, dynamic, প্রতিবার ভিন্ন হতে পারে</td></tr>
+      <tr><td>ইউজার ইন্টারঅ্যাকশন</td><td>সীমিত — শুধু পড়া/নেভিগেট করা</td><td>ব্যাপক — ইনপুট দেওয়া, ডেটা তৈরি/সম্পাদনা/মুছে ফেলা</td></tr>
+      <tr><td>লগইন/অথেন্টিকেশন</td><td>সাধারণত প্রয়োজন হয় না</td><td>প্রায়ই প্রয়োজন হয় (অ্যাকাউন্ট-ভিত্তিক)</td></tr>
+      <tr><td>উদাহরণ</td><td>ব্যক্তিগত ব্লগ, কোম্পানির about-us পেজ, পোর্টফোলিও</td><td>Gmail, Facebook, ই-কমার্স, ব্যাংকিং পোর্টাল</td></tr>
+    </tbody>
+  </table>
+  <div class="callout info"><div class="ic">💡</div><p><strong>বাস্তবতা:</strong> এই সীমারেখা আজকাল অনেকটাই ঝাপসা। একটি নিউজ ওয়েবসাইটেও এখন কমেন্ট সিস্টেম, লগইন, পার্সোনালাইজড ফিড থাকে — ফলে সেটিও কার্যত একটি ওয়েব অ্যাপ্লিকেশনে পরিণত হয়। তাই আধুনিক আলোচনায় প্রায় সবকিছুকেই "ওয়েব অ্যাপ্লিকেশন" বলা হয়।</p></div>
+
+  <h2>ওয়েবের সংক্ষিপ্ত বিবর্তন</h2>
+  <div class="grid3">
+    <div class="card"><h4>Web 1.0 (১৯৯০-এর দশক)</h4><p>Static HTML পেজ, শুধু পড়ার জন্য (read-only), hyperlink-এর মাধ্যমে ন্যাভিগেশন। ইউজার শুধু কনজিউমার, কনটেন্ট ক্রিয়েটর নয়।</p></div>
+    <div class="card"><h4>Web 2.0 (২০০০-এর দশক)</h4><p>Dynamic ও ইন্টারঅ্যাক্টিভ — AJAX, সোশ্যাল মিডিয়া, ইউজার-জেনারেটেড কনটেন্ট। ব্রাউজার পুরোপুরি রিলোড না করেই ডেটা আপডেট হতে শুরু করে।</p></div>
+    <div class="card"><h4>আধুনিক যুগ</h4><p>Single Page Application (SPA), রিয়েল-টাইম আপডেট, মোবাইল-ফার্স্ট, API-ভিত্তিক আর্কিটেকচার, এবং ক্লাউড-নেটিভ ডিপ্লয়মেন্ট।</p></div>
+  </div>
+
+  <h2>একটি ওয়েব অ্যাপ্লিকেশনের মূল উপাদান</h2>
+  <p>প্রতিটি ওয়েব অ্যাপ্লিকেশন — তা যত ছোট বা বড়ই হোক — মূলত কয়েকটি স্তর (layer) মিলে তৈরি হয়:</p>
+  <ul>
+    <li><strong>Frontend (Client-side):</strong> যা ইউজার ব্রাউজারে দেখেন ও যার সাথে ইন্টারঅ্যাক্ট করেন — HTML, CSS, JavaScript।</li>
+    <li><strong>Backend (Server-side):</strong> যেখানে ব্যবসায়িক লজিক (business logic) প্রসেস হয়, রিকোয়েস্ট হ্যান্ডেল হয়, ডেটা যাচাই হয়।</li>
+    <li><strong>Database:</strong> যেখানে তথ্য স্থায়ীভাবে (persistently) সংরক্ষিত থাকে — ইউজার অ্যাকাউন্ট, পোস্ট, অর্ডার ইত্যাদি।</li>
+    <li><strong>API:</strong> Frontend ও Backend-এর মধ্যে, অথবা একাধিক সিস্টেমের মধ্যে কথোপকথনের নিয়ম।</li>
+    <li><strong>Infrastructure:</strong> Web server, hosting, networking — যা পুরো অ্যাপ্লিকেশনটি ইন্টারনেটে সচল রাখে।</li>
+  </ul>
+  <div class="callout warn"><div class="ic">⚠️</div><p>এই পরবর্তী ১৪টি অধ্যায় জুড়ে এই প্রতিটি উপাদান আলাদা আলাদাভাবে বিস্তারিতভাবে আলোচনা করা হবে — তাই এই মুহূর্তে সবকিছু পুরোপুরি বুঝে ফেলতে হবে না, শুধু একটি সামগ্রিক চিত্র (big picture) মাথায় রাখুন।</p></div>
+
+  <h2>বাস্তব উদাহরণ: একটি লগইন প্রক্রিয়ার পেছনে কী ঘটে</h2>
+  <p>ধরা যাক, আপনি একটি ই-কমার্স সাইটে ইমেইল ও পাসওয়ার্ড দিয়ে লগইন করছেন। পর্দার আড়ালে:</p>
+  <ol>
+    <li>আপনার <strong>ব্রাউজার (Frontend)</strong> ফর্ম ডেটা সংগ্রহ করে একটি রিকোয়েস্ট তৈরি করে</li>
+    <li>রিকোয়েস্টটি ইন্টারনেট হয়ে <strong>সার্ভারে (Backend)</strong> পৌঁছায়</li>
+    <li>Backend <strong>Database</strong>-এ গিয়ে চেক করে এই ইমেইল/পাসওয়ার্ড সঠিক কি না</li>
+    <li>সঠিক হলে, Backend একটি সেশন/টোকেন তৈরি করে ব্রাউজারে ফেরত পাঠায়</li>
+    <li>ব্রাউজার সেই টোকেন সংরক্ষণ করে এবং আপনাকে "ড্যাশবোর্ড" পেজ দেখায়</li>
+  </ol>
+  <p>এই একক ক্লিকের পেছনে কমপক্ষে ৫টি ভিন্ন উপাদান একসাথে কাজ করে — এবং এই পুরো প্রবাহটাই এই ডকুমেন্টেশনের মূল বিষয়বস্তু।</p>
+
+  <div class="summary-box">
+    <h4>এই অধ্যায়ের সারাংশ</h4>
+    <p>ওয়েব অ্যাপ্লিকেশন হলো ইন্টারঅ্যাক্টিভ, ডায়নামিক সফটওয়্যার যা ব্রাউজারে চলে; এটি সাধারণ ওয়েবসাইট থেকে আলাদা কারণ এতে ইউজার-নির্দিষ্ট কার্যকারিতা থাকে। Frontend, Backend, Database, API ও Infrastructure — এই পাঁচটি স্তর মিলে একটি সম্পূর্ণ ওয়েব অ্যাপ্লিকেশন তৈরি হয়, যা পরবর্তী অধ্যায়গুলোতে বিস্তারিতভাবে আলোচিত হবে।</p>
+  </div>
+
+  <div class="pager">
+    <a class="next" href="/chapter02"><span>পরবর্তী</span>অধ্যায় ০২ — Client-Server আর্কিটেকচার</a>
+  </div>
+</section>
+
+
+<section class="chapter" id="chapter02">
+  <div class="eyebrow">অধ্যায় ০২ · আর্কিটেকচার</div>
+  <h1>Client-Server আর্কিটেকচার ও Request-Response Cycle</h1>
+  <p class="sub">প্রতিটি ওয়েব অ্যাপ্লিকেশনের ভিত্তি একটি সহজ কিন্তু শক্তিশালী মডেল — Client ও Server-এর মধ্যে কথোপকথন। এই অধ্যায়ে এই মডেলটি ধাপে ধাপে ভাঙা হয়েছে।</p>
+
+  <h2>Client-Server মডেল কী</h2>
+  <p><strong>Client</strong> হলো সেই ডিভাইস/সফটওয়্যার যা রিকোয়েস্ট পাঠায় — সাধারণত আপনার ব্রাউজার (Chrome, Firefox) বা একটি মোবাইল অ্যাপ। <strong>Server</strong> হলো সেই কম্পিউটার যা সবসময় "শুনে" থাকে এবং রিকোয়েস্ট পেলে উত্তর (response) পাঠায়। এই মডেলে client সবসময় কথোপকথন শুরু করে — server নিজে থেকে client-কে ডেটা পাঠায় না (ব্যতিক্রম: WebSocket, যা পরে আলোচনা হবে)।</p>
+
+  <div class="grid2">
+    <div class="card"><h4>🖥️ Client-এর দায়িত্ব</h4><p>UI রেন্ডার করা, ইউজার ইনপুট গ্রহণ করা, রিকোয়েস্ট তৈরি ও পাঠানো, response অনুযায়ী পেজ আপডেট করা।</p></div>
+    <div class="card"><h4>🗄️ Server-এর দায়িত্ব</h4><p>রিকোয়েস্ট গ্রহণ করা, authentication/validation করা, business logic প্রসেস করা, Database-এর সাথে কথা বলা, response তৈরি করে পাঠানো।</p></div>
+  </div>
+
+  <h2>Request-Response চক্র (ধাপে ধাপে)</h2>
+  <ol>
+    <li><strong>DNS Lookup:</strong> ব্রাউজার ডোমেইন নাম (যেমন <code>example.com</code>) থেকে সার্ভারের IP অ্যাড্রেস খুঁজে বের করে</li>
+    <li><strong>TCP/TLS Connection:</strong> ব্রাউজার সার্ভারের সাথে একটি নিরাপদ সংযোগ স্থাপন করে (HTTPS হলে TLS handshake হয়)</li>
+    <li><strong>HTTP Request পাঠানো:</strong> ব্রাউজার একটি request পাঠায় — এতে থাকে method (GET/POST), URL, headers, এবং (প্রয়োজনে) body</li>
+    <li><strong>Server Processing:</strong> সার্ভার request গ্রহণ করে, প্রয়োজনীয় লজিক চালায়, হয়তো Database query করে</li>
+    <li><strong>HTTP Response পাঠানো:</strong> সার্ভার একটি status code (যেমন ২০০, ৪০৪), headers, এবং body (HTML/JSON/ফাইল) সহ response ফেরত পাঠায়</li>
+    <li><strong>Rendering:</strong> ব্রাউজার response পার্স করে পর্দায় দেখায় অথবা JavaScript দিয়ে প্রসেস করে</li>
+  </ol>
+
+  <div class="codeblock"><div class="cb-head"><span>একটি সহজ HTTP Request/Response উদাহরণ</span><button class="copy-btn">কপি</button></div><pre><code>// Request (ব্রাউজার → সার্ভার)
+GET /api/products?category=shoes HTTP/1.1
+Host: example.com
+Accept: application/json
+
+// Response (সার্ভার → ব্রাউজার)
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{"products": [{"id": 1, "name": "Running Shoes", "price": 2500}]}</code></pre></div>
+
+  <h2>Stateless প্রোটোকল — একটি গুরুত্বপূর্ণ ধারণা</h2>
+  <p>HTTP মূলত <strong>stateless</strong> — অর্থাৎ প্রতিটি request সম্পূর্ণ স্বাধীন; সার্ভার আগের request মনে রাখে না। তাহলে লগইন করার পর কীভাবে সার্ভার মনে রাখে আপনি কে? উত্তর: <strong>Session ও Cookie</strong> ব্যবহার করে — যা অধ্যায় ১০-এ বিস্তারিত আলোচিত হবে।</p>
+  <div class="callout info"><div class="ic">💡</div><p>Stateless হওয়ার সুবিধা হলো — সার্ভার সহজে স্কেল করা যায় (একাধিক সার্ভারের মধ্যে request ভাগ করে দেওয়া যায়, কারণ যেকোনো সার্ভার যেকোনো request হ্যান্ডেল করতে পারে)।</p></div>
+
+  <h2>One-Tier, Two-Tier ও Three-Tier আর্কিটেকচার</h2>
+  <table>
+    <thead><tr><th>মডেল</th><th>বর্ণনা</th></tr></thead>
+    <tbody>
+      <tr><td>One-Tier</td><td>সবকিছু একই মেশিনে — ডেভেলপমেন্ট/টেস্টিং পরিবেশে সাধারণ</td></tr>
+      <tr><td>Two-Tier</td><td>Client সরাসরি Database-এর সাথে কথা বলে (পুরনো desktop অ্যাপে দেখা যেত, আধুনিক ওয়েবে বিরল)</td></tr>
+      <tr><td>Three-Tier</td><td>Presentation (Frontend) → Application (Backend) → Data (Database) — আধুনিক ওয়েব অ্যাপ্লিকেশনের মানক মডেল</td></tr>
+    </tbody>
+  </table>
+
+  <div class="summary-box">
+    <h4>এই অধ্যায়ের সারাংশ</h4>
+    <p>Client রিকোয়েস্ট পাঠায়, Server সেটি প্রসেস করে response ফেরত দেয় — এই চক্রই ওয়েবের ভিত্তি। HTTP stateless, তাই ইউজারের "পরিচয়" মনে রাখতে session/cookie ব্যবহৃত হয়। আধুনিক অ্যাপ্লিকেশন সাধারণত Three-Tier আর্কিটেকচার অনুসরণ করে।</p>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter01"><span>পূর্ববর্তী</span>অধ্যায় ০১</a>
+    <a class="next" href="/chapter03"><span>পরবর্তী</span>অধ্যায় ০৩ — Frontend Fundamentals</a>
+  </div>
+</section>
+
+
+<section class="chapter" id="chapter03">
+  <div class="eyebrow">অধ্যায় ০৩ · Frontend</div>
+  <h1>Frontend Fundamentals — HTML, CSS, JavaScript ও DOM</h1>
+  <p class="sub">ইউজার যা দেখেন ও যার সাথে ইন্টারঅ্যাক্ট করেন, তার পুরোটাই Frontend-এর কাজ। এই অধ্যায়ে এর তিনটি মূল প্রযুক্তি এবং DOM-এর ধারণা আলোচিত হয়েছে।</p>
+
+  <h2>Frontend কী</h2>
+  <p><strong>Frontend (Client-side)</strong> হলো ওয়েব অ্যাপ্লিকেশনের সেই অংশ যা সরাসরি ইউজারের ব্রাউজারে চলে ও দেখা যায়। এটি তিনটি মূল প্রযুক্তির সমন্বয়ে তৈরি — প্রতিটির নিজস্ব স্বতন্ত্র ভূমিকা আছে।</p>
+
+  <div class="grid3">
+    <div class="card"><h4>🏗️ HTML — Structure</h4><p>পেজের কাঠামো ও কনটেন্ট সংজ্ঞায়িত করে — heading, paragraph, image, form, button ইত্যাদি।</p></div>
+    <div class="card"><h4>🎨 CSS — Presentation</h4><p>HTML কে দৃশ্যমানভাবে সাজায় — রং, ফন্ট, লেআউট, স্পেসিং, রেসপনসিভনেস।</p></div>
+    <div class="card"><h4>⚡ JavaScript — Behavior</h4><p>পেজকে ইন্টারঅ্যাক্টিভ করে তোলে — ক্লিক হ্যান্ডেল করা, ডেটা fetch করা, কনটেন্ট ডায়নামিকভাবে আপডেট করা।</p></div>
+  </div>
+
+  <div class="codeblock"><div class="cb-head"><span>তিনটি প্রযুক্তি একসাথে — একটি ন্যূনতম উদাহরণ</span><button class="copy-btn">কপি</button></div><pre><code>&lt;!-- HTML: কাঠামো --&gt;
+&lt;button id="likeBtn"&gt;লাইক&lt;/button&gt;
+&lt;span id="count"&gt;0&lt;/span&gt;
+
+&lt;style&gt;
+/* CSS: প্রেজেন্টেশন */
+#likeBtn { background: #ff5c5c; color: white; border-radius: 6px; padding: 8px 14px; }
+&lt;/style&gt;
+
+&lt;script&gt;
+// JavaScript: আচরণ
+let count = 0;
+document.getElementById('likeBtn').addEventListener('click', () =&gt; {
+  count++;
+  document.getElementById('count').textContent = count;
+});
+&lt;/script&gt;</code></pre></div>
+
+  <h2>DOM (Document Object Model) কী</h2>
+  <p>ব্রাউজার যখন একটি HTML পেজ লোড করে, তখন সেটি পুরো পেজটিকে একটি <strong>ট্রি-আকৃতির স্ট্রাকচারে</strong> রূপান্তর করে মেমোরিতে রাখে — একে বলে DOM। JavaScript এই DOM-এর সাথে সরাসরি কথা বলতে পারে — এলিমেন্ট পড়তে, যোগ করতে, মুছতে বা পরিবর্তন করতে পারে — যার ফলেই পেজ রিলোড ছাড়াই পরিবর্তিত হতে পারে।</p>
+  <div class="codeblock"><div class="cb-head"><span>DOM ম্যানিপুলেশনের সাধারণ মেথড</span><button class="copy-btn">কপি</button></div><pre><code>document.getElementById('title');          // ID দিয়ে এলিমেন্ট খুঁজুন
+document.querySelector('.card');            // CSS selector দিয়ে খুঁজুন
+element.textContent = "নতুন টেক্সট";          // টেক্সট পরিবর্তন
+element.innerHTML = "&lt;b&gt;বোল্ড&lt;/b&gt;";        // HTML কনটেন্ট বসানো (সতর্কতার সাথে ব্যবহার করুন)
+element.addEventListener('click', handler); // ইভেন্ট হ্যান্ডলার যোগ করা</code></pre></div>
+
+  <h2>Frontend Framework ও Library</h2>
+  <p>আধুনিক ওয়েব অ্যাপ্লিকেশন সাধারণত "খালি হাতে" (vanilla) JavaScript লেখার বদলে একটি framework/library ব্যবহার করে — এতে বড় অ্যাপ্লিকেশন ব্যবস্থাপনা অনেক সহজ হয়।</p>
+  <table>
+    <thead><tr><th>টুল</th><th>ধরন</th><th>বৈশিষ্ট্য</th></tr></thead>
+    <tbody>
+      <tr><td>React</td><td>Library (Meta)</td><td>Component-ভিত্তিক, Virtual DOM, বিশাল ecosystem</td></tr>
+      <tr><td>Vue</td><td>Framework</td><td>শেখা সহজ, template-ভিত্তিক syntax</td></tr>
+      <tr><td>Angular</td><td>পূর্ণাঙ্গ Framework (Google)</td><td>TypeScript-ভিত্তিক, বড় enterprise অ্যাপের জন্য জনপ্রিয়</td></tr>
+      <tr><td>Svelte</td><td>Compiler-ভিত্তিক</td><td>Build-টাইমে অপ্টিমাইজড কোডে কম্পাইল হয়, কোনো runtime overhead নেই</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Browser Rendering Engine — সংক্ষিপ্ত ধারণা</h2>
+  <p>ব্রাউজার HTML পার্স করে DOM তৈরি করে, CSS পার্স করে CSSOM তৈরি করে, এই দুটি মিলিয়ে একটি <strong>Render Tree</strong> তৈরি হয়, এরপর <strong>Layout</strong> (প্রতিটি এলিমেন্টের অবস্থান/আকার হিসাব) ও <strong>Paint</strong> (পর্দায় আসল রং/পিক্সেল বসানো) ধাপ সম্পন্ন হয়। JavaScript এই পুরো প্রক্রিয়ার যেকোনো ধাপকে আবার ট্রিগার করতে পারে — যার কারণেই dynamic আপডেট সম্ভব হয়।</p>
+
+  <div class="summary-box">
+    <h4>এই অধ্যায়ের সারাংশ</h4>
+    <p>HTML কাঠামো দেয়, CSS সাজায়, JavaScript প্রাণ দেয়। ব্রাউজার HTML-কে DOM নামক একটি ট্রি-কাঠামোয় রূপান্তর করে, যার সাথে JavaScript ডায়নামিকভাবে কথা বলে। React, Vue, Angular-এর মতো framework বড় অ্যাপ্লিকেশন তৈরি সহজ করে।</p>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter02"><span>পূর্ববর্তী</span>অধ্যায় ০২</a>
+    <a class="next" href="/chapter04"><span>পরবর্তী</span>অধ্যায় ০৪ — Backend Fundamentals</a>
+  </div>
+</section>
+
+
+<section class="chapter" id="chapter04">
+  <div class="eyebrow">অধ্যায় ০৪ · Backend</div>
+  <h1>Backend Fundamentals — Server-Side Logic ও Language/Runtime</h1>
+  <p class="sub">ইউজার যা দেখেন না, কিন্তু যা ছাড়া কোনো অ্যাপ্লিকেশনই আসলে "কাজ" করতে পারে না — Backend। এই অধ্যায়ে সার্ভার-সাইড লজিক কীভাবে কাজ করে তা আলোচিত হয়েছে।</p>
+
+  <h2>Backend কী এবং এর দায়িত্ব</h2>
+  <p><strong>Backend (Server-side)</strong> হলো সেই অংশ, যা সার্ভারে চলে এবং সরাসরি ইউজার দেখতে পান না। এর প্রধান দায়িত্ব:</p>
+  <ul>
+    <li>Client থেকে আসা request গ্রহণ করা ও বোঝা</li>
+    <li>ইউজার কে, তিনি লগইন করেছেন কি না তা যাচাই করা (Authentication)</li>
+    <li>ইউজারের সেই নির্দিষ্ট কাজটি করার অনুমতি আছে কি না তা যাচাই করা (Authorization)</li>
+    <li>ব্যবসায়িক নিয়ম (Business Logic) প্রয়োগ করা — যেমন "স্টকে পণ্য আছে কি না"</li>
+    <li>Database-এর সাথে কথা বলে ডেটা পড়া/লেখা</li>
+    <li>একটি উপযুক্ত response (HTML, JSON, ফাইল) তৈরি করে ফেরত পাঠানো</li>
+  </ul>
+
+  <h2>জনপ্রিয় Backend ভাষা ও রানটাইম</h2>
+  <table>
+    <thead><tr><th>ভাষা/রানটাইম</th><th>জনপ্রিয় Framework</th><th>সাধারণ ব্যবহার</th></tr></thead>
+    <tbody>
+      <tr><td>Node.js (JavaScript)</td><td>Express, NestJS</td><td>Real-time অ্যাপ, API, একই ভাষায় Frontend+Backend</td></tr>
+      <tr><td>Python</td><td>Django, Flask, FastAPI</td><td>দ্রুত ডেভেলপমেন্ট, ডেটা-হেভি অ্যাপ, AI integration</td></tr>
+      <tr><td>PHP</td><td>Laravel, WordPress</td><td>CMS, শেয়ার্ড হোস্টিং-এ ব্যাপক ব্যবহৃত</td></tr>
+      <tr><td>Java</td><td>Spring Boot</td><td>বড় Enterprise সিস্টেম, ব্যাংকিং</td></tr>
+      <tr><td>Ruby</td><td>Ruby on Rails</td><td>স্টার্টআপ-ফ্রেন্ডলি, দ্রুত প্রোটোটাইপিং</td></tr>
+      <tr><td>Go</td><td>Gin, Fiber</td><td>উচ্চ-পারফরম্যান্স, মাইক্রোসার্ভিস</td></tr>
+    </tbody>
+  </table>
+
+  <h2>একটি সাধারণ Backend রুট কেমন দেখায়</h2>
+  <div class="codeblock"><div class="cb-head"><span>Node.js/Express উদাহরণ</span><button class="copy-btn">কপি</button></div><pre><code>app.post('/api/login', async (req, res) =&gt; {
+  const { email, password } = req.body;
+
+  // ১. ইনপুট যাচাই
+  if (!email || !password) {
+    return res.status(400).json({ error: "ইমেইল ও পাসওয়ার্ড আবশ্যক" });
+  }
+
+  // ২. Database থেকে ইউজার খোঁজা
+  const user = await db.findUserByEmail(email);
+  if (!user || !verifyPassword(password, user.hashedPassword)) {
+    return res.status(401).json({ error: "ভুল ইমেইল বা পাসওয়ার্ড" });
+  }
+
+  // ৩. সেশন/টোকেন তৈরি করা
+  const token = createSessionToken(user.id);
+  res.json({ token, name: user.name });
+});</code></pre></div>
+  <p>এই একটি ছোট্ট ফাংশনেই Backend-এর প্রধান দায়িত্বগুলো দেখা যাচ্ছে — input validation, database lookup, authentication এবং response তৈরি।</p>
+
+  <h2>Business Logic — "নিয়মের" স্তর</h2>
+  <p>Business Logic বলতে বোঝায় একটি অ্যাপ্লিকেশনের নির্দিষ্ট ব্যবসায়িক নিয়মাবলী — যেমন একটি ই-কমার্স সাইটে "স্টকে ৫টির কম পণ্য থাকলে অর্ডার নেওয়া যাবে না", অথবা একটি ব্যাংকিং অ্যাপে "একদিনে সর্বোচ্চ ৫০,০০০ টাকা ট্রান্সফার করা যাবে"। এই নিয়মগুলো সবসময় Backend-এ প্রয়োগ করতে হয় — কখনো শুধু Frontend-এ নয়, কারণ Frontend-এর কোড ইউজার সহজেই পরিবর্তন/বাইপাস করতে পারেন।</p>
+  <div class="callout warn"><div class="ic">⚠️</div><p><strong>গুরুত্বপূর্ণ নীতি:</strong> "Never trust the client" — কখনো Frontend-কে বিশ্বাস করবেন না। সব গুরুত্বপূর্ণ validation ও business logic অবশ্যই Backend-এ পুনরায় যাচাই করতে হবে, কারণ attacker সরাসরি Backend API-তে request পাঠাতে পারেন, Frontend UI সম্পূর্ণ এড়িয়ে।</p></div>
+
+  <h2>Backend যেসব গুরুত্বপূর্ণ কাজ করে</h2>
+  <div class="grid2">
+    <div class="card"><h4>Input Validation</h4><p>ইউজারের দেওয়া প্রতিটি ডেটা নির্দিষ্ট নিয়ম (টাইপ, দৈর্ঘ্য, ফরম্যাট) মেনে কি না তা যাচাই করা।</p></div>
+    <div class="card"><h4>Error Handling</h4><p>কোনো সমস্যা হলে একটি অর্থপূর্ণ, কিন্তু sensitive তথ্য ফাঁস না করে এমন error message ফেরত দেওয়া।</p></div>
+    <div class="card"><h4>Logging ও Monitoring</h4><p>কী ঘটছে তার রেকর্ড রাখা — সমস্যা নির্ণয় ও নিরাপত্তা পর্যবেক্ষণের জন্য অপরিহার্য।</p></div>
+    <div class="card"><h4>Third-party Integration</h4><p>পেমেন্ট গেটওয়ে, ইমেইল সার্ভিস, SMS API-এর মতো বাহ্যিক সার্ভিসের সাথে সংযোগ স্থাপন।</p></div>
+  </div>
+
+  <div class="summary-box">
+    <h4>এই অধ্যায়ের সারাংশ</h4>
+    <p>Backend হলো অ্যাপ্লিকেশনের "মস্তিষ্ক" — এটি request গ্রহণ করে, যাচাই করে, business logic প্রয়োগ করে, Database-এর সাথে কথা বলে এবং response তৈরি করে। Node.js, Python, PHP, Java-র মতো বিভিন্ন ভাষায় Backend তৈরি করা যায়, কিন্তু মূল নীতি সবসময় একই — client-কে কখনো সরাসরি বিশ্বাস করবেন না।</p>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter03"><span>পূর্ববর্তী</span>অধ্যায় ০৩</a>
+    <a class="next" href="/chapter05"><span>পরবর্তী</span>অধ্যায় ০৫ — Database ও Data Persistence</a>
+  </div>
+</section>
+
+
+<section class="chapter" id="chapter05">
+  <div class="eyebrow">অধ্যায় ০৫ · Database</div>
+  <h1>Database ও Data Persistence</h1>
+  <p class="sub">সার্ভার রিস্টার্ট হলেও, ব্রাউজার বন্ধ করলেও কেন আপনার অ্যাকাউন্ট ডেটা হারিয়ে যায় না — কারণ এটি সংরক্ষিত থাকে Database-এ। এই অধ্যায়ে Data Persistence-এর ধারণা আলোচিত।</p>
+
+  <h2>Database কেন প্রয়োজন</h2>
+  <p>Backend সার্ভারের মেমোরি (RAM) <strong>temporary</strong> — সার্ভার রিস্টার্ট হলে বা ক্র্যাশ করলে সব হারিয়ে যায়। তাই যেকোনো ডেটা দীর্ঘমেয়াদে সংরক্ষণের জন্য প্রয়োজন একটি <strong>Database</strong> — যা ডিস্কে স্থায়ীভাবে (persistently) ডেটা রাখে, এবং দ্রুত পড়া/লেখা/খোঁজার সুবিধা দেয়।</p>
+
+  <h2>SQL (Relational) বনাম NoSQL Database</h2>
+  <table>
+    <thead><tr><th>বৈশিষ্ট্য</th><th>SQL (Relational)</th><th>NoSQL (Non-Relational)</th></tr></thead>
+    <tbody>
+      <tr><td>ডেটা গঠন</td><td>নির্দিষ্ট স্কিমা-সহ টেবিল, সারি, কলাম</td><td>Flexible — document, key-value, graph, column-family</td></tr>
+      <tr><td>উদাহরণ</td><td>MySQL, PostgreSQL, SQLite, SQL Server</td><td>MongoDB, Redis, Cassandra, DynamoDB</td></tr>
+      <tr><td>সম্পর্ক (Relationships)</td><td>Foreign key দিয়ে টেবিলের মধ্যে সম্পর্ক তৈরি</td><td>সাধারণত ডেটা একসাথে embed/nested করা হয়</td></tr>
+      <tr><td>কখন ব্যবহার করবেন</td><td>Structured ডেটা, জটিল সম্পর্ক, transaction-নির্ভর (ব্যাংকিং)</td><td>Flexible/evolving স্কিমা, বিশাল স্কেল, দ্রুত read/write (রিয়েল-টাইম)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>একটি Relational টেবিলের উদাহরণ</h2>
+  <div class="codeblock"><div class="cb-head"><span>SQL টেবিল তৈরি ও কোয়েরি</span><button class="copy-btn">কপি</button></div><pre><code>CREATE TABLE users (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(100),
+  email VARCHAR(150) UNIQUE,
+  created_at DATETIME
+);
+
+-- নতুন ইউজার যোগ করা
+INSERT INTO users (name, email, created_at) VALUES ('রহিম', 'rahim@example.com', NOW());
+
+-- ইমেইল দিয়ে খোঁজা
+SELECT * FROM users WHERE email = 'rahim@example.com';</code></pre></div>
+
+  <h2>CRUD — ডেটার সাথে চারটি মৌলিক কাজ</h2>
+  <p>প্রায় প্রতিটি ওয়েব অ্যাপ্লিকেশন ডেটার উপর চারটি মৌলিক অপারেশন করে — একসাথে এদের বলা হয় <strong>CRUD</strong>:</p>
+  <div class="grid2">
+    <div class="card"><h4>Create</h4><p>নতুন ডেটা যোগ করা — যেমন নতুন অ্যাকাউন্ট তৈরি, নতুন পোস্ট লেখা (SQL: <code>INSERT</code>)</p></div>
+    <div class="card"><h4>Read</h4><p>বিদ্যমান ডেটা পড়া — যেমন প্রোফাইল দেখা, পোস্ট ফিড লোড করা (SQL: <code>SELECT</code>)</p></div>
+    <div class="card"><h4>Update</h4><p>বিদ্যমান ডেটা পরিবর্তন করা — যেমন প্রোফাইল এডিট করা (SQL: <code>UPDATE</code>)</p></div>
+    <div class="card"><h4>Delete</h4><p>ডেটা মুছে ফেলা — যেমন পোস্ট ডিলিট করা, অ্যাকাউন্ট বন্ধ করা (SQL: <code>DELETE</code>)</p></div>
+  </div>
+
+  <h2>ORM — কোড দিয়ে Database-এর সাথে কথা বলা</h2>
+  <p>অনেক আধুনিক Backend সরাসরি raw SQL না লিখে <strong>ORM (Object-Relational Mapping)</strong> লাইব্রেরি ব্যবহার করে — এটি Database টেবিলকে প্রোগ্রামিং ভাষার object-এর মতো ব্যবহারের সুযোগ দেয়, এবং সঠিকভাবে ব্যবহৃত হলে কিছু সাধারণ নিরাপত্তা সমস্যা (যেমন SQL Injection) প্রতিরোধেও সাহায্য করে।</p>
+  <div class="codeblock"><div class="cb-head"><span>ORM উদাহরণ (Prisma/Node.js স্টাইল)</span><button class="copy-btn">কপি</button></div><pre><code>// Raw SQL-এর বদলে:
+const user = await prisma.user.findUnique({
+  where: { email: "rahim@example.com" }
+});</code></pre></div>
+
+  <div class="callout info"><div class="ic">💡</div><p>ORM/Parameterized query সঠিকভাবে ব্যবহার করলে, ইউজার-ইনপুট কখনো সরাসরি SQL কমান্ডের অংশ হিসেবে "লেখা" হয় না — এটিই SQL Injection প্রতিরোধের মূল নীতি, যা <em>Learn SQLi</em> ডকুমেন্টেশনে বিস্তারিত আলোচিত হয়েছে।</p></div>
+
+  <div class="summary-box">
+    <h4>এই অধ্যায়ের সারাংশ</h4>
+    <p>Database ডেটা স্থায়ীভাবে সংরক্ষণ করে। SQL Database স্ট্রাকচার্ড, সম্পর্কযুক্ত ডেটার জন্য উপযোগী; NoSQL flexible, বড় স্কেলের জন্য উপযোগী। প্রতিটি অ্যাপ্লিকেশন মূলত CRUD (Create, Read, Update, Delete) অপারেশনের উপর নির্ভর করে, এবং ORM/parameterized query ব্যবহার নিরাপত্তার দিক থেকেও গুরুত্বপূর্ণ।</p>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter04"><span>পূর্ববর্তী</span>অধ্যায় ০৪</a>
+    <a class="next" href="/chapter06"><span>পরবর্তী</span>অধ্যায় ০৬ — API ও Communication</a>
+  </div>
+</section>
+
+
+<section class="chapter" id="chapter06">
+  <div class="eyebrow">অধ্যায় ০৬ · API</div>
+  <h1>API ও Communication (REST, JSON, GraphQL, WebSocket)</h1>
+  <p class="sub">Frontend ও Backend কীভাবে একে অপরের সাথে "ভাষা" বিনিময় করে, এবং এক সিস্টেম কীভাবে আরেক সিস্টেমের সাথে কথা বলে — তার মূল হাতিয়ার হলো API।</p>
+
+  <h2>API কী</h2>
+  <p><strong>API (Application Programming Interface)</strong> হলো দুটি সফটওয়্যার সিস্টেমের মধ্যে কথোপকথনের একটি নির্দিষ্ট নিয়মাবলী। ওয়েব প্রসঙ্গে, API সাধারণত বোঝায় Backend-এর তৈরি করা একগুচ্ছ URL (endpoint), যেখানে Frontend (বা অন্য কোনো সিস্টেম) নির্দিষ্ট নিয়মে request পাঠিয়ে ডেটা পেতে বা পরিবর্তন করতে পারে।</p>
+
+  <h2>REST API — সবচেয়ে জনপ্রিয় স্টাইল</h2>
+  <p><strong>REST (Representational State Transfer)</strong> একটি architecture স্টাইল, যেখানে প্রতিটি "রিসোর্স" (যেমন একজন ইউজার, একটি পোস্ট) একটি নির্দিষ্ট URL দিয়ে চিহ্নিত হয়, এবং HTTP method দিয়ে বোঝানো হয় কী কাজ করতে হবে।</p>
+  <table>
+    <thead><tr><th>HTTP Method</th><th>কাজ</th><th>উদাহরণ Endpoint</th></tr></thead>
+    <tbody>
+      <tr><td><code>GET</code></td><td>ডেটা পড়া</td><td><code>GET /api/users/42</code></td></tr>
+      <tr><td><code>POST</code></td><td>নতুন ডেটা তৈরি</td><td><code>POST /api/users</code></td></tr>
+      <tr><td><code>PUT</code>/<code>PATCH</code></td><td>বিদ্যমান ডেটা আপডেট</td><td><code>PUT /api/users/42</code></td></tr>
+      <tr><td><code>DELETE</code></td><td>ডেটা মুছে ফেলা</td><td><code>DELETE /api/users/42</code></td></tr>
+    </tbody>
+  </table>
+
+  <h2>JSON — আধুনিক ওয়েবের ডেটা ফরম্যাট</h2>
+  <p><strong>JSON (JavaScript Object Notation)</strong> হলো সবচেয়ে বহুল ব্যবহৃত ডেটা-এক্সচেঞ্জ ফরম্যাট — পড়তে সহজ, এবং প্রায় সব প্রোগ্রামিং ভাষায় সহজে parse করা যায়।</p>
+  <div class="codeblock"><div class="cb-head"><span>একটি REST API response (JSON)</span><button class="copy-btn">কপি</button></div><pre><code>{
+  "id": 42,
+  "name": "করিম",
+  "email": "karim@example.com",
+  "orders": [
+    { "id": 1, "item": "বই", "price": 450 },
+    { "id": 2, "item": "কলম", "price": 20 }
+  ]
+}</code></pre></div>
+
+  <h2>Frontend থেকে API কল করা</h2>
+  <div class="codeblock"><div class="cb-head"><span>JavaScript fetch() দিয়ে API কল</span><button class="copy-btn">কপি</button></div><pre><code>fetch('/api/users/42')
+  .then(response =&gt; response.json())
+  .then(data =&gt; {
+    console.log(data.name); // "করিম"
+  });
+
+// POST request পাঠানো
+fetch('/api/orders', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ item: "নোটবুক", price: 150 })
+});</code></pre></div>
+
+  <h2>REST বনাম GraphQL</h2>
+  <table>
+    <thead><tr><th>বৈশিষ্ট্য</th><th>REST</th><th>GraphQL</th></tr></thead>
+    <tbody>
+      <tr><td>Endpoint সংখ্যা</td><td>প্রতিটি রিসোর্সের জন্য আলাদা URL</td><td>সাধারণত একটি একক endpoint</td></tr>
+      <tr><td>ডেটা নিয়ন্ত্রণ</td><td>সার্ভার যা দেয়, client তাই পায় (over/under-fetching হতে পারে)</td><td>Client ঠিক যে ফিল্ডগুলো দরকার সেটাই চেয়ে নেয়</td></tr>
+      <tr><td>শেখার কার্ভ</td><td>সহজ, ব্যাপক ব্যবহৃত</td><td>কিছুটা জটিল, নির্দিষ্ট use-case-এ শক্তিশালী</td></tr>
+    </tbody>
+  </table>
+
+  <h2>WebSocket — রিয়েল-টাইম কমিউনিকেশন</h2>
+  <p>REST API-তে client-কেই সবসময় request শুরু করতে হয় (Server নিজে থেকে push করতে পারে না)। কিন্তু চ্যাট অ্যাপ, লাইভ নোটিফিকেশন, রিয়েল-টাইম ড্যাশবোর্ডের মতো ক্ষেত্রে <strong>WebSocket</strong> ব্যবহৃত হয় — এটি একটি persistent, দ্বিমুখী (bidirectional) সংযোগ তৈরি করে, যেখানে Server যেকোনো সময় Client-কে ডেটা push করতে পারে, কোনো নতুন request ছাড়াই।</p>
+
+  <div class="callout warn"><div class="ic">⚠️</div><p>API endpoint প্রায়ই সরাসরি Database/Business logic-এর সাথে যুক্ত থাকে — তাই প্রতিটি API endpoint-এ অবশ্যই যথাযথ authentication, authorization ও input validation থাকতে হয়, নাহলে এটি আক্রমণের সহজ লক্ষ্যবস্তুতে পরিণত হতে পারে।</p></div>
+
+  <div class="summary-box">
+    <h4>এই অধ্যায়ের সারাংশ</h4>
+    <p>API হলো সিস্টেমের মধ্যে কথোপকথনের নিয়ম। REST, HTTP method ও URL দিয়ে রিসোর্স চিহ্নিত করে, JSON ফরম্যাটে ডেটা আদান-প্রদান করে — এটিই আজকের ওয়েবের সবচেয়ে জনপ্রিয় প্যাটার্ন। GraphQL নমনীয় কোয়েরি দেয়, আর WebSocket রিয়েল-টাইম, দ্বিমুখী যোগাযোগ সম্ভব করে।</p>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter05"><span>পূর্ববর্তী</span>অধ্যায় ০৫</a>
+    <a class="next" href="/chapter07"><span>পরবর্তী</span>অধ্যায় ০৭ — ওয়েব অ্যাপের ধরন</a>
+  </div>
+</section>
+
+
+<section class="chapter" id="chapter07">
+  <div class="eyebrow">অধ্যায় ০৭ · অ্যাপের ধরন</div>
+  <h1>Web Application এর ধরন — Static, MPA, SPA, SSR/SSG, PWA</h1>
+  <p class="sub">সব ওয়েব অ্যাপ্লিকেশন একইভাবে তৈরি হয় না। এই অধ্যায়ে পেজ কীভাবে render ও delivery হয় তার ভিত্তিতে বিভিন্ন স্থাপত্য-ধরন আলোচিত হয়েছে।</p>
+
+  <h2>Static Website</h2>
+  <p>প্রতিটি পেজ আগে থেকেই HTML ফাইল হিসেবে তৈরি করা থাকে — সার্ভার কোনো প্রসেসিং ছাড়াই সরাসরি সেই ফাইল পাঠায়। দ্রুত, সহজ, কিন্তু ইউজার-নির্দিষ্ট dynamic কনটেন্ট দেখানো যায় না।</p>
+
+  <h2>MPA — Multi-Page Application</h2>
+  <p>প্রথাগত মডেল — প্রতিটি নেভিগেশনে ব্রাউজার সম্পূর্ণ নতুন একটি HTML পেজ সার্ভার থেকে লোড করে (পুরো পেজ রিফ্রেশ হয়)। সার্ভার প্রতিবার সম্পূর্ণ HTML তৈরি করে পাঠায়।</p>
+
+  <h2>SPA — Single Page Application</h2>
+  <p>প্রাথমিকভাবে একটি মাত্র HTML পেজ লোড হয়; এরপর নেভিগেশন JavaScript দিয়ে হ্যান্ডেল হয় — শুধু প্রয়োজনীয় ডেটা (JSON) API থেকে fetch করে পেজের অংশবিশেষ আপডেট করা হয়, সম্পূর্ণ পেজ রিলোড হয় না। React, Vue, Angular দিয়ে তৈরি বেশিরভাগ আধুনিক অ্যাপ SPA।</p>
+  <table>
+    <thead><tr><th>বৈশিষ্ট্য</th><th>MPA</th><th>SPA</th></tr></thead>
+    <tbody>
+      <tr><td>নেভিগেশন</td><td>প্রতিবার পুরো পেজ রিলোড</td><td>শুধু ডেটা fetch, পেজ রিলোড হয় না</td></tr>
+      <tr><td>প্রাথমিক লোড</td><td>সাধারণত দ্রুত</td><td>কিছুটা ধীর (পুরো JS bundle লোড করতে হয়)</td></tr>
+      <tr><td>SEO</td><td>স্বাভাবিকভাবেই ভালো (HTML সহজে crawl হয়)</td><td>অতিরিক্ত কাজ লাগতে পারে (SSR ছাড়া)</td></tr>
+      <tr><td>ইউজার অভিজ্ঞতা</td><td>নেভিগেশনে সামান্য দেরি/ফ্লিকার</td><td>মসৃণ, অ্যাপ-এর মতো অনুভূতি</td></tr>
+    </tbody>
+  </table>
+
+  <h2>SSR ও SSG — দুই জগতের সেরাটা</h2>
+  <div class="grid2">
+    <div class="card"><h4>SSR (Server-Side Rendering)</h4><p>প্রতিটি request-এ সার্ভার React/Vue কম্পোনেন্ট দিয়ে HTML তৈরি করে client-কে পাঠায় — দ্রুত প্রাথমিক রেন্ডার, ভালো SEO। উদাহরণ: Next.js, Nuxt.js।</p></div>
+    <div class="card"><h4>SSG (Static Site Generation)</h4><p>Build টাইমেই সব পেজ HTML হিসেবে তৈরি হয়ে যায় — অত্যন্ত দ্রুত, CDN-এ সহজে হোস্ট করা যায়। ব্লগ, ডকুমেন্টেশন সাইটে জনপ্রিয়।</p></div>
+  </div>
+
+  <h2>PWA — Progressive Web App</h2>
+  <p>একটি PWA হলো এমন ওয়েব অ্যাপ, যা নেটিভ মোবাইল অ্যাপের মতো আচরণ করতে পারে — হোমস্ক্রিনে ইনস্টল করা যায়, অফলাইনেও (সীমিতভাবে) কাজ করে (Service Worker ব্যবহার করে), এবং push notification পাঠাতে পারে — অথচ এটি মূলত একটি ওয়েবসাইট, কোনো আলাদা app store প্রয়োজন হয় না।</p>
+
+  <div class="callout info"><div class="ic">💡</div><p>বাস্তব অ্যাপ্লিকেশনে প্রায়ই এই ধরনগুলো মিশ্রিত হয় — যেমন একটি ই-কমার্স সাইটের প্রোডাক্ট পেজ SSR/SSG দিয়ে তৈরি (SEO-এর জন্য), কিন্তু ইউজার ড্যাশবোর্ড SPA-এর মতো আচরণ করে।</p></div>
+
+  <div class="summary-box">
+    <h4>এই অধ্যায়ের সারাংশ</h4>
+    <p>Static সাইট দ্রুত কিন্তু স্থির; MPA প্রথাগত ও SEO-বান্ধব; SPA মসৃণ, অ্যাপ-এর মতো অভিজ্ঞতা দেয় কিন্তু SEO-তে বাড়তি কাজ লাগে; SSR/SSG উভয়ের সুবিধা একত্র করার চেষ্টা করে; আর PWA ওয়েব অ্যাপকে নেটিভ অ্যাপের কাছাকাছি নিয়ে যায়।</p>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter06"><span>পূর্ববর্তী</span>অধ্যায় ০৬</a>
+    <a class="next" href="/chapter08"><span>পরবর্তী</span>অধ্যায় ০৮ — Web Server ও Hosting</a>
+  </div>
+</section>
+
+
+<section class="chapter" id="chapter08">
+  <div class="eyebrow">অধ্যায় ০৮ · Infrastructure</div>
+  <h1>Web Server, Application Server ও Hosting</h1>
+  <p class="sub">একটি ওয়েব অ্যাপ্লিকেশন কোডিং করার পর, সেটি ইন্টারনেটে কীভাবে "লাইভ" হয় — এই অধ্যায়ে সার্ভার ও হোস্টিং-এর ধারণা আলোচিত।</p>
+
+  <h2>Web Server বনাম Application Server</h2>
+  <table>
+    <thead><tr><th></th><th>Web Server</th><th>Application Server</th></tr></thead>
+    <tbody>
+      <tr><td>কাজ</td><td>Static ফাইল (HTML, CSS, JS, ছবি) পরিবেশন করা, request route করা</td><td>Dynamic কনটেন্ট তৈরি — business logic চালানো, Database-এর সাথে কথা বলা</td></tr>
+      <tr><td>উদাহরণ</td><td>Nginx, Apache</td><td>Node.js (Express), Django, Spring Boot</td></tr>
+    </tbody>
+  </table>
+  <p>বাস্তবে এই দুটি প্রায়ই একসাথে ব্যবহৃত হয় — Nginx একটি <strong>Reverse Proxy</strong> হিসেবে কাজ করে, static ফাইল নিজে পরিবেশন করে এবং dynamic request গুলো application server-এ ফরোয়ার্ড করে।</p>
+
+  <div class="codeblock"><div class="cb-head"><span>সাধারণ রিকোয়েস্ট প্রবাহ (Nginx + Node.js)</span><button class="copy-btn">কপি</button></div><pre><code>ব্রাউজার → Nginx (reverse proxy, static ফাইল, SSL)
+            → Node.js Application Server (business logic)
+            → Database (MySQL/PostgreSQL/MongoDB)</code></pre></div>
+
+  <h2>হোস্টিং-এর বিভিন্ন মডেল</h2>
+  <div class="grid3">
+    <div class="card"><h4>Shared Hosting</h4><p>একাধিক ওয়েবসাইট একই সার্ভার রিসোর্স ভাগ করে — সস্তা কিন্তু সীমিত নিয়ন্ত্রণ ও পারফরম্যান্স।</p></div>
+    <div class="card"><h4>VPS/Dedicated Server</h4><p>নির্দিষ্ট পরিমাণ (VPS) বা সম্পূর্ণ (Dedicated) সার্ভার রিসোর্স একক ব্যবহারকারীর — বেশি নিয়ন্ত্রণ, বেশি দায়িত্ব।</p></div>
+    <div class="card"><h4>Cloud Hosting</h4><p>AWS, Google Cloud, Azure, DigitalOcean — প্রয়োজন অনুযায়ী স্কেল করা যায় (Elastic), pay-as-you-go মডেল।</p></div>
+  </div>
+
+  <h2>Domain, DNS ও SSL — সংক্ষিপ্ত পুনরালোচনা</h2>
+  <p>একটি ওয়েব অ্যাপ্লিকেশন লাইভ করতে সাধারণত প্রয়োজন হয় একটি <strong>Domain Name</strong> (যেমন <code>example.com</code>), যা DNS-এর মাধ্যমে সার্ভারের IP অ্যাড্রেসের সাথে যুক্ত হয়, এবং একটি <strong>SSL/TLS Certificate</strong>, যা HTTPS নিশ্চিত করে। এই বিষয়গুলো <em>HTTP/HTTPS/IP/DNS/Cookies</em> ডকুমেন্টেশনে আরও বিস্তারিত আলোচিত হয়েছে।</p>
+
+  <h2>CDN — দ্রুত কনটেন্ট ডেলিভারির জন্য</h2>
+  <p><strong>Content Delivery Network (CDN)</strong> হলো বিশ্বজুড়ে ছড়িয়ে থাকা সার্ভারের একটি নেটওয়ার্ক, যা static ফাইল (ছবি, CSS, JS) ইউজারের ভৌগোলিকভাবে সবচেয়ে কাছের সার্ভার থেকে পরিবেশন করে — ফলে লোড টাইম উল্লেখযোগ্যভাবে কমে যায় এবং মূল সার্ভারের উপর চাপও কমে।</p>
+
+  <h2>Containerization ও Deployment — সংক্ষিপ্ত পরিচিতি</h2>
+  <p>আধুনিক অ্যাপ্লিকেশন প্রায়ই <strong>Docker</strong>-এর মতো টুল দিয়ে "কনটেইনার"-এ প্যাকেজ করা হয় — এতে অ্যাপ্লিকেশন ও তার সব dependency একটি পোর্টেবল ইউনিটে বন্দি থাকে, যা যেকোনো পরিবেশে একইভাবে চলে ("works on my machine" সমস্যা কমায়)। <strong>Kubernetes</strong>-এর মতো টুল এই কনটেইনারগুলোকে বড় স্কেলে পরিচালনা (orchestrate) করে।</p>
+
+  <div class="summary-box">
+    <h4>এই অধ্যায়ের সারাংশ</h4>
+    <p>Web Server static কনটেন্ট পরিবেশন করে, Application Server dynamic লজিক চালায় — আধুনিক স্থাপত্যে এরা একসাথে কাজ করে (Nginx + Backend)। Shared, VPS, Dedicated ও Cloud — বিভিন্ন হোস্টিং মডেল থেকে প্রয়োজন অনুযায়ী বেছে নেওয়া যায়, আর CDN ও containerization আধুনিক ডিপ্লয়মেন্টকে দ্রুত ও নির্ভরযোগ্য করে তোলে।</p>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter07"><span>পূর্ববর্তী</span>অধ্যায় ০৭</a>
+    <a class="next" href="/chapter09"><span>পরবর্তী</span>অধ্যায় ০৯ — Authentication ও Authorization</a>
+  </div>
+</section>
+
+
+<section class="chapter" id="chapter09">
+  <div class="eyebrow">অধ্যায় ০৯ · পরিচয় যাচাই</div>
+  <h1>Authentication ও Authorization</h1>
+  <p class="sub">"আপনি কে?" এবং "আপনি কী করতে পারেন?" — দুটি আলাদা, কিন্তু ঘনিষ্ঠভাবে সম্পর্কিত প্রশ্ন, যা প্রতিটি ওয়েব অ্যাপ্লিকেশনের নিরাপত্তার ভিত্তি।</p>
+
+  <h2>Authentication বনাম Authorization</h2>
+  <table>
+    <thead><tr><th></th><th>Authentication (AuthN)</th><th>Authorization (AuthZ)</th></tr></thead>
+    <tbody>
+      <tr><td>প্রশ্ন</td><td>"আপনি কে?"</td><td>"আপনি কী করার অনুমতিপ্রাপ্ত?"</td></tr>
+      <tr><td>উদাহরণ</td><td>ইমেইল/পাসওয়ার্ড দিয়ে লগইন</td><td>শুধুমাত্র admin-রা ইউজার ডিলিট করতে পারবেন</td></tr>
+      <tr><td>ঘটে কখন</td><td>প্রথমে — পরিচয় নিশ্চিত করা</td><td>এরপর — প্রতিটি নির্দিষ্ট কাজের সময়</td></tr>
+    </tbody>
+  </table>
+  <div class="callout info"><div class="ic">💡</div><p>সহজ মনে রাখার উপায়: Authentication = লগইন করা (login), Authorization = অনুমতি (permission)। একজন ইউজার সফলভাবে Authenticate হতে পারেন, কিন্তু তবুও নির্দিষ্ট কোনো কাজের জন্য Authorized নাও হতে পারেন।</p></div>
+
+  <h2>পাসওয়ার্ড কখনো plain text-এ সংরক্ষণ করা হয় না</h2>
+  <p>একটি নিরাপদ অ্যাপ্লিকেশন কখনো আসল পাসওয়ার্ড Database-এ সংরক্ষণ করে না। বরং একটি <strong>hashing algorithm</strong> (যেমন bcrypt, Argon2) দিয়ে পাসওয়ার্ডকে একমুখী (one-way) রূপান্তর করে রাখা হয় — এটি থেকে আসল পাসওয়ার্ড ফিরিয়ে আনা প্রায় অসম্ভব।</p>
+  <div class="codeblock"><div class="cb-head"><span>Password hashing উদাহরণ (bcrypt)</span><button class="copy-btn">কপি</button></div><pre><code>const bcrypt = require('bcrypt');
+
+// সংরক্ষণের সময়
+const hashedPassword = await bcrypt.hash(plainPassword, 10);
+// Database-এ সংরক্ষিত হয়: $2b$10$N9qo8uLOickgx2ZMRZoMye...
+
+// লগইনের সময় যাচাই
+const isMatch = await bcrypt.compare(enteredPassword, hashedPassword);</code></pre></div>
+
+  <h2>Multi-Factor Authentication (MFA)</h2>
+  <p>শুধু পাসওয়ার্ডের উপর নির্ভর না করে, অতিরিক্ত একটি স্তর যোগ করা — যেমন ফোনে পাঠানো OTP কোড, অথবা Authenticator অ্যাপের কোড। এটি তিনটি সাধারণ বিভাগে পড়ে:</p>
+  <ul>
+    <li><strong>যা আপনি জানেন</strong> (Something you know) — পাসওয়ার্ড, PIN</li>
+    <li><strong>যা আপনার কাছে আছে</strong> (Something you have) — ফোন, Authenticator অ্যাপ, হার্ডওয়্যার কী</li>
+    <li><strong>যা আপনি</strong> (Something you are) — ফিঙ্গারপ্রিন্ট, ফেস আইডি</li>
+  </ul>
+
+  <h2>Role-Based Access Control (RBAC)</h2>
+  <p>Authorization বাস্তবায়নের একটি সাধারণ পদ্ধতি হলো প্রতিটি ইউজারকে একটি বা একাধিক <strong>Role</strong> (যেমন Admin, Editor, Viewer) দেওয়া, এবং প্রতিটি কাজের জন্য প্রয়োজনীয় Role নির্দিষ্ট করা।</p>
+  <div class="codeblock"><div class="cb-head"><span>RBAC চেক উদাহরণ</span><button class="copy-btn">কপি</button></div><pre><code>app.delete('/api/users/:id', requireAuth, (req, res) =&gt; {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: "অনুমতি নেই" });
+  }
+  // ইউজার ডিলিট করার লজিক
+});</code></pre></div>
+
+  <div class="callout warn"><div class="ic">⚠️</div><p>একটি সাধারণ, কিন্তু গুরুতর ভুল হলো শুধুমাত্র Authentication চেক করা (ইউজার লগইন আছে কি না) কিন্তু প্রতিটি নির্দিষ্ট রিসোর্সের জন্য Authorization চেক না করা (ইউজার <em>এই নির্দিষ্ট</em> রিসোর্স অ্যাক্সেস করার অনুমতিপ্রাপ্ত কি না) — একে বলা হয় <strong>Broken Access Control</strong>, যা OWASP Top 10-এর শীর্ষ ঝুঁকিগুলোর একটি।</p></div>
+
+  <div class="summary-box">
+    <h4>এই অধ্যায়ের সারাংশ</h4>
+    <p>Authentication পরিচয় নিশ্চিত করে, Authorization অনুমতি নিয়ন্ত্রণ করে — দুটিই প্রয়োজন, একটি অন্যটির বিকল্প নয়। পাসওয়ার্ড সবসময় hash করে সংরক্ষণ করতে হয়, MFA বাড়তি নিরাপত্তা দেয়, এবং RBAC-এর মতো পদ্ধতি Authorization পরিচালনা সহজ করে।</p>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter08"><span>পূর্ববর্তী</span>অধ্যায় ০৮</a>
+    <a class="next" href="/chapter10"><span>পরবর্তী</span>অধ্যায় ১০ — Session, Cookies ও Token</a>
+  </div>
+</section>
+
+
+<section class="chapter" id="chapter10">
+  <div class="eyebrow">অধ্যায় ১০ · স্টেট ম্যানেজমেন্ট</div>
+  <h1>Session, State ও Cookies — Token-based Authentication</h1>
+  <p class="sub">HTTP stateless হওয়া সত্ত্বেও কীভাবে একটি অ্যাপ্লিকেশন মনে রাখে আপনি লগইন করে আছেন — এই অধ্যায়ে Session, Cookie ও Token-এর ব্যবহারিক দিক আলোচিত।</p>
+
+  <h2>সংক্ষিপ্ত পুনরালোচনা — Cookie কী</h2>
+  <p>একটি <strong>Cookie</strong> হলো ছোট্ট একটি key-value তথ্য, যা সার্ভার ব্রাউজারকে সংরক্ষণ করতে বলে, এবং ব্রাউজার পরবর্তী প্রতিটি request-এ স্বয়ংক্রিয়ভাবে সেই ডোমেইনে ফেরত পাঠায়। (Cookie-এর গঠন, attributes ও সিকিউরিটি flag নিয়ে বিস্তারিত আলোচনা আছে <em>HTTP/HTTPS/IP/DNS/Cookies</em> ডকুমেন্টেশনে।)</p>
+
+  <h2>Session-based Authentication</h2>
+  <p>প্রথাগত পদ্ধতিতে, লগইনের পর সার্ভার একটি ইউনিক <strong>Session ID</strong> তৈরি করে, এটি সার্ভারের মেমোরি/Database-এ (ইউজার তথ্যসহ) সংরক্ষণ করে, এবং শুধু সেই ID-টি একটি cookie আকারে ব্রাউজারকে পাঠায়। প্রতিটি পরবর্তী request-এ ব্রাউজার সেই Session ID ফেরত পাঠালে, সার্ভার তা দিয়ে ইউজারকে চিহ্নিত করে।</p>
+  <div class="codeblock"><div class="cb-head"><span>Session-based ফ্লো</span><button class="copy-btn">কপি</button></div><pre><code>১. ইউজার লগইন করেন
+২. সার্ভার session তৈরি করে: session_store["abc123"] = { userId: 42 }
+৩. সার্ভার cookie পাঠায়: Set-Cookie: sessionId=abc123; HttpOnly; Secure
+৪. পরবর্তী request-এ ব্রাউজার পাঠায়: Cookie: sessionId=abc123
+৫. সার্ভার session_store-এ "abc123" খুঁজে userId=42 বের করে</code></pre></div>
+
+  <h2>Token-based Authentication (JWT)</h2>
+  <p>আধুনিক API-ভিত্তিক অ্যাপ্লিকেশনে (বিশেষত mobile app ও SPA-তে) প্রায়ই <strong>JWT (JSON Web Token)</strong> ব্যবহৃত হয় — এখানে সার্ভার নিজে কোনো session মেমোরিতে সংরক্ষণ করে না; বরং ইউজারের তথ্য একটি স্বাক্ষরিত (cryptographically signed) টোকেনের ভেতরেই এনকোড করা থাকে।</p>
+  <div class="grid2">
+    <div class="card"><h4>Session-based</h4><p>সার্ভার state সংরক্ষণ করে (stateful)। Session বাতিল করা সহজ (সার্ভার থেকে মুছে দিলেই হয়)।</p></div>
+    <div class="card"><h4>Token-based (JWT)</h4><p>সার্ভার কোনো state রাখে না (stateless) — স্কেল করা সহজ। কিন্তু টোকেন বাতিল করা তুলনামূলক জটিল (এক্সপায়ারি/blacklist প্রয়োজন)।</p></div>
+  </div>
+  <div class="codeblock"><div class="cb-head"><span>একটি JWT কেমন দেখতে (তিন অংশ, ডট দিয়ে আলাদা)</span><button class="copy-btn">কপি</button></div><pre><code>eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOjQyLCJyb2xlIjoiYWRtaW4ifQ.4f8a2c...
+    ↑ Header              ↑ Payload (userId, role ইত্যাদি)    ↑ Signature</code></pre></div>
+
+  <h2>Browser Storage — LocalStorage ও SessionStorage</h2>
+  <p>Cookie ছাড়াও ব্রাউজারে ডেটা রাখার আরও উপায় আছে — তবে এগুলো cookie-র মতো স্বয়ংক্রিয়ভাবে প্রতিটি request-এ পাঠানো হয় না; JavaScript দিয়ে ম্যানুয়ালি পড়তে/পাঠাতে হয়।</p>
+  <table>
+    <thead><tr><th>Storage</th><th>মেয়াদ</th><th>সাধারণ ব্যবহার</th></tr></thead>
+    <tbody>
+      <tr><td>Cookie</td><td>নির্দিষ্ট expiry অথবা সেশন শেষ হওয়া পর্যন্ত</td><td>Session ID, ট্র্যাকিং</td></tr>
+      <tr><td>LocalStorage</td><td>স্থায়ী, ম্যানুয়ালি না মোছা পর্যন্ত থাকে</td><td>Theme পছন্দ, ড্রাফট ডেটা, (সতর্কতার সাথে) JWT</td></tr>
+      <tr><td>SessionStorage</td><td>শুধু বর্তমান ট্যাব/উইন্ডো খোলা থাকা পর্যন্ত</td><td>অস্থায়ী ফর্ম ডেটা, একক-সেশন স্টেট</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn"><div class="ic">⚠️</div><p>JWT/সেনসিটিভ টোকেন LocalStorage-এ রাখলে এটি JavaScript দিয়ে সহজে পড়া যায় — অর্থাৎ কোনো XSS vulnerability থাকলে, আক্রমণকারী সহজেই টোকেন চুরি করতে পারেন। <code>HttpOnly</code> cookie (যা JavaScript থেকে পড়া যায় না) এক্ষেত্রে তুলনামূলক নিরাপদ বিকল্প।</p></div>
+
+  <div class="summary-box">
+    <h4>এই অধ্যায়ের সারাংশ</h4>
+    <p>Session-based auth সার্ভারে state রাখে, Token-based (JWT) auth stateless ও স্কেল-বান্ধব। Cookie স্বয়ংক্রিয়ভাবে পাঠানো হয়; LocalStorage/SessionStorage ম্যানুয়ালি নিয়ন্ত্রিত। টোকেন/সেশন কোথায় ও কীভাবে সংরক্ষণ করা হচ্ছে, তা একটি অ্যাপ্লিকেশনের সামগ্রিক নিরাপত্তার জন্য গুরুত্বপূর্ণ সিদ্ধান্ত।</p>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter09"><span>পূর্ববর্তী</span>অধ্যায় ০৯</a>
+    <a class="next" href="/chapter11"><span>পরবর্তী</span>অধ্যায় ১১ — আর্কিটেকচার প্যাটার্ন</a>
+  </div>
+</section>
+
+
+<section class="chapter" id="chapter11">
+  <div class="eyebrow">অধ্যায় ১১ · স্থাপত্য</div>
+  <h1>Architecture Patterns — MVC, Monolith, Microservices, Serverless</h1>
+  <p class="sub">একটি অ্যাপ্লিকেশনের কোড কীভাবে সংগঠিত হবে, এবং পুরো সিস্টেমটি একক ইউনিট হিসেবে নাকি ছোট ছোট স্বাধীন অংশে তৈরি হবে — এই স্থাপত্যগত সিদ্ধান্তগুলো আলোচিত হয়েছে এই অধ্যায়ে।</p>
+
+  <h2>MVC — Model-View-Controller</h2>
+  <p>একটি জনপ্রিয় কোড-অর্গানাইজেশন প্যাটার্ন, যা অ্যাপ্লিকেশনকে তিনটি স্বতন্ত্র অংশে ভাগ করে:</p>
+  <div class="grid3">
+    <div class="card"><h4>Model</h4><p>ডেটা ও business logic — Database-এর সাথে সরাসরি সম্পর্কিত।</p></div>
+    <div class="card"><h4>View</h4><p>ইউজার-ইন্টারফেস — যা দেখানো হয় (HTML/UI)।</p></div>
+    <div class="card"><h4>Controller</h4><p>Request গ্রহণ করে, Model থেকে ডেটা নিয়ে, সঠিক View নির্বাচন করে।</p></div>
+  </div>
+  <p>এই বিভাজনের মূল সুবিধা — কোড পরিষ্কার, পুনর্ব্যবহারযোগ্য (reusable), এবং টিমের বিভিন্ন সদস্য একইসাথে বিভিন্ন অংশে কাজ করতে পারেন।</p>
+
+  <h2>Monolithic Architecture</h2>
+  <p>পুরো অ্যাপ্লিকেশন — Frontend, Backend, সব business logic — একটিমাত্র কোডবেস ও একক ইউনিট হিসেবে তৈরি ও ডিপ্লয় করা হয়।</p>
+  <div class="grid2">
+    <div class="card"><h4>✅ সুবিধা</h4><p>শুরুতে সহজ, ডেভেলপ করা ও ডিবাগ করা তুলনামূলক সরল, একক ডিপ্লয়মেন্ট।</p></div>
+    <div class="card"><h4>⚠️ সীমাবদ্ধতা</h4><p>অ্যাপ্লিকেশন বড় হলে পরিচালনা কঠিন হয়ে ওঠে; একটি অংশে পরিবর্তন করতে পুরো অ্যাপ্লিকেশন রিডিপ্লয় করতে হয়; শুধু নির্দিষ্ট অংশ আলাদাভাবে স্কেল করা যায় না।</p></div>
+  </div>
+
+  <h2>Microservices Architecture</h2>
+  <p>অ্যাপ্লিকেশনকে ছোট ছোট, স্বাধীন সার্ভিসে ভাগ করা হয় — প্রতিটি নির্দিষ্ট একটি কাজের জন্য দায়ী (যেমন: User Service, Payment Service, Notification Service), এবং এরা API-এর মাধ্যমে একে অপরের সাথে কথা বলে।</p>
+  <div class="grid2">
+    <div class="card"><h4>✅ সুবিধা</h4><p>প্রতিটি সার্ভিস আলাদাভাবে ডেভেলপ, ডিপ্লয় ও স্কেল করা যায়; আলাদা টিম আলাদা সার্ভিসে কাজ করতে পারে; একটি সার্ভিস ক্র্যাশ করলে পুরো সিস্টেম বন্ধ নাও হতে পারে।</p></div>
+    <div class="card"><h4>⚠️ সীমাবদ্ধতা</h4><p>অনেক বেশি জটিল অবকাঠামো প্রয়োজন (networking, monitoring); সার্ভিসগুলোর মধ্যে কমিউনিকেশন পরিচালনা করা কঠিন; debugging আরও কঠিন (একাধিক সার্ভিস জুড়ে)।</p></div>
+  </div>
+
+  <h2>Serverless Architecture</h2>
+  <p>ডেভেলপার সরাসরি কোনো সার্ভার ম্যানেজ করেন না — বরং ছোট ছোট ফাংশন লেখেন (যেমন AWS Lambda), যা নির্দিষ্ট ইভেন্টে (যেমন একটি API request) স্বয়ংক্রিয়ভাবে রান হয়, এবং ক্লাউড প্রোভাইডার প্রয়োজন অনুযায়ী এটিকে স্কেল করে। শুধুমাত্র ব্যবহৃত compute time-এর জন্য খরচ হয়।</p>
+
+  <h2>কোন প্যাটার্ন কখন বেছে নেবেন</h2>
+  <table>
+    <thead><tr><th>পরিস্থিতি</th><th>সাধারণ পছন্দ</th></tr></thead>
+    <tbody>
+      <tr><td>নতুন স্টার্টআপ, MVP</td><td>Monolith — দ্রুত শুরু করা যায়</td></tr>
+      <tr><td>বড়, জটিল, বহু-টিমের প্রোডাক্ট</td><td>Microservices — স্বাধীনভাবে স্কেল/ডেভেলপ করা যায়</td></tr>
+      <tr><td>অনিয়মিত, event-driven ওয়ার্কলোড</td><td>Serverless — শুধু ব্যবহারের জন্যই খরচ</td></tr>
+    </tbody>
+  </table>
+
+  <div class="summary-box">
+    <h4>এই অধ্যায়ের সারাংশ</h4>
+    <p>MVC কোড সংগঠিত করে (Data/UI/Control-flow আলাদা রেখে)। Monolith সরল কিন্তু স্কেল করা কঠিন, Microservices নমনীয় কিন্তু জটিল অবকাঠামো দাবি করে, আর Serverless অপারেশনাল দায়িত্ব কমায়। কোনো একক "সঠিক" উত্তর নেই — প্রতিটি প্রোজেক্টের স্কেল ও প্রয়োজন অনুযায়ী সিদ্ধান্ত নিতে হয়।</p>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter10"><span>পূর্ববর্তী</span>অধ্যায় ১০</a>
+    <a class="next" href="/chapter12"><span>পরবর্তী</span>অধ্যায় ১২ — আধুনিক ডেভেলপমেন্ট ওয়ার্কফ্লো</a>
+  </div>
+</section>
+
+
+<section class="chapter" id="chapter12">
+  <div class="eyebrow">অধ্যায় ১২ · ডেভেলপমেন্ট ওয়ার্কফ্লো</div>
+  <h1>আধুনিক Development Workflow — Framework, Build Tools, Git, CI/CD</h1>
+  <p class="sub">একজন ডেভেলপার যখন কোড লেখেন এবং সেটি আসল ইউজারের কাছে পৌঁছায়, তার মাঝে বেশ কিছু গুরুত্বপূর্ণ ধাপ থাকে — এই অধ্যায়ে সেই আধুনিক ওয়ার্কফ্লো আলোচিত হয়েছে।</p>
+
+  <h2>Version Control — Git</h2>
+  <p><strong>Git</strong> হলো একটি version control system, যা কোডের প্রতিটি পরিবর্তনের ইতিহাস রাখে, একাধিক ডেভেলপারকে একসাথে কাজ করার সুযোগ দেয় (branch, merge), এবং প্রয়োজনে আগের কোনো অবস্থায় ফিরে যাওয়ার সুবিধা দেয়। GitHub, GitLab, Bitbucket — এগুলো Git রিপোজিটরি হোস্ট করার জনপ্রিয় প্ল্যাটফর্ম।</p>
+  <div class="codeblock"><div class="cb-head"><span>সাধারণ Git ওয়ার্কফ্লো</span><button class="copy-btn">কপি</button></div><pre><code>git checkout -b feature/login-page   # নতুন branch তৈরি
+git add .                             # পরিবর্তন স্টেজ করা
+git commit -m "লগইন পেজ যোগ করা হলো"   # commit তৈরি
+git push origin feature/login-page    # রিমোট রিপোতে পাঠানো
+# এরপর একটি Pull Request তৈরি করে কোড রিভিউ ও merge করা হয়</code></pre></div>
+
+  <h2>Build Tools ও Bundlers</h2>
+  <p>আধুনিক Frontend কোড (বিশেষত React/Vue/TypeScript) ব্রাউজারে সরাসরি চালানোর আগে প্রসেস করা প্রয়োজন — একাধিক ফাইলকে একত্র করা (bundling), কোড ছোট করা (minification), এবং পুরনো ব্রাউজারের জন্য রূপান্তর (transpiling) করা। এই কাজ করে Vite, Webpack-এর মতো টুল।</p>
+
+  <h2>Package Manager</h2>
+  <p>npm, yarn, pnpm — এগুলো তৃতীয়-পক্ষের লাইব্রেরি/প্যাকেজ ইনস্টল ও ব্যবস্থাপনা করতে ব্যবহৃত হয়, যাতে প্রতিটি ফাংশনালিটি শূন্য থেকে নিজে লিখতে না হয়।</p>
+  <div class="codeblock"><div class="cb-head"><span>প্যাকেজ ইনস্টল উদাহরণ</span><button class="copy-btn">কপি</button></div><pre><code>npm install express        # একটি নির্দিষ্ট লাইব্রেরি ইনস্টল
+npm install                # package.json অনুযায়ী সব dependency ইনস্টল</code></pre></div>
+
+  <h2>Environment — Development, Staging, Production</h2>
+  <table>
+    <thead><tr><th>Environment</th><th>উদ্দেশ্য</th></tr></thead>
+    <tbody>
+      <tr><td>Development</td><td>ডেভেলপারের নিজস্ব মেশিনে, সক্রিয় কোডিং ও টেস্টিংয়ের জন্য</td></tr>
+      <tr><td>Staging</td><td>Production-এর মতোই একটি পরিবেশ, চূড়ান্ত টেস্টিংয়ের জন্য, আসল ইউজারদের জন্য নয়</td></tr>
+      <tr><td>Production</td><td>আসল ইউজারদের জন্য লাইভ পরিবেশ — এখানে সর্বোচ্চ সতর্কতা প্রয়োজন</td></tr>
+    </tbody>
+  </table>
+
+  <h2>CI/CD — Continuous Integration/Deployment</h2>
+  <p><strong>CI (Continuous Integration):</strong> প্রতিবার কোড push করলে স্বয়ংক্রিয়ভাবে টেস্ট চালানো হয়, যাতে কোনো পরিবর্তন বিদ্যমান ফাংশনালিটি ভেঙে না দেয় তা দ্রুত ধরা পড়ে। <strong>CD (Continuous Deployment/Delivery):</strong> টেস্ট পাস হলে, কোড স্বয়ংক্রিয়ভাবে (অথবা এক ক্লিকে) Staging/Production-এ ডিপ্লয় হয়ে যায় — ম্যানুয়াল ধাপ অনেকটাই কমে যায়।</p>
+  <div class="callout info"><div class="ic">💡</div><p>GitHub Actions, GitLab CI, Jenkins — এগুলো জনপ্রিয় CI/CD টুল। এই অটোমেশনের ফলে একটি টিম দিনে একাধিকবার নিরাপদে নতুন আপডেট রিলিজ করতে পারে।</p></div>
+
+  <h2>Environment Variables ও Secrets</h2>
+  <p>Database পাসওয়ার্ড, API key-র মতো sensitive তথ্য কখনো সরাসরি কোডে (hardcoded) লেখা উচিত নয় — এগুলো <strong>Environment Variables</strong>-এর মাধ্যমে সরবরাহ করা হয়, এবং কোড রিপোজিটরিতে কখনো commit করা হয় না (<code>.env</code> ফাইল <code>.gitignore</code>-এ রাখা হয়)।</p>
+
+  <div class="summary-box">
+    <h4>এই অধ্যায়ের সারাংশ</h4>
+    <p>Git কোডের ইতিহাস ও সহযোগিতা পরিচালনা করে, Build Tool আধুনিক কোডকে ব্রাউজার-উপযোগী করে, আর CI/CD স্বয়ংক্রিয়ভাবে টেস্ট ও ডিপ্লয়মেন্ট পরিচালনা করে। Development → Staging → Production — এই ধাপগুলো অনুসরণ করে পরিবর্তন নিরাপদে বাস্তব ইউজারদের কাছে পৌঁছায়।</p>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter11"><span>পূর্ববর্তী</span>অধ্যায় ১১</a>
+    <a class="next" href="/chapter13"><span>পরবর্তী</span>অধ্যায় ১৩ — Web Application Security Overview</a>
+  </div>
+</section>
+
+
+<section class="chapter" id="chapter13">
+  <div class="eyebrow">অধ্যায় ১৩ · সিকিউরিটি</div>
+  <h1>Web Application Security — সংক্ষিপ্ত পরিচিতি</h1>
+  <p class="sub">এতক্ষণ আমরা একটি ওয়েব অ্যাপ্লিকেশন কীভাবে তৈরি ও পরিচালিত হয় তা দেখেছি। এখন একটি সংক্ষিপ্ত ওভারভিউ — এই একই উপাদানগুলো কীভাবে দুর্বলতার (vulnerability) উৎস হতে পারে।</p>
+
+  <div class="callout info"><div class="ic">💡</div><p>এই অধ্যায়টি কোনো আক্রমণ-কৌশল শেখায় না — এটি শুধু দেখায় যে আগের অধ্যায়গুলোতে শেখা প্রতিটি উপাদানের (Frontend, Backend, Database, API, Session) নিজস্ব একটি নিরাপত্তা-মাত্রা আছে, যা learn.alamincyber.com-এর অন্যান্য ডকুমেন্টেশনে বিস্তারিত আলোচিত হয়েছে।</p></div>
+
+  <h2>কেন একটি ওয়েব অ্যাপ্লিকেশন "দুর্বল" হয়ে ওঠে</h2>
+  <p>প্রতিটি vulnerability মূলত একটি সাধারণ নীতির ব্যত্যয় থেকে জন্ম নেয়: <strong>কোনো একটি স্তর ভুলভাবে ইউজার-নিয়ন্ত্রিত ডেটাকে বিশ্বাস করে ফেলে</strong> — তা Frontend থেকে আসা ইনপুট, URL parameter, Cookie, অথবা API request body যাই হোক না কেন।</p>
+
+  <h2>স্তর অনুযায়ী সাধারণ দুর্বলতার শ্রেণি</h2>
+  <table>
+    <thead><tr><th>স্তর</th><th>সাধারণ দুর্বলতার ধরন</th><th>মূল কারণ</th></tr></thead>
+    <tbody>
+      <tr><td>Frontend/DOM</td><td>Cross-Site Scripting (XSS)</td><td>ইউজার-ইনপুট সঠিকভাবে encode না করে HTML/JS হিসেবে render হওয়া</td></tr>
+      <tr><td>Session/State</td><td>Cross-Site Request Forgery (CSRF)</td><td>সার্ভার যাচাই করে না request আসলেই ইউজারের ইচ্ছায় পাঠানো হয়েছে কি না</td></tr>
+      <tr><td>Database Layer</td><td>SQL Injection (SQLi)</td><td>ইউজার-ইনপুট সরাসরি SQL কোয়েরির অংশ হিসেবে জুড়ে দেওয়া</td></tr>
+      <tr><td>Authorization</td><td>Broken Access Control / IDOR</td><td>প্রতিটি রিসোর্সের জন্য আলাদাভাবে অনুমতি যাচাই না করা</td></tr>
+      <tr><td>API/Input Validation</td><td>Injection (Command, NoSQL ইত্যাদি)</td><td>ইনপুট যাচাই না করে সরাসরি কোনো কমান্ড/কোয়েরিতে ব্যবহার করা</td></tr>
+    </tbody>
+  </table>
+
+  <h2>OWASP Top 10 — সংক্ষিপ্ত পরিচিতি</h2>
+  <p><strong>OWASP (Open Web Application Security Project)</strong> নিয়মিতভাবে সবচেয়ে সাধারণ ও গুরুত্বপূর্ণ ওয়েব অ্যাপ্লিকেশন দুর্বলতার একটি তালিকা প্রকাশ করে — একে বলা হয় <strong>OWASP Top 10</strong>। এটি গোটা ইন্ডাস্ট্রিতে একটি মানক রেফারেন্স হিসেবে ব্যবহৃত হয়, যেখানে Broken Access Control, Cryptographic Failures, Injection, Insecure Design-এর মতো বিভাগ অন্তর্ভুক্ত থাকে।</p>
+
+  <h2>Defense in Depth — একটি মূল নীতি</h2>
+  <p>কোনো একক "ম্যাজিক সমাধান" নিরাপত্তা নিশ্চিত করে না। বরং একটি নিরাপদ অ্যাপ্লিকেশন একাধিক স্তরে সুরক্ষা রাখে — Frontend-এ validation (সুবিধার জন্য), Backend-এ পুনরায় validation (নিরাপত্তার জন্য, বাধ্যতামূলক), Database-এ parameterized query, যথাযথ Authentication/Authorization, এবং নিয়মিত monitoring/logging।</p>
+  <div class="grid3">
+    <div class="card"><h4>🛡️ Input Validation</h4><p>প্রতিটি ইনপুট প্রত্যাশিত ফরম্যাট/টাইপ/দৈর্ঘ্য মেনে কি না, তা Backend-এ অবশ্যই যাচাই করা।</p></div>
+    <div class="card"><h4>🔐 Output Encoding</h4><p>কনটেক্সট অনুযায়ী (HTML, JS, URL) আউটপুট সঠিকভাবে encode করা, যাতে ডেটা কখনো কোড হিসেবে execute না হয়।</p></div>
+    <div class="card"><h4>🔑 Least Privilege</h4><p>প্রতিটি ইউজার/সিস্টেম কম্পোনেন্টকে শুধু তার প্রয়োজনীয় ন্যূনতম অনুমতি দেওয়া।</p></div>
+  </div>
+
+  <h2>আরও শেখার পথ</h2>
+  <p>learn.alamincyber.com-এ এই ওভারভিউর পরবর্তী ধাপ হিসেবে পাওয়া যাবে — <strong>XSS ডকুমেন্টেশন</strong> (Cross-Site Scripting বিস্তারিত), <strong>CSRF ডকুমেন্টেশন</strong>, এবং <strong>SQLi ডকুমেন্টেশন</strong> — প্রতিটি নির্দিষ্ট vulnerability class-কে থিওরি থেকে হ্যান্ডস-অন টেস্টিং ও সিকিউর কোডিং পর্যন্ত বিস্তারিতভাবে কভার করে।</p>
+
+  <div class="summary-box">
+    <h4>এই অধ্যায়ের সারাংশ</h4>
+    <p>বেশিরভাগ ওয়েব vulnerability মূলত এক জায়গায় — অবিশ্বাস্য ডেটাকে ভুলভাবে বিশ্বাস করা থেকে জন্ম নেয়। OWASP Top 10 একটি মানক রেফারেন্স, এবং Defense in Depth (একাধিক স্তরের সুরক্ষা) একটি নিরাপদ অ্যাপ্লিকেশন তৈরির মূল দর্শন। এই ভিত্তির উপর দাঁড়িয়েই XSS/CSRF/SQLi-এর মতো নির্দিষ্ট দুর্বলতা বোঝা সহজ হয়।</p>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter12"><span>পূর্ববর্তী</span>অধ্যায় ১২</a>
+    <a class="next" href="/chapter14"><span>পরবর্তী</span>অধ্যায় ১৪ — অনুশীলনী ও মূল্যায়ন</a>
+  </div>
+</section>
+
+
+<section class="chapter" id="chapter14">
+  <div class="eyebrow">অধ্যায় ১৪ · মূল্যায়ন</div>
+  <h1>Practice Questions and Assessment</h1>
+  <p class="sub">Beginner থেকে Advanced পর্যন্ত প্রশ্ন, আর্কিটেকচার বিশ্লেষণ এবং scenario-based প্রশ্ন — বিস্তারিত answer key-সহ, পুরো ডকুমেন্টেশনের ধারণাগুলো যাচাইয়ের জন্য।</p>
+
+  <h2>বিভাগ A — Beginner প্রশ্ন (১–৮)</h2>
+  <ol>
+    <li>ওয়েবসাইট ও ওয়েব অ্যাপ্লিকেশনের মধ্যে প্রধান পার্থক্য কী?</li>
+    <li>HTML, CSS ও JavaScript — প্রতিটির মূল ভূমিকা এক বাক্যে বলুন।</li>
+    <li>HTTP কেন "stateless" প্রোটোকল হিসেবে পরিচিত?</li>
+    <li>CRUD-এর পূর্ণরূপ কী এবং প্রতিটি কী বোঝায়?</li>
+    <li>SQL ও NoSQL Database-এর মধ্যে একটি প্রধান পার্থক্য লিখুন।</li>
+    <li>Authentication ও Authorization-এর মধ্যে পার্থক্য কী?</li>
+    <li>Web Server ও Application Server-এর কাজের পার্থক্য কী?</li>
+    <li>SPA ও MPA-এর মধ্যে একটি মূল পার্থক্য কী?</li>
+  </ol>
+
+  <h2>বিভাগ B — Intermediate ধারণা বিশ্লেষণ (৯–১৬)</h2>
+  <ol start="9">
+    <li>একটি REST API-তে নতুন রিসোর্স তৈরির জন্য কোন HTTP method ব্যবহৃত হয়?</li>
+    <li>কেন পাসওয়ার্ড কখনো plain text-এ সংরক্ষণ করা উচিত নয়?</li>
+    <li>Session-based ও Token-based (JWT) authentication-এর মধ্যে একটি গুরুত্বপূর্ণ পার্থক্য লিখুন।</li>
+    <li>CDN ব্যবহারের প্রধান সুবিধা কী?</li>
+    <li>Monolith ও Microservices আর্কিটেকচারের মধ্যে একটি করে সুবিধা/অসুবিধা লিখুন।</li>
+    <li>CI/CD-এর পূর্ণরূপ কী এবং এর উদ্দেশ্য কী?</li>
+    <li>"Never trust the client" নীতির অর্থ কী?</li>
+    <li>DOM কী এবং এটি কীভাবে তৈরি হয়?</li>
+  </ol>
+
+  <h2>বিভাগ C — Advanced Scenario-Based প্রশ্ন (১৭–২২)</h2>
+  <ol start="17">
+    <li>আপনি একটি নতুন স্টার্টআপের MVP তৈরি করছেন, খুব সীমিত সময় ও টিম নিয়ে। Monolith নাকি Microservices বেছে নেবেন এবং কেন?</li>
+    <li>একটি ই-কমার্স সাইটে "স্টকে পণ্য আছে কি না" যাচাইয়ের লজিক কোথায় রাখা উচিত — শুধু Frontend-এ, শুধু Backend-এ, নাকি উভয় স্থানে? ব্যাখ্যা করুন।</li>
+    <li>একটি ব্লগ সাইট যেখানে SEO অত্যন্ত গুরুত্বপূর্ণ, কিন্তু ইউজার ড্যাশবোর্ডও ইন্টারঅ্যাক্টিভ হতে হবে — কোন রেন্ডারিং স্ট্র্যাটেজি (SSR/SSG/SPA) ব্যবহার করবেন, এবং কোথায়?</li>
+    <li>একটি API endpoint-এ আপনি লক্ষ্য করলেন যে শুধু Authentication চেক আছে (লগইন করা আছে কি না), কিন্তু কোনো নির্দিষ্ট রিসোর্সের owner যাচাই করা হচ্ছে না। এটি কোন ধরনের দুর্বলতার দিকে ইঙ্গিত করে?</li>
+    <li>একটি JWT টোকেন LocalStorage-এ সংরক্ষিত হচ্ছে। এর সাথে সম্পর্কিত একটি নিরাপত্তা ঝুঁকি কী, এবং একটি নিরাপদ বিকল্প কী হতে পারে?</li>
+    <li>একটি Database query-তে ইউজারের সার্চ-বক্সের ইনপুট সরাসরি SQL স্ট্রিং-এর সাথে জোড়া (concatenate) দেওয়া হচ্ছে। এটি কোন দুর্বলতার সম্ভাব্য উৎস, এবং সুরক্ষিত বিকল্প কী?</li>
+  </ol>
+
+  <h2>Answer Key — বিভাগ A</h2>
+  <details><summary>উত্তর ১–৮ দেখুন</summary><div class="inner">
+    <ol>
+      <li>ওয়েবসাইট মূলত তথ্য প্রদর্শন করে (static/informational); ওয়েব অ্যাপ্লিকেশন ইউজার-নির্দিষ্ট, ইন্টারঅ্যাক্টিভ কার্যকারিতা প্রদান করে।</li>
+      <li>HTML কাঠামো দেয়, CSS দৃশ্যত সাজায়, JavaScript ইন্টারঅ্যাক্টিভিটি/আচরণ যোগ করে।</li>
+      <li>কারণ সার্ভার আগের কোনো request মনে রাখে না — প্রতিটি request স্বাধীনভাবে প্রসেস হয়।</li>
+      <li>Create, Read, Update, Delete — ডেটার উপর চারটি মৌলিক অপারেশন।</li>
+      <li>SQL নির্দিষ্ট স্কিমা ও টেবিল-ভিত্তিক, সম্পর্কযুক্ত ডেটার জন্য উপযোগী; NoSQL flexible স্কিমা, বড় স্কেলের জন্য উপযোগী।</li>
+      <li>Authentication পরিচয় নিশ্চিত করে ("আপনি কে"); Authorization অনুমতি নিয়ন্ত্রণ করে ("আপনি কী করতে পারেন")।</li>
+      <li>Web Server static ফাইল পরিবেশন করে ও request route করে; Application Server dynamic business logic চালায়।</li>
+      <li>SPA নেভিগেশনে পুরো পেজ রিলোড করে না (শুধু ডেটা fetch করে); MPA প্রতিটি নেভিগেশনে সম্পূর্ণ নতুন পেজ লোড করে।</li>
+    </ol>
+  </div></details>
+
+  <h2>Answer Key — বিভাগ B</h2>
+  <details><summary>উত্তর ৯–১৬ দেখুন</summary><div class="inner">
+    <ol start="9">
+      <li><code>POST</code> method।</li>
+      <li>কারণ Database-এ কোনো ফাঁস (breach) হলে, plain text পাসওয়ার্ড সরাসরি ইউজারদের আসল পাসওয়ার্ড ফাঁস করে দেবে; hashing এই ঝুঁকি প্রশমিত করে।</li>
+      <li>Session-based সার্ভারে state (stateful) সংরক্ষণ করে, সহজে বাতিলযোগ্য; Token-based (JWT) stateless, সার্ভারে কিছু সংরক্ষণ করে না, স্কেল-বান্ধব কিন্তু বাতিল করা তুলনামূলক কঠিন।</li>
+      <li>ইউজারের ভৌগোলিকভাবে কাছের সার্ভার থেকে static কনটেন্ট দ্রুত পরিবেশন করা, এবং মূল সার্ভারের উপর চাপ কমানো।</li>
+      <li>Monolith: সুবিধা — শুরুতে সরল; অসুবিধা — বড় হলে পরিচালনা কঠিন। Microservices: সুবিধা — স্বাধীনভাবে স্কেল/ডেভেলপ; অসুবিধা — জটিল অবকাঠামো প্রয়োজন।</li>
+      <li>Continuous Integration/Continuous Deployment — কোডের পরিবর্তন স্বয়ংক্রিয়ভাবে টেস্ট ও ডিপ্লয় করার প্র্যাকটিস, যা দ্রুত ও নির্ভরযোগ্য রিলিজ সম্ভব করে।</li>
+      <li>Frontend-এর কোড ইউজার সহজেই দেখতে/পরিবর্তন/বাইপাস করতে পারেন — তাই সব গুরুত্বপূর্ণ যাচাই/লজিক অবশ্যই Backend-এ (আবার) নিশ্চিত করতে হয়।</li>
+      <li>DOM হলো একটি HTML পেজের ট্রি-আকৃতির মেমোরি-প্রতিনিধিত্ব, যা ব্রাউজার HTML পার্স করার সময় তৈরি করে, এবং JavaScript যার সাথে ডায়নামিকভাবে কথা বলে।</li>
+    </ol>
+  </div></details>
+
+  <h2>Answer Key — বিভাগ C</h2>
+  <details><summary>উত্তর ১৭–২২ দেখুন</summary><div class="inner">
+    <p><strong>১৭:</strong> সাধারণত Monolith — সীমিত সময়/টিমে দ্রুত ডেভেলপ ও ডিপ্লয় করা যায়; Microservices-এর অতিরিক্ত অবকাঠামোগত জটিলতা এই পর্যায়ে অপ্রয়োজনীয় বোঝা হয়ে দাঁড়াতে পারে।</p>
+    <p><strong>১৮:</strong> উভয় স্থানে — Frontend-এ রাখলে ইউজার-অভিজ্ঞতা দ্রুত হয় (সুবিধার জন্য), কিন্তু Backend-এও বাধ্যতামূলকভাবে পুনরায় যাচাই করতে হবে, কারণ attacker সরাসরি API কল করে Frontend-এর চেক এড়িয়ে যেতে পারেন।</p>
+    <p><strong>১৯:</strong> ব্লগ পোস্ট/পেজের জন্য SSR অথবা SSG (SEO-এর জন্য ভালো, দ্রুত প্রাথমিক রেন্ডার); ইউজার ড্যাশবোর্ডের জন্য SPA-এর মতো client-side ইন্টারঅ্যাক্টিভিটি (SEO প্রয়োজন নেই, কারণ এটি লগইন-সুরক্ষিত)।</p>
+    <p><strong>২০:</strong> Broken Access Control (বিশেষভাবে IDOR — Insecure Direct Object Reference) — ইউজার লগইন থাকলেও, তিনি অন্য ইউজারের রিসোর্স অ্যাক্সেস করতে পারছেন কি না তা যাচাই হচ্ছে না।</p>
+    <p><strong>২১:</strong> LocalStorage JavaScript দিয়ে সহজে পড়া যায় — তাই কোনো XSS থাকলে টোকেন চুরি সহজ হয়ে যায়। নিরাপদ বিকল্প: <code>HttpOnly</code> cookie ব্যবহার করা, যা JavaScript থেকে পড়া যায় না।</p>
+    <p><strong>২২:</strong> এটি SQL Injection-এর সম্ভাব্য উৎস। সুরক্ষিত বিকল্প: parameterized query/prepared statement অথবা ORM ব্যবহার করা, যেখানে ইউজার-ইনপুট কখনো সরাসরি SQL কমান্ডের অংশ হিসেবে "লেখা" হয় না — এই বিষয়ে বিস্তারিত <em>Learn SQLi</em> ডকুমেন্টেশনে আছে।</p>
+  </div></details>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>এই অধ্যায়ের ২২টি প্রশ্ন (৮টি conceptual, ৮টি intermediate, ৬টি advanced scenario-based) পুরো ডকুমেন্টেশনের মূল ধারণাগুলো পুনরাবৃত্তি ও প্রয়োগ করার সুযোগ দেয়। Answer key-সহ প্রতিটি উত্তর যাচাই করে নিজের বোঝাপড়া মূল্যায়ন করুন।</p>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter13"><span>পূর্ববর্তী</span>অধ্যায় ১৩</a>
+    <a class="next" href="/chapter15"><span>পরবর্তী</span>অধ্যায় ১৫ — শব্দকোষ ও চিট শিট</a>
+  </div>
+</section>
+
+
+<section class="chapter" id="chapter15">
+  <div class="eyebrow">অধ্যায় ১৫ · রেফারেন্স</div>
+  <h1>Glossary, Cheat Sheet and FAQ</h1>
+  <p class="sub">গুরুত্বপূর্ণ টার্মিনোলজি, দ্রুত রেফারেন্স টেবিল, এবং সাধারণ প্রশ্নোত্তর — পুরো ডকুমেন্টেশনের সংক্ষিপ্ত সারাংশ হিসেবে ব্যবহার করুন।</p>
+
+  <h2>গুরুত্বপূর্ণ Terminology</h2>
+  <table>
+    <thead><tr><th>টার্ম</th><th>সংজ্ঞা</th></tr></thead>
+    <tbody>
+      <tr><td>Client</td><td>যে ডিভাইস/সফটওয়্যার রিকোয়েস্ট পাঠায় (সাধারণত ব্রাউজার)</td></tr>
+      <tr><td>Server</td><td>যে সিস্টেম রিকোয়েস্ট গ্রহণ করে প্রসেস করে ও response পাঠায়</td></tr>
+      <tr><td>DOM</td><td>HTML পেজের ট্রি-আকৃতির মেমোরি-প্রতিনিধিত্ব, যার সাথে JS কথা বলে</td></tr>
+      <tr><td>API</td><td>দুটি সিস্টেমের মধ্যে কথোপকথনের নিয়মাবলী</td></tr>
+      <tr><td>REST</td><td>HTTP method ও URL দিয়ে রিসোর্স চিহ্নিত করার architecture স্টাইল</td></tr>
+      <tr><td>JSON</td><td>জনপ্রিয় ডেটা-এক্সচেঞ্জ ফরম্যাট, পড়তে সহজ ও parse করা সহজ</td></tr>
+      <tr><td>CRUD</td><td>Create, Read, Update, Delete — ডেটার উপর চারটি মৌলিক অপারেশন</td></tr>
+      <tr><td>ORM</td><td>Object-Relational Mapping — কোড দিয়ে Database-এর সাথে কথা বলার লাইব্রেরি</td></tr>
+      <tr><td>Session</td><td>সার্ভারে সংরক্ষিত ইউজার-নির্দিষ্ট state, Session ID দিয়ে চিহ্নিত</td></tr>
+      <tr><td>JWT</td><td>JSON Web Token — স্বাক্ষরিত, stateless authentication টোকেন</td></tr>
+      <tr><td>SPA/MPA</td><td>Single/Multi Page Application — নেভিগেশন হ্যান্ডলিং-এর দুটি ভিন্ন মডেল</td></tr>
+      <tr><td>SSR/SSG</td><td>Server-Side Rendering/Static Site Generation — HTML কোথায়/কখন তৈরি হয় তার ভিত্তিতে</td></tr>
+      <tr><td>CDN</td><td>Content Delivery Network — ভৌগোলিকভাবে বিতরণকৃত সার্ভার নেটওয়ার্ক</td></tr>
+      <tr><td>CI/CD</td><td>Continuous Integration/Deployment — স্বয়ংক্রিয় টেস্ট ও রিলিজ প্রক্রিয়া</td></tr>
+      <tr><td>RBAC</td><td>Role-Based Access Control — Role অনুযায়ী অনুমতি নিয়ন্ত্রণ</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Quick Reference — HTTP Methods</h2>
+  <div class="codeblock"><div class="cb-head"><span>CRUD ↔ HTTP Method ম্যাপিং</span><button class="copy-btn">কপি</button></div><pre><code>Create → POST
+Read   → GET
+Update → PUT / PATCH
+Delete → DELETE</code></pre></div>
+
+  <h2>আর্কিটেকচার সিদ্ধান্ত — দ্রুত চেকলিস্ট</h2>
+  <div class="grid2">
+    <div class="card"><h4>কখন Monolith</h4><p>ছোট টিম, দ্রুত MVP প্রয়োজন, সীমিত জটিলতা।</p></div>
+    <div class="card"><h4>কখন Microservices</h4><p>বড় স্কেল, একাধিক স্বাধীন টিম, আলাদা আলাদা স্কেলিং প্রয়োজন।</p></div>
+    <div class="card"><h4>কখন SSR/SSG</h4><p>SEO গুরুত্বপূর্ণ, কনটেন্ট-ভারী সাইট (ব্লগ, মার্কেটিং পেজ)।</p></div>
+    <div class="card"><h4>কখন SPA</h4><p>লগইন-সুরক্ষিত ড্যাশবোর্ড, রিচ ইন্টারঅ্যাক্টিভিটি, SEO কম গুরুত্বপূর্ণ।</p></div>
+  </div>
+
+  <h2>সাধারণ ভুল যা এড়িয়ে চলা উচিত</h2>
+  <ul>
+    <li>শুধু Frontend-এ validation করা, Backend-এ পুনরায় যাচাই না করা</li>
+    <li>পাসওয়ার্ড plain text-এ সংরক্ষণ করা (hash না করে)</li>
+    <li>Authentication চেক করেও প্রতিটি রিসোর্সের জন্য আলাদা Authorization যাচাই না করা</li>
+    <li>Database credential বা API key সরাসরি কোডে hardcode করা</li>
+    <li>Production-এ debug/error মেসেজে sensitive internal তথ্য ফাঁস করা</li>
+  </ul>
+
+  <h2>FAQ — ঘনঘন জিজ্ঞাসিত প্রশ্ন</h2>
+
+  <div class="qa">
+    <h3>একজন নতুন শিক্ষার্থীর কোনটা আগে শেখা উচিত — Frontend নাকি Backend?</h3>
+    <p>কোনো কঠোর নিয়ম নেই — তবে অনেকেই Frontend (HTML/CSS/JS) দিয়ে শুরু করেন, কারণ ফলাফল তাৎক্ষণিকভাবে দেখা যায় (visual feedback), যা শেখার আগ্রহ ধরে রাখতে সাহায্য করে। এরপর Backend ও Database শেখা স্বাভাবিক পরবর্তী ধাপ।</p>
+  </div>
+  <div class="qa">
+    <h3>Framework শেখার আগে কি "vanilla" JavaScript শেখা জরুরি?</h3>
+    <p>হ্যাঁ, সাধারণত রেকমেন্ড করা হয়। React/Vue-এর মতো framework আসলে JavaScript-এর উপরেই তৈরি — মূল ভাষা ভালোভাবে না বুঝলে, framework ব্যবহারের সময় অনেক ধারণা অস্পষ্ট থেকে যায়।</p>
+  </div>
+  <div class="qa">
+    <h3>SQL নাকি NoSQL — কোনটা শেখা উচিত?</h3>
+    <p>দুটোরই মৌলিক ধারণা জানা ভালো। তবে শুরুতে SQL (যেমন PostgreSQL/MySQL) শেখা বেশি রেকমেন্ড করা হয়, কারণ Relational ধারণা (table, relationship, query) অনেক গভীর ও স্থানান্তরযোগ্য (transferable) জ্ঞান দেয়।</p>
+  </div>
+  <div class="qa">
+    <h3>সব অ্যাপ্লিকেশনেই কি Microservices ব্যবহার করা উচিত, কারণ "বড় কোম্পানিরা তাই করে"?</h3>
+    <p>না। Microservices একটি নির্দিষ্ট স্কেল ও জটিলতার জন্য উপযোগী সমাধান, সবসময় "সেরা" নয়। ছোট টিম/প্রজেক্টের জন্য অপ্রয়োজনীয় জটিলতা যোগ করলে তা উন্নয়ন ধীর করে দিতে পারে — এটিকে বলা হয় "premature optimization"।</p>
+  </div>
+  <div class="qa">
+    <h3>JWT কি Session-এর চেয়ে বেশি নিরাপদ?</h3>
+    <p>কোনোটাই অন্যটির চেয়ে স্বভাবতই বেশি নিরাপদ নয় — দুটোই সঠিকভাবে বাস্তবায়ন করলে নিরাপদ, ভুলভাবে করলে দুর্বল। পার্থক্যটা মূলত trade-off-এর — stateless স্কেলেবিলিটি (JWT) বনাম সহজ revocation (Session)।</p>
+  </div>
+  <div class="qa">
+    <h3>এই ডকুমেন্টেশনের পরে কোনটি পড়া উচিত?</h3>
+    <p>এই ফাউন্ডেশনাল ডকুমেন্টেশনের পরে, learn.alamincyber.com-এর <em>HTTP/HTTPS/IP/DNS/Cookies</em>, <em>XSS</em>, <em>CSRF</em>, এবং <em>SQLi</em> ডকুমেন্টেশনগুলো পড়া রেকমেন্ড করা হয় — এখন আপনার কাছে প্রতিটি বিষয় বোঝার জন্য প্রয়োজনীয় ভিত্তি তৈরি হয়ে গেছে।</p>
+  </div>
+
+  <div class="callout info"><div class="ic">💡</div><p><strong>Authoritative Further Learning Resources:</strong> MDN Web Docs, OWASP Foundation, "How the Web Works" (MDN গাইড), এবং Roadmap.sh-এর Frontend/Backend Developer roadmap — এই পুরো বিষয়ের উপর আরও গভীরে শেখার জন্য চমৎকার সম্পদ।</p></div>
+
+  <div class="summary-box">
+    <h4>অধ্যায় ও ডকুমেন্টেশন সম্পন্ন</h4>
+    <p>অভিনন্দন — আপনি ওয়েব অ্যাপ্লিকেশন ডকুমেন্টেশনের সবগুলো ১৫টি অধ্যায় সম্পন্ন করেছেন: ভিত্তি, Client-Server আর্কিটেকচার, Frontend/Backend fundamentals, Database, API, অ্যাপের ধরন, Infrastructure, Authentication/Authorization, Session/Token, আর্কিটেকচার প্যাটার্ন, ডেভেলপমেন্ট ওয়ার্কফ্লো, সিকিউরিটি ওভারভিউ, এবং assessment। এখন learn.alamincyber.com-এর অন্যান্য ডকুমেন্টেশন (XSS, CSRF, SQLi) আরও গভীরভাবে বোঝার জন্য আপনি প্রস্তুত।</p>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter14"><span>পূর্ববর্তী</span>অধ্যায় ১৪</a>
+  </div>
+</section>
+
+      </div>
+    </div>
+    <footer class="site-footer">© learn.alamincyber.com — Web Application Documentation · শুধুমাত্র শিক্ষামূলক ও অনুমোদিত ব্যবহারের জন্য</footer>
+  </div>
+</div>
+
+<script>
+/* ===================== CHAPTER REGISTRY ===================== */
+var CHAPTERS = [
+  {id:"chapter01", num:"০১", title:"ওয়েব অ্যাপ্লিকেশন কী ও কেন"},
+  {id:"chapter02", num:"০২", title:"Client-Server আর্কিটেকচার"},
+  {id:"chapter03", num:"০৩", title:"Frontend Fundamentals"},
+  {id:"chapter04", num:"০৪", title:"Backend Fundamentals"},
+  {id:"chapter05", num:"০৫", title:"Database ও Data Persistence"},
+  {id:"chapter06", num:"০৬", title:"API ও Communication"},
+  {id:"chapter07", num:"০৭", title:"ওয়েব অ্যাপের ধরন"},
+  {id:"chapter08", num:"০৮", title:"Web Server ও Hosting"},
+  {id:"chapter09", num:"০৯", title:"Authentication ও Authorization"},
+  {id:"chapter10", num:"১০", title:"Session, Cookies ও Token"},
+  {id:"chapter11", num:"১১", title:"আর্কিটেকচার প্যাটার্ন"},
+  {id:"chapter12", num:"১২", title:"ডেভেলপমেন্ট ওয়ার্কফ্লো"},
+  {id:"chapter13", num:"১৩", title:"সিকিউরিটি ওভারভিউ"},
+  {id:"chapter14", num:"১৪", title:"অনুশীলনী ও মূল্যায়ন"},
+  {id:"chapter15", num:"১৫", title:"শব্দকোষ ও চিট শিট / FAQ"}
+];
+var DOC_INDEX = "https://learn.alamincyber.com/documentation/";
+
+/* ===================== BUILD SIDEBAR ===================== */
+(function buildToc(){
+  var toc = document.getElementById("toc");
+  var liHome = document.createElement("li");
+  liHome.innerHTML = '<a href="/"><span class="num">●</span>Web Application Documentation Home</a>';
+  toc.appendChild(liHome);
+  CHAPTERS.forEach(function(ch){
+    var li = document.createElement("li");
+    li.innerHTML = '<a href="/'+ch.id+'" data-id="'+ch.id+'"><span class="num">'+ch.num+'</span>'+ch.title+'</a>';
+    toc.appendChild(li);
+  });
+})();
+
+/* ===================== ROUTING (clean root-relative paths, e.g. /chapter02) ===================== */
+function idToPath(route){ return route === "" ? "/" : "/" + route; }
+function currentRouteFromPath(path){
+  var p = path.replace(/\/+$/,"") || "/";
+  var m = p.match(/chapter(\d{2})/);
+  if (m) return "chapter" + m[1];
+  // Anything that isn't a recognizable /chapterNN path is treated as the landing
+  // page — this covers "/", "/index.html", a nested deployment folder like
+  // "/documentation/xss/", AND opening the file directly (file://...index.html,
+  // where location.pathname is the full filesystem path). A genuinely bad chapter
+  // number (e.g. /chapter99) still matches the regex above and correctly falls
+  // through to the not-found page via routeExists().
+  return "";
+}
+
+function routeExists(route){
+  if (route === "") return true;
+  return CHAPTERS.some(function(c){ return c.id === route; });
+}
+
+function showRoute(route, opts){
+  opts = opts || {};
+  var valid = routeExists(route) ? route : "__notfound__";
+  var sections = document.querySelectorAll(".chapter");
+  sections.forEach(function(s){ s.classList.remove("active"); });
+
+  var target;
+  if (valid === "") target = document.getElementById("landing");
+  else if (valid === "__notfound__") target = document.getElementById("notfound");
+  else target = document.getElementById(valid);
+
+  if (target) target.classList.add("active");
+
+  // sidebar active state
+  document.querySelectorAll(".toc a").forEach(function(a){
+    a.classList.toggle("active", a.getAttribute("data-id") === valid);
+  });
+
+  // topbar title + breadcrumb
+  var topTitle = document.getElementById("topTitle");
+  var breadcrumb = document.getElementById("breadcrumb");
+  if (valid === ""){
+    topTitle.textContent = "Web Application Documentation";
+    breadcrumb.innerHTML = "";
+  } else if (valid === "__notfound__"){
+    topTitle.textContent = "পাওয়া যায়নি";
+    breadcrumb.innerHTML = '<a href="/">Web Application Documentation</a> / ৪০৪';
+  } else {
+    var ch = CHAPTERS.filter(function(c){return c.id===valid;})[0];
+    topTitle.textContent = "অধ্যায় "+ch.num+" — "+ch.title;
+    breadcrumb.innerHTML = '<a href="/">Web Application Documentation</a> / অধ্যায় '+ch.num;
+  }
+
+  document.title = (valid===""? "Web Application Documentation" : (valid==="__notfound__" ? "404" : "অধ্যায় "+CHAPTERS.filter(function(c){return c.id===valid;})[0].num)) + " — Learn Cyber Security";
+
+  if (!opts.noScroll){
+    document.getElementById("content").scrollIntoView({block:"start"});
+    window.scrollTo(0,0);
+  }
+  closeSidebarMobile();
+}
+
+function navigateTo(route, push){
+  var path = idToPath(route);
+  if (push !== false && location.pathname !== path){
+    try {
+      history.pushState({route:route}, "", path);
+    } catch (e) {
+      // Some sandboxed/embedded preview contexts (e.g. an iframe loaded via
+      // srcdoc, whose real document URL is "about:srcdoc") throw a
+      // SecurityError here because the URL doesn't match the document's
+      // actual origin/path. On a real host (GitHub Pages etc.) this never
+      // happens. Fail silently so the app still renders the right chapter —
+      // only the address-bar URL won't update in that sandboxed case.
+    }
+  }
+  showRoute(route);
+}
+
+/* intercept internal nav clicks — any same-origin, root-relative link (href="/...") */
+document.addEventListener("click", function(e){
+  var a = e.target.closest('a[href^="/"]');
+  if (!a) return;
+  if (a.target === "_blank" || a.hasAttribute("download")) return;
+  var url = new URL(a.href, location.origin);
+  if (url.origin !== location.origin) return;
+  e.preventDefault();
+  navigateTo(currentRouteFromPath(url.pathname), true);
+});
+
+window.addEventListener("popstate", function(e){
+  var route = (e.state && typeof e.state.route === "string") ? e.state.route : currentRouteFromPath(location.pathname);
+  showRoute(route, {noScroll:true});
+});
+
+/* ===================== SIDEBAR TOGGLES ===================== */
+var sidebar = document.getElementById("sidebar");
+var scrim = document.getElementById("scrim");
+var mainWrap = document.getElementById("mainWrap");
+
+function openSidebarMobile(){
+  sidebar.classList.add("open");
+  scrim.classList.add("show");
+  document.getElementById("hamburgerBtn").setAttribute("aria-expanded","true");
+}
+function closeSidebarMobile(){
+  sidebar.classList.remove("open");
+  scrim.classList.remove("show");
+  document.getElementById("hamburgerBtn").setAttribute("aria-expanded","false");
+}
+document.getElementById("hamburgerBtn").addEventListener("click", function(){
+  if (sidebar.classList.contains("open")) closeSidebarMobile(); else openSidebarMobile();
+});
+scrim.addEventListener("click", closeSidebarMobile);
+
+document.getElementById("collapseBtn").addEventListener("click", function(){
+  sidebar.classList.toggle("collapsed");
+  mainWrap.classList.toggle("full");
+});
+
+document.addEventListener("keydown", function(e){
+  if (e.key === "Escape") closeSidebarMobile();
+});
+
+/* ===================== COPY CODE BUTTONS ===================== */
+document.addEventListener("click", function(e){
+  var btn = e.target.closest(".copy-btn");
+  if (!btn) return;
+  var block = btn.closest(".codeblock");
+  var codeEl = block.querySelector("pre code") || block.querySelector("pre");
+  var text = codeEl.textContent;
+  navigator.clipboard.writeText(text).then(function(){
+    var old = btn.textContent;
+    btn.textContent = "কপি হয়েছে ✓";
+    btn.classList.add("copied");
+    setTimeout(function(){ btn.textContent = old; btn.classList.remove("copied"); }, 1500);
+  }).catch(function(){
+    btn.textContent = "কপি ব্যর্থ";
+  });
+});
+
+/* initial load — runs last, after sidebar/scrim/listeners above are all set up,
+   since showRoute() -> closeSidebarMobile() depends on them existing */
+(function initRoute(){
+  var route = currentRouteFromPath(location.pathname);
+  // replace current history entry with a state object so popstate works immediately after.
+  // Wrapped in try/catch: a sandboxed preview iframe (document URL "about:srcdoc") throws
+  // a SecurityError here since the target URL can't match its real origin/path — harmless
+  // to skip in that case; on a real host (GitHub Pages etc.) this always succeeds.
+  try {
+    history.replaceState({route:route}, "", idToPath(route));
+  } catch (e) {}
+  showRoute(route, {noScroll:true});
+})();
+</script>
+</body>
+</html>
