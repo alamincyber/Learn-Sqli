@@ -32,7 +32,7 @@
     },
     {
       title: 'Auth Documentation',
-      short: 'Auth',
+      short: 'Authentication',
       url: '/documentation/Auth/',
       description: ''
     },
