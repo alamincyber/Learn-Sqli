@@ -7,17 +7,35 @@
 
   var DOCS = [
     {
-      title: 'Web Fundamental',
+      title: 'Web Fundamental Documentation',
       short: 'Web Fundamentals',
       url: '/documentation/Http/',
       description: ''
     },
     {
-      title: 'Web Application',
+      title: 'Web Application Documentation',
       short: 'Web Application',
       url: '/documentation/web/',
       description: ''
-    }
+    },
+    {
+      title: 'Api Security Documentation',
+      short: 'Api Security',
+      url: '/documentation/Api/',
+      description: ''
+    },
+    {
+      title: 'Operating System Documentation',
+      short: 'Operating System',
+      url: '/documentation/OS/',
+      description: ''
+    },
+    {
+      title: 'Auth Documentation',
+      short: 'Auth',
+      url: '/documentation/Auth/',
+      description: ''
+    },
     {
       title: 'SQL Injection',
       short: 'SQLi',
