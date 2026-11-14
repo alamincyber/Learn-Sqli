@@ -1,1 +1,1415 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mobile Application Security Documentation</title>
+<meta name="description" content="বাংলায় সম্পূর্ণ Mobile Application Security শেখার ডকুমেন্টেশন — Android/iOS আর্কিটেকচার, OWASP Mobile Top 10, Reverse Engineering, Static/Dynamic Analysis, Insecure Storage/Communication, Cryptography ও Mobile Pentesting Methodology।">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tiro+Bangla&family=Hind+Siliguri:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0e14; --surface:#111722; --surface-2:#161d2a; --border:#263044;
+  --fg:#e7edf5; --fg-muted:#93a3bd; --accent:#ff5c5c; --accent-fg:#1a0505;
+  --accent-2:#f5a524; --danger:#ff6b6b; --code-bg:#0d1117; --code-fg:#d7e0ea;
+  --link:#5bc2e8; --shadow:0 4px 18px rgba(0,0,0,.45); color-scheme:dark;
+  --font-head:'Tiro Bangla','Noto Serif Bengali',serif;
+  --font-body:'Hind Siliguri','Noto Sans Bengali',sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);line-height:1.8;margin:0;min-height:100vh}
+h1,h2,h3,h4{font-family:var(--font-head);line-height:1.35;color:var(--fg)}
+a{color:var(--link)}
+code,pre{font-family:var(--font-mono)}
+::selection{background:var(--accent);color:var(--accent-fg)}
+img{max-width:100%}
 
+/* ---- App shell ---- */
+.app{display:flex;min-height:100vh}
+.sidebar{
+  width:300px;flex:0 0 300px;background:var(--surface);border-right:1px solid var(--border);
+  padding:16px 14px 24px;position:fixed;top:0;left:0;bottom:0;overflow-y:auto;
+  scrollbar-width:thin;z-index:30;transition:transform .25s ease;
+}
+.sidebar.collapsed{transform:translateX(-100%)}
+.brand{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.brand .mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--accent),#b91c1c);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-family:var(--font-mono);font-size:13px;flex:none}
+.brand .name{font-family:var(--font-head);font-weight:700;font-size:17px}
+.tagline{font-size:12px;color:var(--fg-muted);margin:0 0 16px}
+.sidebar-section-label{font-size:11px;letter-spacing:.06em;color:var(--fg-muted);margin:16px 0 6px;padding:0 6px;text-transform:uppercase}
+.toc{list-style:none;margin:0;padding:0}
+.toc a{display:flex;align-items:center;gap:9px;text-decoration:none;color:var(--fg);padding:9px 10px;border-radius:8px;font-size:14px}
+.toc a .num{font-family:var(--font-mono);font-size:11px;color:var(--fg-muted);flex:none;width:20px}
+.toc a:hover{background:var(--surface-2)}
+.toc a.active{background:var(--accent);color:var(--accent-fg);font-weight:600}
+.toc a.active .num{color:var(--accent-fg)}
+.sidebar-footer{margin-top:22px;padding-top:14px;border-top:1px solid var(--border);font-size:11px;color:var(--fg-muted)}
+
+.main{flex:1 1 auto;min-width:0;margin-left:300px;transition:margin-left .25s ease;display:flex;flex-direction:column;min-height:100vh}
+.main.full{margin-left:0}
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(10,14,20,.88);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 16px;
+}
+
+.backbtn {
+    position: absolute;
+    right: 16px;
+    padding: 0 14px;
+    gap: 6px;
+    margin-left: 0;
+}
+.topbar .title{font-size:14px;color:var(--fg-muted);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
+.iconbtn,.backbtn{appearance:none;border:1px solid var(--border);background:var(--surface);color:var(--fg);height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;font-family:var(--font-body);font-size:13px;text-decoration:none}
+.iconbtn{width:36px}
+.backbtn{padding:0 14px;gap:6px}
+.backbtn:hover,.iconbtn:hover{background:var(--surface-2);border-color:var(--accent)}
+.hamburger{display:none}
+.collapse-btn{display:none}
+@media (min-width:861px){.collapse-btn{display:flex}}
+
+.content{padding:30px 22px 90px;max-width:860px;margin:0 auto;width:100%;flex:1}
+.breadcrumb{font-size:12px;color:var(--fg-muted);margin-bottom:10px}
+.breadcrumb a{color:var(--fg-muted);text-decoration:none}
+.breadcrumb a:hover{color:var(--link)}
+
+.chapter{display:none}
+.chapter.active{display:block;animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.chapter>.eyebrow{font-family:var(--font-mono);font-size:12px;color:var(--accent);letter-spacing:.04em}
+.chapter>h1{font-size:30px;margin:4px 0 6px}
+.chapter>.sub{color:var(--fg-muted);font-size:15.5px;margin:0 0 18px}
+
+h2{font-size:22px;margin-top:40px;border-bottom:1px solid var(--border);padding-bottom:9px}
+h3{font-size:17.5px;margin-top:26px;color:var(--accent)}
+p{margin:12px 0}
+ul,ol{padding-left:22px;margin:12px 0}
+li{margin:6px 0}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13.5px;display:block;overflow-x:auto}
+table thead{background:var(--surface-2)}
+th,td{border:1px solid var(--border);padding:9px 11px;text-align:left}
+th{font-family:var(--font-head)}
+
+.callout{border-radius:10px;padding:14px 16px;margin:18px 0;border:1px solid var(--border);background:var(--surface);display:flex;gap:10px}
+.callout .ic{flex:none;font-size:17px}
+.callout.warn{border-color:#f5a52455;background:rgba(245,165,36,.08)}
+.callout.danger{border-color:#ef444455;background:rgba(239,68,68,.1)}
+.callout.info{border-color:#5bc2e855;background:rgba(91,194,232,.08)}
+.callout.legal{border-color:var(--accent);background:rgba(255,92,92,.08)}
+.callout p{margin:0}
+
+.codeblock{position:relative;margin:16px 0;border-radius:10px;overflow:hidden;border:1px solid var(--border)}
+.codeblock .cb-head{display:flex;justify-content:space-between;align-items:center;background:var(--surface-2);padding:7px 11px;font-size:11.5px;color:var(--fg-muted);font-family:var(--font-mono)}
+.codeblock pre{margin:0;padding:14px;background:var(--code-bg);color:var(--code-fg);overflow-x:auto;font-size:13px;line-height:1.65;max-width:100%}
+.copy-btn{appearance:none;border:1px solid var(--border);background:var(--surface);color:var(--fg);font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer;font-family:var(--font-body)}
+.copy-btn:hover{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.copy-btn.copied{background:#22c55e;color:#06240f;border-color:#22c55e}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+@media (max-width:700px){.grid2,.grid3{grid-template-columns:1fr}}
+.card{border:1px solid var(--border);border-radius:10px;padding:14px;background:var(--surface)}
+.card h4{margin:0 0 8px;font-size:14px}
+
+details{border:1px solid var(--border);border-radius:10px;margin:14px 0;background:var(--surface)}
+details summary{cursor:pointer;padding:12px 14px;font-weight:600;list-style:none}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:"▸ ";color:var(--accent)}
+details[open] summary::before{content:"▾ "}
+details .inner{padding:0 14px 14px}
+
+.exercise{border:1px dashed var(--accent);border-radius:10px;padding:14px 16px;margin:18px 0;background:rgba(255,92,92,.05)}
+.exercise h4{margin:0 0 6px;font-size:14px;color:var(--accent)}
+
+.qa{border-top:1px dashed var(--border);margin-top:28px;padding-top:14px}
+.qa ol{padding-left:20px}
+
+.summary-box{background:var(--surface-2);border-radius:10px;padding:14px 16px;margin:26px 0;border:1px solid var(--border)}
+.summary-box h4{margin:0 0 6px;font-size:13px;color:var(--fg-muted);text-transform:uppercase;letter-spacing:.04em;font-family:var(--font-body)}
+
+.pager{display:flex;justify-content:space-between;gap:12px;margin-top:40px;border-top:1px solid var(--border);padding-top:18px;flex-wrap:wrap}
+.pager a{flex:1;min-width:140px;border:1px solid var(--border);border-radius:10px;padding:13px 15px;text-decoration:none;color:var(--fg);font-size:13.5px;background:var(--surface)}
+.pager a:hover{border-color:var(--accent)}
+.pager a span{display:block;color:var(--fg-muted);font-size:11px;margin-bottom:3px}
+.pager a.next{text-align:right}
+.pager a.single{flex:none;margin-left:auto}
+
+.landing-hero{text-align:center;padding:30px 0 10px}
+.landing-hero .mark-xl{width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,var(--accent),#b91c1c);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-family:var(--font-mono);font-size:22px;margin:0 auto 16px}
+.next-chapter-cta{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:var(--accent-fg);text-decoration:none;font-weight:700;padding:14px 26px;border-radius:12px;font-size:16px;margin-top:20px}
+.next-chapter-cta:hover{filter:brightness(1.08)}
+.cta-center{text-align:center;margin:30px 0}
+
+.notfound{text-align:center;padding:70px 20px}
+.notfound h1{font-size:60px;margin:0}
+
+.scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:25}
+.scrim.show{display:block}
+
+footer.site-footer{text-align:center;font-size:12px;color:var(--fg-muted);padding:22px;border-top:1px solid var(--border)}
+
+@media (max-width:860px){
+  .sidebar{transform:translateX(-100%);width:85%;max-width:320px;box-shadow:var(--shadow)}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-left:0}
+  .hamburger{display:flex}
+  .collapse-btn{display:none}
+  table{font-size:12.5px}
+  .grid3{grid-template-columns:1fr}
+}
+@media print{
+  .sidebar,.topbar,.pager,.copy-btn{display:none!important}
+  .chapter{display:block!important}
+  .main{margin-left:0}
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="scrim" id="scrim"></div>
+
+  <aside class="sidebar" id="sidebar" aria-label="অধ্যায় নেভিগেশন">
+    <div class="brand"><div class="mark">MOB</div><div class="name">Mobile Security Documentation</div></div>
+    <p class="tagline">বাংলায় সম্পূর্ণ Cross-Site Request Forgery গাইড — ভিত্তি থেকে বাগ বাউন্টি পর্যন্ত</p>
+    <div class="sidebar-section-label">সূচিপত্র</div>
+    <ul class="toc" id="toc"></ul>
+    <div class="sidebar-footer">© learn.alamincyber.com — শুধুমাত্র শিক্ষামূলক উদ্দেশ্যে</div>
+  </aside>
+
+  <div class="main" id="mainWrap">
+    <div class="topbar">
+      <button class="iconbtn hamburger" id="hamburgerBtn" aria-label="মেনু খুলুন/বন্ধ করুন" aria-expanded="false">☰</button>
+      <button class="iconbtn collapse-btn" id="collapseBtn" aria-label="সাইডবার টগল করুন" title="সাইডবার টগল করুন">⟨⟩</button>
+      <a class="backbtn" id="backBtn" href="https://learn.alamincyber.com/documentation/" aria-label="ডকুমেন্টেশন ইনডেক্সে ফিরে যান">← Back</a>
+      <div class="title" id="topTitle">Mobile Security Documentation</div>
+    </div>
+
+    <div class="content" id="content">
+      <div class="breadcrumb" id="breadcrumb"></div>
+      <div id="chapters">
+
+<!-- =========================================================
+     LANDING PAGE
+========================================================= -->
+<!-- =========================================================
+     LANDING PAGE
+========================================================= -->
+<section class="chapter" id="landing" data-route="">
+  <div class="landing-hero">
+    <div class="mark-xl">MOB</div>
+    <div class="eyebrow" style="justify-content:center;display:flex">Learn Cyber Security · Documentation</div>
+    <h1 style="font-size:34px">Mobile Application Security ডকুমেন্টেশন</h1>
+    <p class="sub" style="max-width:640px;margin:0 auto">বাংলাদেশের শিক্ষার্থীদের জন্য তৈরি, সম্পূর্ণ বাংলায় লেখা একটি Mobile Application Security গাইড — Android/iOS আর্কিটেকচার থেকে শুরু করে OWASP Mobile Top 10, Reverse Engineering, Static/Dynamic Analysis, Insecure Storage/Communication, Cryptography, ও Mobile Pentesting Methodology পর্যন্ত — ১৫টি অধ্যায়ে সাজানো।</p>
+  </div>
+
+  <h2>Mobile Application Security নিয়ে সংক্ষিপ্ত কথা</h2>
+  <p>এই সিরিজের আগের ডকুমেন্টেশনগুলো (Common Web Vulnerabilities, API Security, Cloud Security) মূলত ওয়েব ও cloud-কেন্দ্রিক আক্রমণ-তল নিয়ে আলোচনা করেছে। স্মার্টফোনে চলা অ্যাপ্লিকেশনের নিরাপত্তা মডেল ভিন্ন — এখানে APK/IPA ফাইল, লোকাল ডেটা স্টোরেজ, platform permission, এবং reverse engineering-এর মতো নতুন আক্রমণ-তল যুক্ত হয়।</p>
+  <p>এখানে ধাপে ধাপে দেখানো হয়েছে — Android/iOS অ্যাপ্লিকেশন আর্কিটেকচার ও sandboxing, OWASP Mobile Top 10, Insecure Data Storage, Insecure Communication, Authentication/Authorization দুর্বলতা, Reverse Engineering (APK/IPA বিশ্লেষণ), Static Analysis টুল (MobSF, jadx, apktool), Dynamic Analysis ও Frida, Code Tampering/Binary Protection, Insecure Cryptography, Platform-specific misuse (permission, intent, WebView), Third-party SDK ঝুঁকি, Mobile API Security, এবং একটি সম্পূর্ণ Mobile Pentesting Methodology।</p>
+
+  <div class="callout legal">
+    <div class="ic">⚖️</div>
+    <div>
+      <p><strong>আইনি নোটিশ:</strong> এই ডকুমেন্টেশনে উল্লেখিত সব রিভার্স ইঞ্জিনিয়ারিং, স্ট্যাটিক/ডায়নামিক অ্যানালাইসিস কৌশল শুধুমাত্র নিজের তৈরি/মালিকানাধীন অ্যাপ্লিকেশন, অনুমোদিত training platform (OWASP MASTG Crackmes, InsecureBankv2 ইত্যাদি), অথবা স্পষ্টভাবে scope-ভুক্ত bug bounty প্রোগ্রামে প্রয়োগ করুন। অনুমতি ছাড়া কোনো অ্যাপ্লিকেশন বা সার্ভারে প্রয়োগ করলে তা আইনত দণ্ডনীয় অপরাধ।</p>
+    </div>
+  </div>
+
+  <h2>কীভাবে পড়বেন</h2>
+  <div class="grid3">
+    <div class="card"><h4>🟢 শুরু (১–৫)</h4><p>Mobile Security-র ভিত্তি, OWASP Mobile Top 10, Insecure Data Storage, Insecure Communication, Authentication দুর্বলতা।</p></div>
+    <div class="card"><h4>🟡 মধ্যবর্তী (৬–১০)</h4><p>Reverse Engineering, Static Analysis টুল, Dynamic Analysis/Frida, Code Tampering, Insecure Cryptography।</p></div>
+    <div class="card"><h4>🔴 প্রয়োগ (১১–১৫)</h4><p>Platform Misuse, Third-party SDK ঝুঁকি, Mobile API Security, Pentesting Methodology, শব্দকোষ/FAQ।</p></div>
+  </div>
+
+  <div class="cta-center">
+    <a class="next-chapter-cta" href="/chapter01">অধ্যায় ০১ শুরু করুন — Mobile Security-র ভিত্তি →</a>
+  </div>
+</section>
+
+<!-- =========================================================
+     NOT FOUND
+========================================================= -->
+<section class="chapter" id="notfound" data-route="__notfound__">
+  <div class="notfound">
+    <h1>৪০৪</h1>
+    <h2 style="border:none">এই অধ্যায়টি খুঁজে পাওয়া যায়নি</h2>
+    <p class="sub">আপনি যে chapter URL-এ যেতে চেয়েছেন, তা এই ডকুমেন্টেশনে নেই। অনুগ্রহ করে নিচের বাটন ব্যবহার করে ডকুমেন্টেশন ইনডেক্সে ফিরে যান অথবা সাইডবার থেকে একটি অধ্যায় বেছে নিন।</p>
+    <div class="cta-center">
+      <a class="next-chapter-cta" href="https://learn.alamincyber.com/documentation/">ডকুমেন্টেশন ইনডেক্সে ফিরুন</a>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================
+     CHAPTER 1 — Mobile Application Security-র ভিত্তি
+========================================================= -->
+<section class="chapter" id="chapter01">
+  <div class="eyebrow">অধ্যায় ০১ · ভিত্তি</div>
+  <h1>Mobile Application Security-র ভিত্তি</h1>
+  <p class="sub">মোবাইল অ্যাপ্লিকেশনের নিরাপত্তা মডেল ওয়েব অ্যাপ্লিকেশনের থেকে কীভাবে আলাদা — Android ও iOS-এর স্থাপত্য পরিচিতি।</p>
+
+  <div class="callout legal"><div class="ic">⚖️</div><p><strong>আইনি নোটিশ:</strong> এই ডকুমেন্টেশনে উল্লেখিত কৌশল শুধুমাত্র নিজের তৈরি/মালিকানাধীন অ্যাপ্লিকেশন বা অনুমোদিত training platform-এ প্রয়োগ করুন। অনুমতি ছাড়া কোনো অ্যাপ্লিকেশনে প্রয়োগ আইনত দণ্ডনীয় অপরাধ।</p></div>
+
+  <h2>কেন মোবাইল অ্যাপ্লিকেশন নিরাপত্তা আলাদা</h2>
+  <p>একটি ওয়েব অ্যাপ্লিকেশন সার্ভারে চলে এবং ব্রাউজার শুধু render করে — কিন্তু একটি মোবাইল অ্যাপ্লিকেশনের একটি উল্লেখযোগ্য অংশ (বিশেষত কোড ও লজিক) সরাসরি ইউজারের ডিভাইসে, attacker-এর নিজের হাতে থাকা একটি ডিভাইসে, ইনস্টল হয়ে থাকে। এর অর্থ attacker অ্যাপ্লিকেশনের বাইনারি ফাইল সরাসরি হাতে পান, যা <strong>reverse engineering</strong> (অধ্যায় ৬)-এর মাধ্যমে বিশ্লেষণ করা সম্ভব — একটি ঝুঁকি যা সাধারণত ওয়েব অ্যাপ্লিকেশনে থাকে না।</p>
+
+  <h2>Android ও iOS — দুটি প্রধান প্ল্যাটফর্ম</h2>
+  <table>
+    <thead><tr><th>বৈশিষ্ট্য</th><th>Android</th><th>iOS</th></tr></thead>
+    <tbody>
+      <tr><td>অ্যাপ্লিকেশন ফাইল ফরম্যাট</td><td>APK (Android Package)</td><td>IPA (iOS App Store Package)</td></tr>
+      <tr><td>প্রধান প্রোগ্রামিং ভাষা</td><td>Kotlin/Java</td><td>Swift/Objective-C</td></tr>
+      <tr><td>ইনস্টলেশন উৎস</td><td>Google Play ও সাইডলোডিং সম্ভব</td><td>App Store (সাধারণত, জেলব্রেক ছাড়া সীমাবদ্ধ)</td></tr>
+      <tr><td>কোড পরিদর্শন সহজতা</td><td>তুলনামূলক সহজ (decompile করা সহজ)</td><td>তুলনামূলক কঠিন (compiled native code)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Application Sandboxing</h2>
+  <p>উভয় প্ল্যাটফর্মই প্রতিটি অ্যাপ্লিকেশনকে একটি পৃথক, বিচ্ছিন্ন <strong>sandbox</strong>-এ চালায় — একটি অ্যাপ্লিকেশন সাধারণত অন্য অ্যাপ্লিকেশনের ডেটা সরাসরি পড়তে পারে না, যদি না স্পষ্টভাবে কোনো সিস্টেম-লেভেল permission বা শেয়ারিং mechanism ব্যবহার করা হয়। এই sandboxing মডেল একটি গুরুত্বপূর্ণ নিরাপত্তা স্তর, কিন্তু এটি নিখুঁত নয় — Insecure Data Storage (অধ্যায় ৩)-এর মতো ভুল এই সুরক্ষাকে অকার্যকর করে দিতে পারে।</p>
+
+  <h2>Permission Model</h2>
+  <p>মোবাইল অ্যাপ্লিকেশনগুলো নির্দিষ্ট ডিভাইস রিসোর্স (ক্যামেরা, লোকেশন, কন্টাক্ট) অ্যাক্সেস করতে একটি স্পষ্ট <strong>Permission</strong> ব্যবস্থার মধ্য দিয়ে যায় — ইউজারকে সরাসরি অনুমতি দিতে হয়। অতিরিক্ত বা অপ্রয়োজনীয় permission চাওয়া একটি সাধারণ নিরাপত্তা/প্রাইভেসি সমস্যা (অধ্যায় ১১-এ বিস্তারিত)।</p>
+
+  <h2>OWASP Mobile Security Project</h2>
+  <div class="callout info"><div class="ic">💡</div><p>এই ডকুমেন্টেশনের কাঠামো মূলত <strong>OWASP Mobile Application Security</strong> প্রকল্পের (MASVS/MASTG) ধারণার উপর ভিত্তি করে তৈরি — একটি শিল্প-স্বীকৃত, ওপেন-সোর্স কাঠামো, যা পরবর্তী অধ্যায়ে (OWASP Mobile Top 10) বিস্তারিত আলোচিত হয়েছে।</p></div>
+
+  <h2>ওয়েব ও মোবাইলের মধ্যে সংযোগ</h2>
+  <p>অধিকাংশ আধুনিক মোবাইল অ্যাপ্লিকেশন একটি ব্যাকএন্ড REST/GraphQL API-এর সাথে যোগাযোগ করে — অর্থাৎ API Security ডকুমেন্টেশনে আলোচিত সব ঝুঁকি (Broken Object Level Authorization, Rate Limiting ইত্যাদি) এখানেও প্রাসঙ্গিক, ক্লায়েন্ট-সাইড ঝুঁকির পাশাপাশি (অধ্যায় ১৩-এ বিস্তারিত)।</p>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>কেন একটি মোবাইল অ্যাপ্লিকেশনের ক্লায়েন্ট-সাইড কোড একটি ওয়েব অ্যাপ্লিকেশনের চেয়ে বেশি ঝুঁকিপূর্ণ হতে পারে তা ব্যাখ্যা করুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>মোবাইল অ্যাপ্লিকেশনের একটি উল্লেখযোগ্য অংশ ইউজারের ডিভাইসে, attacker-এর নাগালের মধ্যে থাকে, যা reverse engineering-এর ঝুঁকি তৈরি করে। Android ও iOS উভয়ই sandboxing ও permission মডেল ব্যবহার করে, কিন্তু ভুল কনফিগারেশন এই সুরক্ষাকে অকার্যকর করতে পারে।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>মোবাইল অ্যাপ্লিকেশনের নিরাপত্তা মডেল ওয়েব অ্যাপ্লিকেশন থেকে কীভাবে আলাদা?</li>
+      <li>Application Sandboxing কী সুরক্ষা দেয়?</li>
+      <li>OWASP MASVS/MASTG কী?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev single" href="/"><span>পূর্ববর্তী</span>হোম</a>
+    <a class="next" href="/chapter02"><span>পরবর্তী</span>অধ্যায় ০২ — OWASP Mobile Top 10</a>
+  </div>
+</section>
+
+<!-- =========================================================
+     CHAPTER 2 — OWASP Mobile Top 10
+========================================================= -->
+<section class="chapter" id="chapter02">
+  <div class="eyebrow">অধ্যায় ০২ · OWASP</div>
+  <h1>OWASP Mobile Top 10 — ভূমিকা</h1>
+  <p class="sub">Common Web Vulnerabilities ডকুমেন্টেশনের OWASP Top 10-এর মোবাইল সংস্করণ — এই ডকুমেন্টেশনের কাঠামোর ভিত্তি।</p>
+
+  <h2>OWASP Mobile Top 10 কী</h2>
+  <p>Common Web Vulnerabilities ডকুমেন্টেশনে আলোচিত ওয়েব OWASP Top 10-এর মতো, <strong>OWASP Mobile Top 10</strong> মোবাইল অ্যাপ্লিকেশনে সবচেয়ে সাধারণ ও গুরুত্বপূর্ণ ১০টি নিরাপত্তা ঝুঁকির একটি তালিকা — এটি পেন্টেস্টার, ডেভেলপার, ও নিরাপত্তা দলের জন্য একটি সাধারণ রেফারেন্স ফ্রেমওয়ার্ক।</p>
+
+  <h2>সংক্ষিপ্ত তালিকা</h2>
+  <table>
+    <thead><tr><th>#</th><th>ঝুঁকি</th><th>এই ডকুমেন্টেশনে</th></tr></thead>
+    <tbody>
+      <tr><td>M1</td><td>Improper Credential Usage</td><td>অধ্যায় ৫</td></tr>
+      <tr><td>M2</td><td>Inadequate Supply Chain Security</td><td>অধ্যায় ১২</td></tr>
+      <tr><td>M3</td><td>Insecure Authentication/Authorization</td><td>অধ্যায় ৫</td></tr>
+      <tr><td>M4</td><td>Insufficient Input/Output Validation</td><td>অধ্যায় ১৩</td></tr>
+      <tr><td>M5</td><td>Insecure Communication</td><td>অধ্যায় ৪</td></tr>
+      <tr><td>M6</td><td>Inadequate Privacy Controls</td><td>অধ্যায় ৩</td></tr>
+      <tr><td>M7</td><td>Insufficient Binary Protections</td><td>অধ্যায় ৯</td></tr>
+      <tr><td>M8</td><td>Security Misconfiguration</td><td>অধ্যায় ১১</td></tr>
+      <tr><td>M9</td><td>Insecure Data Storage</td><td>অধ্যায় ৩</td></tr>
+      <tr><td>M10</td><td>Insufficient Cryptography</td><td>অধ্যায় ১০</td></tr>
+    </tbody>
+  </table>
+
+  <h2>ওয়েব OWASP Top 10-এর সাথে পার্থক্য</h2>
+  <div class="callout info"><div class="ic">💡</div><p>লক্ষণীয় — Mobile Top 10-এ <strong>Insecure Data Storage</strong> ও <strong>Insufficient Binary Protections</strong>-এর মতো আইটেম আছে, যা ওয়েব OWASP Top 10-এ সরাসরি নেই। এর কারণ মোবাইল অ্যাপ্লিকেশনের ক্লায়েন্ট-সাইড প্রকৃতি (অধ্যায় ১) — ডিভাইসে সংরক্ষিত ডেটা ও বাইনারি নিজেই একটি আক্রমণ-তল।</p></div>
+
+  <div class="codeblock">
+    <div class="cb-head"><span>ধারণাগত Mobile Top 10 চেকলিস্ট আইটেম</span><button class="copy-btn">কপি</button></div>
+    <pre><code>M9  — Insecure Data Storage      → অধ্যায় ৩
+M5  — Insecure Communication     → অধ্যায় ৪
+M3  — Insecure Authentication    → অধ্যায় ৫</code></pre>
+  </div>
+
+  <h2>এই তালিকা কীভাবে ব্যবহার করবেন</h2>
+  <p>একটি পেন্টেস্টের সময়, এই তালিকা একটি চেকলিস্ট হিসেবে কাজ করে — প্রতিটি আইটেম ধাপে ধাপে যাচাই করে একটি পদ্ধতিগত কভারেজ নিশ্চিত করা যায়, যদিও বাস্তব টেস্টিং প্রায়ই এই ক্রম অনুসরণ করে না (অধ্যায় ১৪-এ একটি সম্পূর্ণ methodology আলোচিত)।</p>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>কেন Insecure Data Storage ও Insufficient Binary Protections ওয়েব OWASP Top 10-এ সরাসরি প্রাসঙ্গিক নয়, কিন্তু মোবাইলে গুরুত্বপূর্ণ তা ব্যাখ্যা করুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>OWASP Mobile Top 10 মোবাইল অ্যাপ্লিকেশনের ১০টি সবচেয়ে সাধারণ ঝুঁকি তালিকাভুক্ত করে — এই ডকুমেন্টেশনের বাকি অধ্যায়গুলো এই তালিকার প্রতিটি আইটেম বিস্তারিতভাবে কভার করে।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>OWASP Mobile Top 10 কী উদ্দেশ্যে তৈরি করা হয়েছে?</li>
+      <li>M9 (Insecure Data Storage) কোন অধ্যায়ে বিস্তারিত আলোচিত?</li>
+      <li>মোবাইল Top 10-এ এমন কোন আইটেম আছে, যা ওয়েব Top 10-এ নেই?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter01"><span>পূর্ববর্তী</span>অধ্যায় ০১ — Mobile Application Security-র ভিত্তি</a>
+    <a class="next" href="/chapter03"><span>পরবর্তী</span>অধ্যায় ০৩ — Insecure Data Storage</a>
+  </div>
+</section>
+
+<!-- =========================================================
+     CHAPTER 3 — Insecure Data Storage
+========================================================= -->
+<section class="chapter" id="chapter03">
+  <div class="eyebrow">অধ্যায় ০৩ · Storage</div>
+  <h1>Insecure Data Storage</h1>
+  <p class="sub">মোবাইল অ্যাপ্লিকেশনের সবচেয়ে সাধারণ দুর্বলতাগুলোর একটি — ডিভাইসে সংবেদনশীল ডেটা ভুলভাবে সংরক্ষণ করা।</p>
+
+  <div class="callout legal"><div class="ic">⚖️</div><p><strong>আইনি নোটিশ:</strong> শুধুমাত্র নিজের বা অনুমোদিত অ্যাপ্লিকেশনে এই কৌশল প্রয়োগ করুন।</p></div>
+
+  <h2>সমস্যাটি কী</h2>
+  <p>একটি মোবাইল ডিভাইস হারিয়ে যেতে পারে, চুরি হতে পারে, বা malware-এ আক্রান্ত হতে পারে — এই পরিস্থিতিতে, যদি একটি অ্যাপ্লিকেশন সংবেদনশীল ডেটা (পাসওয়ার্ড, টোকেন, ব্যক্তিগত তথ্য) প্লেইনটেক্সটে, সহজে অ্যাক্সেসযোগ্য লোকেশনে সংরক্ষণ করে, সেই ডেটা সরাসরি উন্মুক্ত হয়ে যায় — এমনকি কোনো নেটওয়ার্ক আক্রমণ ছাড়াই।</p>
+
+  <h2>সাধারণ Insecure Storage লোকেশন</h2>
+  <table>
+    <thead><tr><th>লোকেশন</th><th>সমস্যা</th></tr></thead>
+    <tbody>
+      <tr><td>SharedPreferences (Android) / UserDefaults (iOS)</td><td>ডিফল্টভাবে এনক্রিপ্টেড নয় — sensitive ডেটা এখানে রাখা বিপজ্জনক</td></tr>
+      <tr><td>SQLite ডেটাবেজ</td><td>প্লেইনটেক্সটে থাকলে, একটি rooted/jailbroken ডিভাইসে সরাসরি পড়া যায়</td></tr>
+      <tr><td>লগ ফাইল</td><td>ডিবাগিং-এর জন্য রাখা লগে ভুলবশত টোকেন বা পাসওয়ার্ড প্রিন্ট হওয়া</td></tr>
+      <tr><td>Clipboard</td><td>কপি করা সংবেদনশীল ডেটা অন্য অ্যাপ্লিকেশন পড়তে পারে</td></tr>
+      <tr><td>Backup (cloud/local)</td><td>ডিভাইস ব্যাকআপের মধ্যে সংবেদনশীল ডেটা অন্তর্ভুক্ত হয়ে যাওয়া</td></tr>
+    </tbody>
+  </table>
+
+  <div class="codeblock">
+    <div class="cb-head"><span>ধারণাগত Insecure Storage উদাহরণ (Android)</span><button class="copy-btn">কপি</button></div>
+    <pre><code>// SharedPreferences-এ প্লেইনটেক্সট টোকেন সংরক্ষণ (Insecure)
+SharedPreferences prefs = getSharedPreferences("app", MODE_PRIVATE);
+prefs.edit().putString("auth_token", token).apply();
+// কোনো এনক্রিপশন নেই — rooted ডিভাইসে বা backup extract করে সরাসরি পড়া যায়</code></pre>
+  </div>
+
+  <h2>সঠিক সমাধান</h2>
+  <div class="grid2">
+    <div class="card"><h4>✅ Platform-Provided Secure Storage</h4><p>Android Keystore / iOS Keychain ব্যবহার করুন — এগুলো hardware-backed encryption সরবরাহ করে, যা SharedPreferences/UserDefaults-এর চেয়ে উল্লেখযোগ্যভাবে বেশি সুরক্ষিত।</p></div>
+    <div class="card"><h4>✅ ন্যূনতম স্টোরেজ নীতি</h4><p>যা স্টোর করা একদমই প্রয়োজন নেই, তা স্টোর করবেন না — একটি access token দীর্ঘ সময় স্টোর না করে, প্রয়োজন অনুযায়ী refresh করুন।</p></div>
+  </div>
+
+  <h2>রুট/জেলব্রেক ডিটেকশনের ভূমিকা</h2>
+  <p>একটি rooted (Android) বা jailbroken (iOS) ডিভাইসে, অ্যাপ্লিকেশনের sandbox সুরক্ষা অনেকাংশে দুর্বল হয়ে যায় — attacker অনেক সহজে ফাইল সিস্টেম অ্যাক্সেস করতে পারেন। অনেক সংবেদনশীল অ্যাপ্লিকেশন (ব্যাংকিং, পেমেন্ট) root/jailbreak detection বাস্তবায়ন করে, যদিও এটি একটি নিখুঁত সমাধান নয় (অধ্যায় ৯-এ বিস্তারিত) — এটি defense-in-depth-এর একটি স্তর।</p>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>কেন SharedPreferences/UserDefaults-এ একটি auth token রাখা Android Keystore/iOS Keychain-এ রাখার চেয়ে কম নিরাপদ তা ব্যাখ্যা করুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>Insecure Data Storage ঘটে যখন সংবেদনশীল ডেটা ডিভাইসে এনক্রিপশন ছাড়া সংরক্ষণ করা হয় — SharedPreferences/UserDefaults, লগ ফাইল, এবং backup সাধারণ ঝুঁকিপূর্ণ লোকেশন। সমাধান হলো platform-provided secure storage (Keystore/Keychain) ব্যবহার এবং ন্যূনতম স্টোরেজ নীতি অনুসরণ করা।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>কেন একটি হারানো ডিভাইস Insecure Data Storage-কে বিশেষভাবে ঝুঁকিপূর্ণ করে তোলে?</li>
+      <li>Android Keystore ও SharedPreferences-এর মধ্যে পার্থক্য কী?</li>
+      <li>Root/Jailbreak Detection কী সুরক্ষা দেয়, এবং এর সীমাবদ্ধতা কী?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter02"><span>পূর্ববর্তী</span>অধ্যায় ০২ — OWASP Mobile Top 10</a>
+    <a class="next" href="/chapter04"><span>পরবর্তী</span>অধ্যায় ০৪ — Insecure Communication</a>
+  </div>
+</section>
+
+<!-- =========================================================
+     CHAPTER 4 — Insecure Communication
+========================================================= -->
+<section class="chapter" id="chapter04">
+  <div class="eyebrow">অধ্যায় ০৪ · Communication</div>
+  <h1>Insecure Communication</h1>
+  <p class="sub">Network Security ডকুমেন্টেশনের TLS নীতি মোবাইল প্রেক্ষাপটে — এবং একটি মোবাইল-নির্দিষ্ট প্রতিরক্ষা, Certificate Pinning।</p>
+
+  <div class="callout legal"><div class="ic">⚖️</div><p><strong>আইনি নোটিশ:</strong> শুধুমাত্র নিজের lab বা অনুমোদিত পরিবেশে নেটওয়ার্ক ট্রাফিক বিশ্লেষণ করুন।</p></div>
+
+  <h2>মূল সমস্যা — এনক্রিপশন ছাড়া বা দুর্বল যাচাই</h2>
+  <p>একটি মোবাইল অ্যাপ্লিকেশন প্রায়ই পাবলিক Wi-Fi-এর মতো অবিশ্বস্ত নেটওয়ার্কে ব্যবহার হয় — যদি অ্যাপ্লিকেশন সার্ভারের সাথে HTTP (এনক্রিপশন ছাড়া) বা সঠিকভাবে সার্টিফিকেট যাচাই না করে যোগাযোগ করে, একজন attacker একই নেটওয়ার্কে থেকে <strong>Man-in-the-Middle (MITM)</strong> আক্রমণের মাধ্যমে ট্রাফিক পড়তে বা পরিবর্তন করতে পারেন — Network Security ডকুমেন্টেশনের TLS/SSL অধ্যায়ে এই ধারণা বিস্তারিত আলোচিত।</p>
+
+  <h2>সাধারণ ভুল</h2>
+  <table>
+    <thead><tr><th>ভুল</th><th>পরিণতি</th></tr></thead>
+    <tbody>
+      <tr><td>HTTP ব্যবহার (HTTPS না)</td><td>সম্পূর্ণ ট্রাফিক প্লেইনটেক্সটে, যেকেউ পড়তে পারে</td></tr>
+      <tr><td>সার্টিফিকেট যাচাই নিষ্ক্রিয় করা</td><td>অ্যাপ্লিকেশন যেকোনো (এমনকি স্ব-স্বাক্ষরিত/আপোসকৃত) সার্টিফিকেট গ্রহণ করে</td></tr>
+      <tr><td>দুর্বল TLS ভার্সন</td><td>পুরনো, দুর্বল ক্রিপ্টোগ্রাফিক প্রোটোকল ব্যবহার</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Certificate Pinning — একটি মোবাইল-নির্দিষ্ট প্রতিরক্ষা</h2>
+  <p>সাধারণ TLS যাচাই নিশ্চিত করে সার্টিফিকেট একটি বিশ্বস্ত Certificate Authority (CA) দ্বারা স্বাক্ষরিত — কিন্তু যদি কোনোভাবে একটি দূষিত CA বা আপোসকৃত সার্টিফিকেট অ্যাপ্লিকেশনে "বিশ্বস্ত" হিসেবে ইনস্টল হয়, MITM সম্ভব হয়ে যায়। <strong>Certificate Pinning</strong> একটি অতিরিক্ত স্তর — অ্যাপ্লিকেশন নির্দিষ্ট একটি (বা কয়েকটি) সার্টিফিকেট/public key-কেই একমাত্র বিশ্বস্ত হিসেবে "pin" করে রাখে, যেকোনো অন্য CA-স্বাক্ষরিত সার্টিফিকেট প্রত্যাখ্যান করে।</p>
+
+  <div class="codeblock">
+    <div class="cb-head"><span>ধারণাগত Certificate Pinning (Android, OkHttp-স্টাইল)</span><button class="copy-btn">কপি</button></div>
+    <pre><code>CertificatePinner pinner = new CertificatePinner.Builder()
+    .add("api.example.com", "sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
+    .build();
+// শুধুমাত্র এই নির্দিষ্ট public key-র সাথে মেলা সার্টিফিকেট গ্রহণযোগ্য</code></pre>
+  </div>
+
+  <div class="callout warn"><div class="ic">⚠️</div><p><strong>বাস্তব ঝুঁকি:</strong> একজন পেন্টেস্টার/attacker প্রায়ই Burp Suite-এর মতো একটি proxy টুল দিয়ে মোবাইল ট্রাফিক ইন্টারসেপ্ট করার চেষ্টা করেন। যদি Certificate Pinning সঠিকভাবে বাস্তবায়িত না থাকে, এই proxy সহজেই ট্রাফিক পড়তে/পরিবর্তন করতে পারে — এমনকি HTTPS থাকা সত্ত্বেও।</p></div>
+
+  <h2>Pinning Bypass — একটি গুরুত্বপূর্ণ সীমাবদ্ধতা</h2>
+  <p>Certificate Pinning একটি শক্তিশালী প্রতিরক্ষা, কিন্তু এটি নিখুঁত নয় — একটি rooted/jailbroken ডিভাইসে, Frida-র মতো একটি dynamic instrumentation টুল (অধ্যায় ৮-এ বিস্তারিত) ব্যবহার করে runtime-এ pinning চেক বাইপাস করা সম্ভব। তাই Certificate Pinning একা যথেষ্ট নয় — এটি defense-in-depth-এর একটি স্তর, root detection-এর (অধ্যায় ৩) সাথে একত্রে ব্যবহার করা উচিত।</p>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>Certificate Pinning সাধারণ TLS যাচাইয়ের তুলনায় কী অতিরিক্ত সুরক্ষা দেয়, এবং কেন এটি একা যথেষ্ট নয় তা ব্যাখ্যা করুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>Insecure Communication ঘটে যখন একটি অ্যাপ্লিকেশন HTTP ব্যবহার করে বা সার্টিফিকেট সঠিকভাবে যাচাই করে না, যা MITM আক্রমণের সুযোগ তৈরি করে। Certificate Pinning একটি অতিরিক্ত স্তর যোগ করে, কিন্তু runtime bypass-এর কারণে এটি একা সম্পূর্ণ সুরক্ষা নয়।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>MITM আক্রমণ কীভাবে একটি মোবাইল অ্যাপ্লিকেশনের ট্রাফিককে প্রভাবিত করতে পারে?</li>
+      <li>Certificate Pinning কী এবং এটি কীভাবে কাজ করে?</li>
+      <li>কেন Certificate Pinning একটি rooted ডিভাইসে বাইপাস হতে পারে?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter03"><span>পূর্ববর্তী</span>অধ্যায় ০৩ — Insecure Data Storage</a>
+    <a class="next" href="/chapter05"><span>পরবর্তী</span>অধ্যায় ০৫ — Insecure Authentication ও Authorization</a>
+  </div>
+</section>
+
+<!-- =========================================================
+     CHAPTER 5 — Insecure Authentication and Authorization
+========================================================= -->
+<section class="chapter" id="chapter05">
+  <div class="eyebrow">অধ্যায় ০৫ · Auth</div>
+  <h1>Insecure Authentication ও Authorization</h1>
+  <p class="sub">Authentication ডকুমেন্টেশনের মূল নীতি মোবাইল অ্যাপ্লিকেশনে কীভাবে ভিন্নভাবে ভুল হতে পারে।</p>
+
+  <div class="callout legal"><div class="ic">⚖️</div><p><strong>আইনি নোটিশ:</strong> শুধুমাত্র নিজের টেস্ট অ্যাকাউন্টে এই ধারণাগুলো যাচাই করুন।</p></div>
+
+  <h2>ক্লায়েন্ট-সাইড Authentication Logic-এর ঝুঁকি</h2>
+  <p>একটি সাধারণ ভুল হলো — একটি মোবাইল অ্যাপ্লিকেশনে কিছু authentication/authorization লজিক (যেমন "এই ইউজার প্রিমিয়াম কিনা") ক্লায়েন্ট-সাইডে (অ্যাপ্লিকেশনের কোডে) যাচাই করা, সার্ভার-সাইডে নয়। যেহেতু attacker-এর বাইনারিতে সম্পূর্ণ অ্যাক্সেস থাকে (অধ্যায় ১), এই ধরনের ক্লায়েন্ট-সাইড চেক সহজেই বাইপাস করা যায়।</p>
+
+  <h2>Local Authentication বনাম Server Authentication</h2>
+  <table>
+    <thead><tr><th>ধরন</th><th>উদাহরণ</th><th>ঝুঁকি</th></tr></thead>
+    <tbody>
+      <tr><td>Local (Biometric/PIN)</td><td>ফিঙ্গারপ্রিন্ট/ফেস আনলক দিয়ে অ্যাপ খোলা</td><td>শুধুমাত্র ডিভাইস-লেভেল সুরক্ষা — সার্ভার-সাইড auth-এর বিকল্প নয়</td></tr>
+      <tr><td>Server Authentication</td><td>প্রতিটি API request-এ সার্ভার টোকেন/session যাচাই করে</td><td>প্রকৃত নিরাপত্তা নিয়ন্ত্রণ এখানেই থাকা উচিত</td></tr>
+    </tbody>
+  </table>
+  <div class="callout warn"><div class="ic">⚠️</div><p><strong>সাধারণ বিভ্রান্তি:</strong> Biometric authentication (ফিঙ্গারপ্রিন্ট) শুধু নিশ্চিত করে "এই ডিভাইসটি যে ব্যবহার করছে সে-ই এই ডিভাইসের মালিক" — এটি সার্ভারকে কিছু বলে না। যদি একটি অ্যাপ্লিকেশন ভুলভাবে ধরে নেয় যে local biometric check-ই যথেষ্ট প্রমাণ, এবং সার্ভার-সাইড token যাচাই দুর্বল থাকে, তাহলে একটি গুরুতর ফাঁক তৈরি হয়।</p></div>
+
+  <h2>Session/Token ব্যবস্থাপনা</h2>
+  <p>মোবাইল অ্যাপ্লিকেশনে সাধারণত দীর্ঘস্থায়ী session থাকে (ইউজার বারবার লগইন করতে চান না) — এর জন্য প্রায়ই একটি <strong>refresh token</strong> মেকানিজম ব্যবহৃত হয় (Authentication ডকুমেন্টেশনে বিস্তারিত)। এই refresh token যদি Insecure Storage (অধ্যায় ৩)-এর শিকার হয়, attacker দীর্ঘমেয়াদী অ্যাক্সেস পেয়ে যেতে পারেন।</p>
+
+  <h2>Biometric Bypass-এর একটি বাস্তব প্যাটার্ন</h2>
+  <div class="codeblock">
+    <div class="cb-head"><span>ধারণাগত দুর্বল implementation</span><button class="copy-btn">কপি</button></div>
+    <pre><code>// দুর্বল: শুধু একটি লোকাল বুলিয়ান ফ্ল্যাগ সেট করে, সার্ভারকে জানায় না
+if (biometricAuthSuccess) {
+    isLoggedIn = true;  // শুধু ক্লায়েন্ট-সাইড state
+}
+// সঠিক: biometric সফল হলে, একটি সার্ভার-যাচাইকৃত টোকেন ব্যবহার করে প্রতিটি request প্রমাণীকরণ করা উচিত</code></pre>
+  </div>
+
+  <h2>Multi-Factor Authentication (MFA)</h2>
+  <p>Authentication ডকুমেন্টেশনে আলোচিত MFA মোবাইলেও সমানভাবে প্রযোজ্য — বিশেষত সংবেদনশীল অ্যাপ্লিকেশনে (ব্যাংকিং, পেমেন্ট), একটি দ্বিতীয় প্রমাণীকরণ স্তর একক credential আপোসের impact উল্লেখযোগ্যভাবে কমায়।</p>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>কেন "biometric authentication সফল হলেই ইউজার authenticated" ধরে নেওয়া একটি নিরাপত্তা দুর্বলতা হতে পারে তা ব্যাখ্যা করুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>Authentication/Authorization লজিক ক্লায়েন্ট-সাইডে বাস্তবায়ন করলে তা সহজে বাইপাসযোগ্য হয়ে যায় — সার্ভার-সাইড যাচাই সবসময় চূড়ান্ত নিয়ন্ত্রণ হওয়া উচিত। Biometric authentication একটি ডিভাইস-লেভেল সুবিধা, সার্ভার-সাইড token-ভিত্তিক auth-এর বিকল্প নয়।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>কেন ক্লায়েন্ট-সাইড authorization চেক ঝুঁকিপূর্ণ?</li>
+      <li>Biometric Authentication কী নিশ্চিত করে, এবং কী নিশ্চিত করে না?</li>
+      <li>Refresh Token কেন বিশেষভাবে সংরক্ষণে সতর্কতা প্রয়োজন?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter04"><span>পূর্ববর্তী</span>অধ্যায় ০৪ — Insecure Communication</a>
+    <a class="next" href="/chapter06"><span>পরবর্তী</span>অধ্যায় ০৬ — Reverse Engineering</a>
+  </div>
+</section>
+
+<!-- =========================================================
+     CHAPTER 6 — Reverse Engineering - APK/IPA Analysis
+========================================================= -->
+<section class="chapter" id="chapter06">
+  <div class="eyebrow">অধ্যায় ০৬ · Reverse Engineering</div>
+  <h1>Reverse Engineering — APK/IPA বিশ্লেষণ</h1>
+  <p class="sub">কীভাবে একটি মোবাইল অ্যাপ্লিকেশন ফাইল থেকে এর ভেতরের কোড ও লজিক পুনরুদ্ধার করা যায়।</p>
+
+  <div class="callout legal"><div class="ic">⚖️</div><p><strong>আইনি নোটিশ:</strong> শুধুমাত্র নিজের তৈরি বা স্পষ্টভাবে অনুমোদিত অ্যাপ্লিকেশনে Reverse Engineering প্রয়োগ করুন। অনুমতি ছাড়া কোনো কমার্শিয়াল অ্যাপ্লিকেশন decompile করা আইনত ও মালিকানা-সংক্রান্ত সমস্যা তৈরি করতে পারে।</p></div>
+
+  <h2>Reverse Engineering কী এবং কেন</h2>
+  <p>একটি পেন্টেস্টার বা security researcher প্রায়ই একটি অ্যাপ্লিকেশনের সোর্স কোড ছাড়াই কাজ করেন — শুধুমাত্র APK/IPA ফাইলটি হাতে থাকে। <strong>Reverse Engineering</strong> হলো সেই compiled/packaged ফাইল থেকে, যতটা সম্ভব, মূল লজিক পুনর্গঠন করার প্রক্রিয়া — hardcoded secret, API endpoint, business logic, বা দুর্বলতা শনাক্ত করার জন্য।</p>
+
+  <h2>APK গঠন (Android)</h2>
+  <table>
+    <thead><tr><th>অংশ</th><th>বিষয়বস্তু</th></tr></thead>
+    <tbody>
+      <tr><td><code>AndroidManifest.xml</code></td><td>Permission, Activity, Service ঘোষণা</td></tr>
+      <tr><td><code>classes.dex</code></td><td>কম্পাইল করা Java/Kotlin bytecode</td></tr>
+      <tr><td><code>res/</code></td><td>লেআউট, স্ট্রিং, রিসোর্স ফাইল</td></tr>
+      <tr><td><code>lib/</code></td><td>Native (C/C++) লাইব্রেরি, যদি থাকে</td></tr>
+    </tbody>
+  </table>
+
+  <h2>প্রাথমিক Reverse Engineering ওয়ার্কফ্লো</h2>
+  <div class="codeblock">
+    <div class="cb-head"><span>ধারণাগত Android APK বিশ্লেষণ ধাপ</span><button class="copy-btn">কপি</button></div>
+    <pre><code>১. apktool দিয়ে APK আনপ্যাক করা → resources ও manifest পড়া
+২. jadx দিয়ে classes.dex-কে readable Java-সদৃশ কোডে decompile করা
+৩. hardcoded API key, endpoint URL, বা debug flag খুঁজে বের করা
+৪. AndroidManifest.xml-এ অতিরিক্ত exported component আছে কিনা পরীক্ষা করা</code></pre>
+  </div>
+
+  <h2>iOS IPA-তে পার্থক্য</h2>
+  <p>iOS অ্যাপ্লিকেশন সাধারণত native compiled কোড (Swift/Objective-C ARM বাইনারি) আকারে প্যাকেজ হয়, যা Android-এর Java bytecode-এর চেয়ে decompile করা উল্লেখযোগ্যভাবে কঠিন — তবে class/method নাম, string, ও symbol টেবিল প্রায়ই বাইনারিতে অবশিষ্ট থাকে, যা <code>class-dump</code> বা <code>Hopper</code>-এর মতো টুল দিয়ে বিশ্লেষণযোগ্য।</p>
+
+  <h2>Reverse Engineering দিয়ে কী পাওয়া যায়</h2>
+  <ul>
+    <li><strong>Hardcoded Secret</strong> — API key, এনক্রিপশন key, বা ব্যাকডোর credential সরাসরি কোডে পাওয়া</li>
+    <li><strong>লুকানো API Endpoint</strong> — UI-তে উন্মুক্ত নয় এমন ফিচার/এন্ডপয়েন্ট আবিষ্কার</li>
+    <li><strong>Business Logic</strong> — মূল্য গণনা, লাইসেন্সিং চেক, বা অন্য লজিক, যা বাইপাসযোগ্য হতে পারে</li>
+  </ul>
+
+  <div class="callout danger"><div class="ic">🚨</div><p><strong>বাস্তব ঝুঁকি:</strong> ডেভেলপাররা মাঝে মাঝে ভুলবশত একটি API key বা এনক্রিপশন key সরাসরি কোডে hardcode করেন, ধরে নিয়ে যে "কম্পাইল করা কোড পড়া কঠিন"। কিন্তু অধ্যায় ৭ ও এই অধ্যায়ের decompile কৌশল ব্যবহার করে, এই ধরনের secret প্রায়ই মিনিটের মধ্যে খুঁজে বের করা সম্ভব।</p></div>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>কেন Android APK-তে hardcoded secret লুকিয়ে রাখা, iOS IPA-এর চেয়ে সাধারণত সহজে আবিষ্কারযোগ্য তা ব্যাখ্যা করুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>Reverse Engineering একটি APK/IPA ফাইল থেকে মূল কোড/লজিক পুনর্গঠনের প্রক্রিয়া — apktool/jadx-এর মতো টুল ব্যবহার করে hardcoded secret, API endpoint, ও business logic আবিষ্কার করা যায়। Android-এর bytecode iOS-এর native বাইনারির চেয়ে সাধারণত সহজে decompile হয়।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>APK ফাইলের প্রধান অংশগুলো কী কী?</li>
+      <li>Hardcoded Secret কেন একটি গুরুতর ঝুঁকি?</li>
+      <li>Android ও iOS বাইনারি Reverse Engineering-এর কঠিনতায় কেন ভিন্ন?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter05"><span>পূর্ববর্তী</span>অধ্যায় ০৫ — Insecure Authentication ও Authorization</a>
+    <a class="next" href="/chapter07"><span>পরবর্তী</span>অধ্যায় ০৭ — Static Analysis Tools</a>
+  </div>
+</section>
+
+<!-- =========================================================
+     CHAPTER 7 — Static Analysis Tools
+========================================================= -->
+<section class="chapter" id="chapter07">
+  <div class="eyebrow">অধ্যায় ০৭ · Static Analysis</div>
+  <h1>Static Analysis Tools</h1>
+  <p class="sub">অ্যাপ্লিকেশন না চালিয়েই, কোড পরীক্ষা করে দুর্বলতা শনাক্ত করার পদ্ধতি ও টুল।</p>
+
+  <div class="callout legal"><div class="ic">⚖️</div><p><strong>আইনি নোটিশ:</strong> শুধুমাত্র নিজের বা অনুমোদিত অ্যাপ্লিকেশনে এই টুল প্রয়োগ করুন।</p></div>
+
+  <h2>Static বনাম Dynamic Analysis</h2>
+  <table>
+    <thead><tr><th>ধরন</th><th>সংজ্ঞা</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Static Analysis</strong></td><td>অ্যাপ্লিকেশন না চালিয়ে, সোর্স/বাইনারি কোড সরাসরি পরীক্ষা করা</td></tr>
+      <tr><td><strong>Dynamic Analysis</strong></td><td>অ্যাপ্লিকেশন বাস্তবে চালিয়ে, runtime আচরণ পর্যবেক্ষণ করা (অধ্যায় ৮)</td></tr>
+    </tbody>
+  </table>
+  <p>দুটো পদ্ধতিই পরিপূরক — Static Analysis দ্রুত, broad coverage দেয়, কিন্তু কিছু দুর্বলতা শুধু runtime-এ প্রকাশ পায়, যেখানে Dynamic Analysis প্রয়োজন।</p>
+
+  <h2>MobSF — একটি সর্বাঙ্গীণ টুল</h2>
+  <p><strong>MobSF (Mobile Security Framework)</strong> একটি জনপ্রিয়, ওপেন-সোর্স টুল যা একটি APK/IPA আপলোড করে স্বয়ংক্রিয়ভাবে static analysis চালায় — permission, hardcoded secret, insecure code pattern, এবং OWASP Mobile Top 10-এর (অধ্যায় ২) সাথে সম্পর্কিত অনেক সমস্যা একটি রিপোর্ট আকারে দেখায়।</p>
+
+  <h2>প্রধান Static Analysis টুল</h2>
+  <table>
+    <thead><tr><th>টুল</th><th>কাজ</th></tr></thead>
+    <tbody>
+      <tr><td>apktool</td><td>APK আনপ্যাক/রিপ্যাক, resources ও manifest পরিদর্শন</td></tr>
+      <tr><td>jadx</td><td>Android bytecode-কে readable Java-সদৃশ সোর্সে decompile</td></tr>
+      <tr><td>MobSF</td><td>স্বয়ংক্রিয় সর্বাঙ্গীণ স্ক্যান ও রিপোর্ট</td></tr>
+      <tr><td>class-dump / Hopper</td><td>iOS বাইনারি বিশ্লেষণ</td></tr>
+      <tr><td>grep/semgrep</td><td>decompile করা কোডে প্যাটার্ন-ভিত্তিক অনুসন্ধান (API key, insecure function)</td></tr>
+    </tbody>
+  </table>
+
+  <div class="codeblock">
+    <div class="cb-head"><span>ধারণাগত MobSF ওয়ার্কফ্লো</span><button class="copy-btn">কপি</button></div>
+    <pre><code>১. MobSF-এ APK আপলোড করা (localhost-এ সেল্ফ-হোস্টেড instance)
+২. স্বয়ংক্রিয় স্ক্যান রিপোর্ট পর্যালোচনা করা:
+   - Permission ব্যবহার
+   - Hardcoded API key/secret
+   - Insecure cryptography pattern
+   - Exported component (অধ্যায় ১১)
+৩. প্রতিটি ফাইন্ডিং ম্যানুয়ালি jadx-এ গিয়ে যাচাই করা (false positive বাদ দেওয়া)</code></pre>
+  </div>
+
+  <h2>False Positive-এর গুরুত্ব</h2>
+  <div class="callout warn"><div class="ic">⚠️</div><p><strong>একটি সাধারণ ভুল:</strong> স্বয়ংক্রিয় টুল প্রায়ই false positive রিপোর্ট করে (যেমন একটি নিরীহ স্ট্রিং-কে "hardcoded secret" হিসেবে ফ্ল্যাগ করা)। একটি দায়িত্বশীল বিশ্লেষণে, প্রতিটি স্বয়ংক্রিয় ফাইন্ডিং ম্যানুয়ালি যাচাই করা প্রয়োজন, যেমন Bug Bounty Methodology ডকুমেন্টেশনের automation-vs-manual-verification নীতি।</p></div>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>কেন একটি স্বয়ংক্রিয় স্ক্যানারের ফলাফল (যেমন MobSF রিপোর্ট) ম্যানুয়ালি যাচাই করা প্রয়োজন তা ব্যাখ্যা করুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>Static Analysis কোড চালানো ছাড়াই দুর্বলতা শনাক্ত করে — MobSF একটি স্বয়ংক্রিয় সর্বাঙ্গীণ স্ক্যানার, আর apktool/jadx ম্যানুয়াল deep-dive বিশ্লেষণের জন্য ব্যবহৃত হয়। স্বয়ংক্রিয় ফলাফল সবসময় ম্যানুয়ালি যাচাই করা উচিত।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>Static ও Dynamic Analysis-এর মধ্যে মূল পার্থক্য কী?</li>
+      <li>MobSF কী ধরনের সমস্যা স্বয়ংক্রিয়ভাবে শনাক্ত করতে পারে?</li>
+      <li>কেন স্বয়ংক্রিয় স্ক্যানারের ফলাফল ম্যানুয়াল যাচাই প্রয়োজন?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter06"><span>পূর্ববর্তী</span>অধ্যায় ০৬ — Reverse Engineering</a>
+    <a class="next" href="/chapter08"><span>পরবর্তী</span>অধ্যায় ০৮ — Dynamic Analysis ও Frida</a>
+  </div>
+</section>
+
+<!-- =========================================================
+     CHAPTER 8 — Dynamic Analysis and Frida
+========================================================= -->
+<section class="chapter" id="chapter08">
+  <div class="eyebrow">অধ্যায় ০৮ · Dynamic Analysis</div>
+  <h1>Dynamic Analysis ও Frida</h1>
+  <p class="sub">অ্যাপ্লিকেশন বাস্তবে চালিয়ে, runtime-এ এর আচরণ পর্যবেক্ষণ ও এমনকি পরিবর্তন করার কৌশল।</p>
+
+  <div class="callout legal"><div class="ic">⚖️</div><p><strong>আইনি নোটিশ:</strong> Dynamic Instrumentation শুধুমাত্র নিজের বা অনুমোদিত অ্যাপ্লিকেশনে, নিজের ডিভাইসে প্রয়োগ করুন।</p></div>
+
+  <h2>Dynamic Analysis কী</h2>
+  <p>Static Analysis (অধ্যায় ৭) কোড পড়ে দুর্বলতা অনুমান করে — কিন্তু কিছু আচরণ (encryption/decryption-এর সময় key-র মান, রানটাইমে তৈরি হওয়া নেটওয়ার্ক request, pinning চেকের প্রকৃত ফলাফল) শুধুমাত্র অ্যাপ্লিকেশন সত্যিকারভাবে চালিয়ে দেখা যায় — এটাই <strong>Dynamic Analysis</strong>।</p>
+
+  <h2>Frida — একটি Dynamic Instrumentation Toolkit</h2>
+  <p><strong>Frida</strong> একটি শক্তিশালী ওপেন-সোর্স টুল, যা একটি চলমান অ্যাপ্লিকেশনের প্রক্রিয়ার মধ্যে JavaScript কোড "ইনজেক্ট" করতে দেয় — এর মাধ্যমে যেকোনো ফাংশন কল পর্যবেক্ষণ করা, তার রিটার্ন ভ্যালু পরিবর্তন করা, বা এমনকি সম্পূর্ণ লজিক বাইপাস করা সম্ভব হয়।</p>
+
+  <div class="codeblock">
+    <div class="cb-head"><span>ধারণাগত Frida স্ক্রিপ্ট — root detection bypass</span><button class="copy-btn">কপি</button></div>
+    <pre><code>Java.perform(function () {
+  var RootCheck = Java.use("com.example.app.security.RootDetector");
+  RootCheck.isDeviceRooted.implementation = function () {
+    console.log("[Frida] isDeviceRooted() called — forcing false");
+    return false;  // মূল চেক বাইপাস করে সবসময় false রিটার্ন করা
+  };
+});</code></pre>
+  </div>
+
+  <h2>Frida দিয়ে সাধারণত কী পরীক্ষা করা হয়</h2>
+  <table>
+    <thead><tr><th>লক্ষ্য</th><th>কেন</th></tr></thead>
+    <tbody>
+      <tr><td>Root/Jailbreak Detection Bypass</td><td>নিশ্চিত করা যে ডিটেকশন কতটা শক্তিশালী — একটি সহজ bypass একটি গুরুতর দুর্বলতা নির্দেশ করে</td></tr>
+      <tr><td>SSL Pinning Bypass</td><td>নেটওয়ার্ক ট্রাফিক ইন্টারসেপ্ট করে API যোগাযোগ বিশ্লেষণ করা (অধ্যায় ৪-এর সাথে সম্পর্কিত)</td></tr>
+      <tr><td>Business Logic পর্যবেক্ষণ</td><td>runtime-এ ফাংশন কল ট্রেস করে সিদ্ধান্ত-গ্রহণ প্রক্রিয়া বোঝা</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Emulator বনাম বাস্তব ডিভাইস</h2>
+  <div class="callout info"><div class="ic">💡</div><p>অনেক অ্যাপ্লিকেশন emulator ডিটেকশন বাস্তবায়ন করে (অর্থাৎ emulator-এ চললে অ্যাপ্লিকেশন কাজ করতে অস্বীকার করে) — একটি সম্পূর্ণ dynamic analysis প্রায়ই একটি বাস্তব, rooted/jailbroken টেস্ট ডিভাইসে করা উচিত, শুধু emulator-এ নয়।</p></div>
+
+  <h2>Dynamic Analysis-এর সীমাবদ্ধতা</h2>
+  <p>Dynamic Analysis একটি নির্দিষ্ট রান-টাইম পাথ (যে কোড পথ ইউজার/টেস্টার প্রকৃতপক্ষে ট্রিগার করেছেন) দেখাতে পারে — কিন্তু কোডের এমন অংশ, যা পরীক্ষার সময় কখনো এক্সিকিউট হয়নি, তা অদেখা থেকে যেতে পারে। তাই Static ও Dynamic Analysis একসাথে ব্যবহার করে সর্বোচ্চ কভারেজ নিশ্চিত করা হয়।</p>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>কেন Frida-র মতো একটি dynamic instrumentation টুল root detection bypass করতে সক্ষম, যেখানে শুধু কোড পড়ে (static) সেই bypass সম্ভব নাও হতে পারে তা ব্যাখ্যা করুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>Dynamic Analysis একটি অ্যাপ্লিকেশন বাস্তবে চালিয়ে runtime আচরণ পর্যবেক্ষণ/পরিবর্তন করে — Frida একটি শক্তিশালী instrumentation টুল, যা root detection ও SSL pinning বাইপাসের মতো কাজে ব্যবহৃত হয়। Static ও Dynamic Analysis পরিপূরক, একা কোনোটিই সম্পূর্ণ কভারেজ দেয় না।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>Dynamic Analysis Static Analysis থেকে কী বাড়তি সুবিধা দেয়?</li>
+      <li>Frida মূলত কী কাজ করে?</li>
+      <li>কেন একটি সম্পূর্ণ dynamic analysis শুধু emulator-এ সীমাবদ্ধ না রাখা ভালো?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter07"><span>পূর্ববর্তী</span>অধ্যায় ০৭ — Static Analysis Tools</a>
+    <a class="next" href="/chapter09"><span>পরবর্তী</span>অধ্যায় ০৯ — Code Tampering ও Binary Protection</a>
+  </div>
+</section>
+
+<!-- =========================================================
+     CHAPTER 9 — Code Tampering and Binary Protection
+========================================================= -->
+<section class="chapter" id="chapter09">
+  <div class="eyebrow">অধ্যায় ০৯ · Binary Protection</div>
+  <h1>Code Tampering ও Binary Protection</h1>
+  <p class="sub">attacker একটি অ্যাপ্লিকেশন বাইনারিকে পরিবর্তন করে কীভাবে পুনঃবিতরণ করতে পারেন — এবং এর বিরুদ্ধে কী প্রতিরক্ষা আছে।</p>
+
+  <div class="callout legal"><div class="ic">⚖️</div><p><strong>আইনি নোটিশ:</strong> Code Tampering কৌশল শুধুমাত্র নিজের বা অনুমোদিত অ্যাপ্লিকেশনে, শিক্ষামূলক উদ্দেশ্যে ব্যবহার করুন।</p></div>
+
+  <h2>Code Tampering কী</h2>
+  <p><strong>Code Tampering</strong> হলো একটি অ্যাপ্লিকেশন বাইনারিকে (অধ্যায় ৬-এর reverse engineering কৌশল ব্যবহার করে) পরিবর্তন করা — যেমন একটি paid feature আনলক করা, একটি লাইসেন্সিং চেক বাদ দেওয়া, বা দূষিত কোড যুক্ত করে পুনরায় প্যাকেজ করা (repackaging) এবং তৃতীয়-পক্ষ স্টোর থেকে বিতরণ করা, যা ইউজারদের জন্য গুরুতর ঝুঁকি তৈরি করে।</p>
+
+  <h2>সাধারণ Tampering দৃশ্যকল্প</h2>
+  <table>
+    <thead><tr><th>দৃশ্যকল্প</th><th>বিবরণ</th></tr></thead>
+    <tbody>
+      <tr><td>Repackaging</td><td>একটি জনপ্রিয় অ্যাপ্লিকেশনে দূষিত কোড যুক্ত করে, একই নামে/আইকনে তৃতীয়-পক্ষ স্টোরে প্রকাশ করা</td></tr>
+      <tr><td>License Bypass</td><td>একটি paid অ্যাপ্লিকেশনের লাইসেন্স যাচাই কোড সরিয়ে ফ্রি-তে বিতরণ করা</td></tr>
+      <tr><td>Logic Modification</td><td>একটি গেম বা ইউটিলিটি অ্যাপ্লিকেশনের নিয়ম/সীমা বাইপাস করা (যেমন "cheat")</td></tr>
+    </tbody>
+  </table>
+
+  <h2>প্রতিরক্ষা — Binary Protection কৌশল</h2>
+  <div class="grid2">
+    <div class="card"><h4>🔒 Code Obfuscation</h4><p>কোডের নাম/গঠন এমনভাবে পরিবর্তন করা যাতে decompile করা কোড পড়া ও বোঝা কঠিন হয় (ProGuard/R8-এর মতো টুল) — এটি reverse engineering-কে সম্পূর্ণ বন্ধ করে না, কিন্তু উল্লেখযোগ্যভাবে কঠিন করে তোলে।</p></div>
+    <div class="card"><h4>🔒 Integrity Check</h4><p>অ্যাপ্লিকেশন নিজে runtime-এ যাচাই করে যে তার নিজের কোড/সিগনেচার পরিবর্তিত হয়নি — যদি tampering শনাক্ত হয়, অ্যাপ্লিকেশন চালানো বন্ধ করে দেয়।</p></div>
+  </div>
+
+  <div class="codeblock">
+    <div class="cb-head"><span>ধারণাগত Integrity Check উদাহরণ</span><button class="copy-btn">কপি</button></div>
+    <pre><code>// অ্যাপ্লিকেশন নিজের APK signature runtime-এ যাচাই করে
+if (!verifyAppSignature(expectedSignatureHash)) {
+    // signature মেলেনি — অ্যাপ্লিকেশন tampered হয়েছে
+    exitApp("Application integrity check failed");
+}</code></pre>
+  </div>
+
+  <h2>একটি গুরুত্বপূর্ণ সীমাবদ্ধতা</h2>
+  <div class="callout warn"><div class="ic">⚠️</div><p><strong>Obfuscation/Integrity Check নিখুঁত নয়:</strong> যেহেতু সব যাচাই লজিক শেষ পর্যন্ত ক্লায়েন্ট-সাইডে, attacker-এর ডিভাইসে চলে (অধ্যায় ১), একজন দক্ষ attacker (অধ্যায় ৮-এর Frida-র মতো টুল ব্যবহার করে) এই যাচাই লজিককেও বাইপাস করতে সক্ষম হতে পারেন। এই কৌশলগুলো আক্রমণকারীর কাজ কঠিন করে তোলে, কিন্তু "অসম্ভব" করে না — Common Web Vulnerabilities ডকুমেন্টেশনের "security through obscurity একা যথেষ্ট নয়" নীতির একটি প্রয়োগ।</p></div>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>কেন Code Obfuscation ও Integrity Check একজন দক্ষ attacker-কে সম্পূর্ণভাবে থামাতে পারে না, তা ব্যাখ্যা করুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>Code Tampering হলো একটি অ্যাপ্লিকেশন বাইনারিকে পরিবর্তন করে পুনর্বিতরণ করা — repackaging ও license bypass সাধারণ উদাহরণ। Code Obfuscation ও Integrity Check এই ঝুঁকি কমায়, কিন্তু ক্লায়েন্ট-সাইড প্রকৃতির কারণে এগুলো নিখুঁত প্রতিরক্ষা নয়।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>Repackaging কী এবং এটি ইউজারদের জন্য কেন ঝুঁকিপূর্ণ?</li>
+      <li>Code Obfuscation কী করে, এবং কী করে না?</li>
+      <li>কেন ক্লায়েন্ট-সাইড Integrity Check একা সম্পূর্ণ সুরক্ষা নয়?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter08"><span>পূর্ববর্তী</span>অধ্যায় ০৮ — Dynamic Analysis ও Frida</a>
+    <a class="next" href="/chapter10"><span>পরবর্তী</span>অধ্যায় ১০ — Insecure Cryptography</a>
+  </div>
+</section>
+
+<!-- =========================================================
+     CHAPTER 10 — Insecure Cryptography
+========================================================= -->
+<section class="chapter" id="chapter10">
+  <div class="eyebrow">অধ্যায় ১০ · Cryptography</div>
+  <h1>Insecure Cryptography</h1>
+  <p class="sub">মোবাইল অ্যাপ্লিকেশনে এনক্রিপশন বাস্তবায়নের সময় সাধারণ ভুল।</p>
+
+  <div class="callout legal"><div class="ic">⚖️</div><p><strong>আইনি নোটিশ:</strong> শুধুমাত্র নিজের অ্যাপ্লিকেশনে এই cryptography-সংক্রান্ত ধারণা যাচাই করুন।</p></div>
+
+  <h2>সাধারণ Cryptographic ভুল</h2>
+  <table>
+    <thead><tr><th>ভুল</th><th>সমস্যা</th></tr></thead>
+    <tbody>
+      <tr><td>দুর্বল/পুরনো অ্যালগরিদম (MD5, DES)</td><td>আধুনিক কম্পিউটিং ক্ষমতা দিয়ে সহজে ভাঙা সম্ভব</td></tr>
+      <tr><td>Hardcoded Encryption Key</td><td>যদি key অ্যাপ্লিকেশন কোডে থাকে, attacker reverse engineering (অধ্যায় ৬)-এর মাধ্যমে সহজে পেয়ে যান</td></tr>
+      <tr><td>কাস্টম/নিজের তৈরি অ্যালগরিদম</td><td>Common Web Vulnerabilities ডকুমেন্টেশনের "নিজের cryptography তৈরি করবেন না" নীতি — প্রায় সবসময় দুর্বল</td></tr>
+      <tr><td>স্থির (static) IV/Salt</td><td>একই ইনপুট সবসময় একই আউটপুট তৈরি করে, যা প্যাটার্ন বিশ্লেষণযোগ্য করে তোলে</td></tr>
+    </tbody>
+  </table>
+
+  <h2>"হার্ডকোডেড কি" সমস্যার একটি বাস্তব উদাহরণ</h2>
+  <div class="codeblock">
+    <div class="cb-head"><span>ধারণাগত Insecure Cryptography উদাহরণ</span><button class="copy-btn">কপি</button></div>
+    <pre><code>// Insecure: encryption key সরাসরি কোডে hardcoded
+private static final String SECRET_KEY = "MyHardcodedKey123";
+// reverse engineering দিয়ে (অধ্যায় ৬) এই key সহজেই উদ্ধারযোগ্য —
+// এনক্রিপটেড ডেটার সুরক্ষা কার্যত শূন্য হয়ে যায়</code></pre>
+  </div>
+
+  <h2>সঠিক অনুশীলন</h2>
+  <div class="grid2">
+    <div class="card"><h4>✅ প্রমাণিত লাইব্রেরি ব্যবহার</h4><p>প্ল্যাটফর্মের নিজস্ব, পরীক্ষিত cryptographic লাইব্রেরি (Android Keystore API, iOS CryptoKit) ব্যবহার করুন — নিজে অ্যালগরিদম তৈরি করবেন না।</p></div>
+    <div class="card"><h4>✅ Key Derivation, Hardcode নয়</h4><p>Encryption key ডিভাইসে hardcode না করে, একটি সার্ভার-সাইড বা hardware-backed মেকানিজম (Keystore/Keychain, অধ্যায় ৩) থেকে প্রাপ্ত করুন।</p></div>
+  </div>
+
+  <h2>Password Hashing — আলাদা একটি বিষয়</h2>
+  <p>লক্ষণীয়, encryption (reversible) ও password hashing (one-way) ভিন্ন জিনিস — Authentication ডকুমেন্টেশনে আলোচিত bcrypt/Argon2-এর মতো hashing অ্যালগরিদম পাসওয়ার্ড সংরক্ষণের জন্য ব্যবহৃত হয়, যা এই অধ্যায়ের encryption আলোচনা থেকে ভিন্ন, যদিও একই পরিবারের ক্রিপ্টোগ্রাফিক নীতির অংশ।</p>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>কেন একটি hardcoded encryption key ব্যবহারিকভাবে "no encryption"-এর সমতুল্য হতে পারে তা ব্যাখ্যা করুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>মোবাইল অ্যাপ্লিকেশনে দুর্বল অ্যালগরিদম, hardcoded key, বা কাস্টম cryptography ব্যবহার একটি সাধারণ ও গুরুতর ভুল — সমাধান হলো প্রমাণিত প্ল্যাটফর্ম লাইব্রেরি ও hardware-backed key management ব্যবহার করা।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>কেন একটি কাস্টম, নিজের তৈরি cryptographic অ্যালগরিদম ঝুঁকিপূর্ণ?</li>
+      <li>Hardcoded Encryption Key কেন reverse engineering-এর মাধ্যমে উদ্ধারযোগ্য?</li>
+      <li>Encryption ও Password Hashing-এর মধ্যে মূল পার্থক্য কী?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter09"><span>পূর্ববর্তী</span>অধ্যায় ০৯ — Code Tampering ও Binary Protection</a>
+    <a class="next" href="/chapter11"><span>পরবর্তী</span>অধ্যায় ১১ — Platform-Specific Misuse</a>
+  </div>
+</section>
+
+<!-- =========================================================
+     CHAPTER 11 — Platform-Specific Misuse
+========================================================= -->
+<section class="chapter" id="chapter11">
+  <div class="eyebrow">অধ্যায় ১১ · Platform Misuse</div>
+  <h1>Platform-Specific Misuse</h1>
+  <p class="sub">Permission, Intent, ও WebView — Android/iOS প্ল্যাটফর্মের নিজস্ব ফিচারের ভুল ব্যবহার থেকে উদ্ভূত ঝুঁকি।</p>
+
+  <div class="callout legal"><div class="ic">⚖️</div><p><strong>আইনি নোটিশ:</strong> শুধুমাত্র নিজের বা অনুমোদিত অ্যাপ্লিকেশনে এই ধারণাগুলো যাচাই করুন।</p></div>
+
+  <h2>Excessive Permission</h2>
+  <p>অধ্যায় ১-এ আলোচিত Permission মডেল অনুযায়ী, একটি অ্যাপ্লিকেশনের প্রয়োজনের চেয়ে বেশি permission চাওয়া (যেমন একটি সাধারণ নোট অ্যাপ্লিকেশন ক্যামেরা/কন্টাক্ট অ্যাক্সেস চাওয়া) একটি প্রাইভেসি ঝুঁকি — যদি অ্যাপ্লিকেশনটি পরবর্তীতে আপোস হয়, সেই অতিরিক্ত অ্যাক্সেসও attacker-এর হাতে চলে যায়।</p>
+
+  <h2>Android Exported Components</h2>
+  <p>একটি Android অ্যাপ্লিকেশনের Activity, Service, বা Broadcast Receiver যদি ভুলবশত <code>exported="true"</code> সেট করা থাকে, অন্য যেকোনো অ্যাপ্লিকেশন (এমনকি একটি দূষিত অ্যাপ্লিকেশন) সরাসরি সেই কম্পোনেন্ট ট্রিগার করতে পারে — Application Sandboxing (অধ্যায় ১)-এর একটি গুরুত্বপূর্ণ ফাঁক।</p>
+
+  <div class="codeblock">
+    <div class="cb-head"><span>ধারণাগত অতিরিক্ত Exported Component</span><button class="copy-btn">কপি</button></div>
+    <pre><code>&lt;!-- বিপজ্জনক: সংবেদনশীল Activity ভুলবশত exported --&gt;
+&lt;activity android:name=".AdminPanelActivity" android:exported="true" /&gt;
+&lt;!-- যেকোনো ইনস্টল করা অ্যাপ্লিকেশন সরাসরি এই Activity চালু করতে পারে --&gt;</code></pre>
+  </div>
+
+  <h2>Intent-ভিত্তিক ঝুঁকি (Android)</h2>
+  <p><strong>Intent</strong> হলো Android-এর কম্পোনেন্টের মধ্যে যোগাযোগের মেকানিজম — যদি একটি অ্যাপ্লিকেশন একটি Intent-এ সংবেদনশীল ডেটা (যেমন একটি সেশন টোকেন) পাঠায়, এবং সেই Intent "implicit" (নির্দিষ্ট গ্রহীতা ছাড়া) হয়, অন্য একটি দূষিত অ্যাপ্লিকেশন সেই ডেটা ইন্টারসেপ্ট করতে পারে।</p>
+
+  <h2>WebView — একটি সাধারণ বিপজ্জনক কম্পোনেন্ট</h2>
+  <div class="callout danger"><div class="ic">🚨</div><p><strong>WebView ঝুঁকি:</strong> অনেক মোবাইল অ্যাপ্লিকেশন একটি embedded ব্রাউজার (<code>WebView</code>) ব্যবহার করে ওয়েব কন্টেন্ট দেখায়। যদি WebView-তে JavaScript-এর জন্য নেটিভ কোডের একটি "bridge" (যেমন Android-এর <code>addJavascriptInterface</code>) ভুলভাবে কনফিগার করা থাকে এবং WebView অবিশ্বস্ত কন্টেন্ট লোড করে, একটি XSS-জাতীয় দুর্বলতা সরাসরি ডিভাইসের নেটিভ ফাংশনে পৌঁছে যেতে পারে — Common Web Vulnerabilities ডকুমেন্টেশনের XSS অধ্যায়ের একটি মোবাইল-নির্দিষ্ট, আরও গুরুতর রূপ।</p></div>
+
+  <h2>Security Misconfiguration-এর অন্যান্য উদাহরণ</h2>
+  <ul>
+    <li>Debug mode/logging প্রোডাকশন বিল্ডে চালু রাখা</li>
+    <li>Backup allowed flag (Android) ভুলভাবে সক্রিয় রাখা, যা ADB দিয়ে অ্যাপ্লিকেশন ডেটা এক্সট্র্যাক্ট সহজ করে</li>
+    <li>Debuggable flag প্রোডাকশন বিল্ডে চালু রাখা</li>
+  </ul>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>কেন একটি "exported" Android কম্পোনেন্ট Application Sandboxing-এর সুরক্ষাকে দুর্বল করে দেয়, তা ব্যাখ্যা করুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>Platform-Specific Misuse-এ Excessive Permission, ভুলভাবে Exported Component, Intent-ভিত্তিক ডেটা leakage, এবং অনিরাপদ WebView কনফিগারেশন অন্তর্ভুক্ত — এগুলো প্রতিটি প্ল্যাটফর্মের নিজস্ব ফিচারের ভুল ব্যবহার থেকে উদ্ভূত, এবং সাবধানী কনফিগারেশন দিয়ে প্রতিরোধযোগ্য।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>Excessive Permission কেন একটি প্রাইভেসি ঝুঁকি?</li>
+      <li>Exported Component কী ঝুঁকি তৈরি করে?</li>
+      <li>WebView কেন একটি বিশেষভাবে বিপজ্জনক কম্পোনেন্ট হতে পারে?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter10"><span>পূর্ববর্তী</span>অধ্যায় ১০ — Insecure Cryptography</a>
+    <a class="next" href="/chapter12"><span>পরবর্তী</span>অধ্যায় ১২ — Third-Party Library ও SDK ঝুঁকি</a>
+  </div>
+</section>
+
+<!-- =========================================================
+     CHAPTER 12 — Third-Party Library and SDK Risks
+========================================================= -->
+<section class="chapter" id="chapter12">
+  <div class="eyebrow">অধ্যায় ১২ · Third-Party</div>
+  <h1>Third-Party Library ও SDK ঝুঁকি</h1>
+  <p class="sub">একটি মোবাইল অ্যাপ্লিকেশনের নিরাপত্তা শুধু নিজের লেখা কোডের উপর নির্ভর করে না।</p>
+
+  <div class="callout legal"><div class="ic">⚖️</div><p><strong>আইনি নোটিশ:</strong> শুধুমাত্র নিজের বা অনুমোদিত অ্যাপ্লিকেশনে এই বিশ্লেষণ প্রয়োগ করুন।</p></div>
+
+  <h2>আধুনিক অ্যাপ্লিকেশনের নির্ভরতা</h2>
+  <p>একটি আধুনিক মোবাইল অ্যাপ্লিকেশন সাধারণত দশ থেকে শত সংখ্যক তৃতীয়-পক্ষ লাইব্রেরি/SDK (analytics, advertisement, payment, crash reporting) ব্যবহার করে। প্রতিটি এই নির্ভরতা একটি অতিরিক্ত আক্রমণ-তল — এই অধ্যায় Common Web Vulnerabilities ডকুমেন্টেশনের Vulnerable Components অধ্যায়ের একটি মোবাইল-নির্দিষ্ট প্রয়োগ।</p>
+
+  <h2>সাধারণ Supply Chain ঝুঁকি</h2>
+  <table>
+    <thead><tr><th>ঝুঁকি</th><th>বিবরণ</th></tr></thead>
+    <tbody>
+      <tr><td>পুরনো/আপডেট না করা SDK</td><td>পরিচিত দুর্বলতাসহ একটি লাইব্রেরি ব্যবহার করা</td></tr>
+      <tr><td>অতিরিক্ত ডেটা সংগ্রহকারী SDK</td><td>একটি analytics/ad SDK প্রয়োজনের চেয়ে বেশি ব্যক্তিগত ডেটা সংগ্রহ ও পাঠানো</td></tr>
+      <tr><td>আপোসকৃত SDK সরবরাহকারী</td><td>একটি জনপ্রিয় SDK-এর নিজস্ব সার্ভার/আপডেট চ্যানেল আপোস হলে, এটি ব্যবহারকারী সব অ্যাপ্লিকেশন প্রভাবিত হয়</td></tr>
+      <tr><td>অতিরিক্ত Permission দাবি</td><td>একটি SDK নিজের প্রয়োজনের চেয়ে বেশি permission চায়, যা মূল অ্যাপ্লিকেশনের সামগ্রিক আক্রমণ-তল বাড়ায়</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Software Bill of Materials (SBOM)</h2>
+  <div class="callout info"><div class="ic">💡</div><p>একটি অ্যাপ্লিকেশনে ঠিক কোন কোন লাইব্রেরি, কোন ভার্সনে ব্যবহৃত হচ্ছে তার একটি স্পষ্ট তালিকা (<strong>SBOM</strong>) রাখা একটি গুরুত্বপূর্ণ অনুশীলন — এটি একটি নতুন আবিষ্কৃত vulnerability (CVE)-এর প্রভাব দ্রুত মূল্যায়ন করতে সাহায্য করে।</p></div>
+
+  <h2>SDK অডিট করার একটি ব্যবহারিক পদ্ধতি</h2>
+  <div class="codeblock">
+    <div class="cb-head"><span>ধারণাগত SDK ট্রাফিক পর্যালোচনা</span><button class="copy-btn">কপি</button></div>
+    <pre><code>১. Dynamic Analysis (অধ্যায় ৮)-এর সময়, সব আউটগোয়িং নেটওয়ার্ক request পর্যালোচনা করা
+২. কোন request প্রথম-পক্ষ API-তে যাচ্ছে, কোনটি তৃতীয়-পক্ষ SDK ডোমেইনে যাচ্ছে তা আলাদা করা
+৩. তৃতীয়-পক্ষ request-এ কোনো অপ্রত্যাশিত ব্যক্তিগত ডেটা পাঠানো হচ্ছে কিনা পরীক্ষা করা</code></pre>
+  </div>
+
+  <h2>নির্ভরযোগ্য উৎস থেকে SDK বাছাই</h2>
+  <p>একটি প্রতিষ্ঠান নতুন SDK অন্তর্ভুক্ত করার আগে, এর ডকুমেন্টেশন, নিরাপত্তা ইতিহাস, ও ডেটা প্রাইভেসি নীতি পর্যালোচনা করা উচিত — অধ্যায় ৬-এ আলোচিত reverse engineering কৌশল ব্যবহার করে, একটি SDK নিজে কী ডেটা সংগ্রহ করছে তা স্বাধীনভাবে যাচাই করাও সম্ভব।</p>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>কেন একটি জনপ্রিয় তৃতীয়-পক্ষ SDK-এর নিজস্ব আপোস, সেই SDK ব্যবহারকারী একাধিক ভিন্ন অ্যাপ্লিকেশনকে একসাথে প্রভাবিত করতে পারে তা ব্যাখ্যা করুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>তৃতীয়-পক্ষ লাইব্রেরি/SDK একটি অতিরিক্ত আক্রমণ-তল তৈরি করে — পুরনো SDK, অতিরিক্ত ডেটা সংগ্রহ, ও সরবরাহ-চেইন আপোস সাধারণ ঝুঁকি। একটি স্পষ্ট SBOM ও নিয়মিত নেটওয়ার্ক ট্রাফিক পর্যালোচনা এই ঝুঁকি পরিচালনায় সাহায্য করে।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>কেন তৃতীয়-পক্ষ SDK একটি অ্যাপ্লিকেশনের আক্রমণ-তল বাড়ায়?</li>
+      <li>SBOM কী এবং এটি কেন উপযোগী?</li>
+      <li>কীভাবে একটি SDK প্রকৃতপক্ষে কী ডেটা পাঠাচ্ছে তা স্বাধীনভাবে যাচাই করা যায়?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter11"><span>পূর্ববর্তী</span>অধ্যায় ১১ — Platform-Specific Misuse</a>
+    <a class="next" href="/chapter13"><span>পরবর্তী</span>অধ্যায় ১৩ — Mobile API Security</a>
+  </div>
+</section>
+
+<!-- =========================================================
+     CHAPTER 13 — Mobile API Security
+========================================================= -->
+<section class="chapter" id="chapter13">
+  <div class="eyebrow">অধ্যায় ১৩ · Mobile API</div>
+  <h1>Mobile API Security</h1>
+  <p class="sub">API Security ডকুমেন্টেশনের নীতি মোবাইল-নির্দিষ্ট প্রেক্ষাপটে — ব্যাকএন্ড এন্ডপয়েন্ট আবিষ্কার ও পরীক্ষা।</p>
+
+  <div class="callout legal"><div class="ic">⚖️</div><p><strong>আইনি নোটিশ:</strong> শুধুমাত্র নিজের বা অনুমোদিত/scope-ভুক্ত API endpoint পরীক্ষা করুন।</p></div>
+
+  <h2>মোবাইল ক্লায়েন্ট, API-কেন্দ্রিক ব্যাকএন্ড</h2>
+  <p>প্রায় প্রতিটি আধুনিক মোবাইল অ্যাপ্লিকেশন একটি REST/GraphQL API-এর ক্লায়েন্ট মাত্র — সত্যিকারের বিজনেস লজিক ও ডেটা সার্ভারে থাকে। এর অর্থ API Security ডকুমেন্টেশনে আলোচিত সব ঝুঁকি (Broken Object Level Authorization, Excessive Data Exposure, Rate Limiting অভাব) এখানে সরাসরি প্রযোজ্য — অ্যাপ্লিকেশনটি শুধু সেই API-কে কল করার একটি মাধ্যম।</p>
+
+  <h2>Hidden/Undocumented Endpoint আবিষ্কার</h2>
+  <p>একটি মোবাইল অ্যাপ্লিকেশনের বাইনারি (অধ্যায় ৬ ও ৭-এর কৌশল ব্যবহার করে) প্রায়ই এমন endpoint উন্মোচন করে, যা পাবলিক API ডকুমেন্টেশনে নেই — যেমন একটি admin-only ফিচার বা একটি আসন্ন ফিচারের endpoint, যা এখনও UI-তে সক্রিয় নয় কিন্তু সার্ভারে কার্যকর আছে।</p>
+
+  <div class="codeblock">
+    <div class="cb-head"><span>ধারণাগত endpoint আবিষ্কার ওয়ার্কফ্লো</span><button class="copy-btn">কপি</button></div>
+    <pre><code>১. Dynamic Analysis (Frida/Proxy)-এর সময় সব API request লগ করা
+২. decompile করা কোডে (jadx) string constant হিসেবে থাকা URL/endpoint খুঁজে বের করা
+৩. প্রতিটি আবিষ্কৃত endpoint-এ BOLA/IDOR-জাতীয় দুর্বলতা যাচাই করা
+   (নিজের টেস্ট অ্যাকাউন্ট দিয়ে, অনুমোদিত scope-এর মধ্যে)</code></pre>
+  </div>
+
+  <h2>Mobile-নির্দিষ্ট API ঝুঁকি</h2>
+  <table>
+    <thead><tr><th>ঝুঁকি</th><th>বিবরণ</th></tr></thead>
+    <tbody>
+      <tr><td>API Key ক্লায়েন্টে hardcoded</td><td>একটি third-party API-এর key অ্যাপ্লিকেশন বাইনারিতে রাখা, যা reverse engineering দিয়ে উদ্ধারযোগ্য (অধ্যায় ৬)</td></tr>
+      <tr><td>সার্ভার-সাইড ইনপুট ভ্যালিডেশনের উপর অতিরিক্ত নির্ভরতা না করা</td><td>মোবাইল ক্লায়েন্টে input validation থাকলেও, attacker সরাসরি API কল করতে পারেন (ক্লায়েন্ট UI বাইপাস করে)</td></tr>
+      <tr><td>Rate Limiting অনুপস্থিতি</td><td>একটি মোবাইল-নির্দিষ্ট endpoint-এ (যেমন OTP verification) rate limiting না থাকলে brute-force সম্ভব</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn"><div class="ic">⚠️</div><p><strong>একটি গুরুত্বপূর্ণ নীতি:</strong> যেহেতু attacker মোবাইল অ্যাপ্লিকেশনের UI সম্পূর্ণভাবে বাইপাস করে সরাসরি API-তে request পাঠাতে পারেন (যেমন Burp Suite দিয়ে ক্যাপচার করা একটি request পুনরায় পাঠিয়ে), ক্লায়েন্ট-সাইড UI-তে থাকা যেকোনো ভ্যালিডেশন/নিয়ন্ত্রণকে কখনো একমাত্র নিরাপত্তা নিয়ন্ত্রণ হিসেবে বিবেচনা করা উচিত নয়। সার্ভার-সাইড-ই চূড়ান্ত সিদ্ধান্ত নেয়।</p></div>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>কেন একটি মোবাইল অ্যাপ্লিকেশনের UI-তে থাকা "input validation" একটি সত্যিকারের নিরাপত্তা নিয়ন্ত্রণ নয় তা ব্যাখ্যা করুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>মোবাইল অ্যাপ্লিকেশন সাধারণত একটি API ক্লায়েন্ট মাত্র — API Security ডকুমেন্টেশনের সব ঝুঁকি এখানে প্রযোজ্য। Reverse Engineering ও Dynamic Analysis দিয়ে hidden endpoint আবিষ্কার করা যায়, এবং সার্ভার-সাইডই সবসময় চূড়ান্ত নিরাপত্তা নিয়ন্ত্রণ হওয়া উচিত।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>কেন একটি মোবাইল অ্যাপ্লিকেশনের নিরাপত্তা অনেকাংশে এর ব্যাকএন্ড API-এর নিরাপত্তার সমতুল্য?</li>
+      <li>Hidden/Undocumented Endpoint কীভাবে আবিষ্কৃত হতে পারে?</li>
+      <li>কেন ক্লায়েন্ট-সাইড input validation একা যথেষ্ট নয়?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter12"><span>পূর্ববর্তী</span>অধ্যায় ১২ — Third-Party Library ও SDK ঝুঁকি</a>
+    <a class="next" href="/chapter14"><span>পরবর্তী</span>অধ্যায় ১৪ — Mobile Pentesting Methodology</a>
+  </div>
+</section>
+
+<!-- =========================================================
+     CHAPTER 14 — Mobile Pentesting Methodology
+========================================================= -->
+<section class="chapter" id="chapter14">
+  <div class="eyebrow">অধ্যায় ১৪ · Methodology</div>
+  <h1>Mobile Pentesting Methodology ও Checklist</h1>
+  <p class="sub">এই ডকুমেন্টেশনের সব ধারণা একত্র করে, একটি বাস্তব মোবাইল পেন্টেস্টের ধাপে-ধাপে ওয়ার্কফ্লো।</p>
+
+  <div class="callout legal"><div class="ic">⚖️</div><p><strong>আইনি নোটিশ:</strong> নিচের methodology শুধুমাত্র scope-ভুক্ত, অনুমোদিত অ্যাপ্লিকেশনে প্রয়োগ করুন — Bug Bounty Methodology ডকুমেন্টেশনের scope নীতি এখানেও প্রযোজ্য।</p></div>
+
+  <h2>একটি সম্পূর্ণ Mobile Pentest-এর ধাপ</h2>
+  <div class="grid3">
+    <div class="card"><h4>১. Reconnaissance</h4><p>অ্যাপ্লিকেশনের metadata, permission তালিকা, এবং প্রাথমিক তথ্য সংগ্রহ (App Store/Play Store তালিকা থেকেও)।</p></div>
+    <div class="card"><h4>২. Static Analysis</h4><p>MobSF/apktool/jadx দিয়ে বাইনারি বিশ্লেষণ — hardcoded secret, misconfiguration খোঁজা (অধ্যায় ৬-৭)।</p></div>
+    <div class="card"><h4>৩. Dynamic Analysis</h4><p>Frida ও proxy টুল দিয়ে runtime আচরণ ও নেটওয়ার্ক ট্রাফিক পর্যবেক্ষণ (অধ্যায় ৮)।</p></div>
+    <div class="card"><h4>৪. API Testing</h4><p>ব্যাকএন্ড API-তে BOLA, auth bypass, ও অন্যান্য দুর্বলতা যাচাই (অধ্যায় ১৩)।</p></div>
+    <div class="card"><h4>৫. Business Logic Review</h4><p>অ্যাপ্লিকেশন-নির্দিষ্ট লজিক (পেমেন্ট, লাইসেন্সিং) manual ভাবে পরীক্ষা।</p></div>
+    <div class="card"><h4>৬. Reporting</h4><p>Bug Bounty Methodology ডকুমেন্টেশনের নীতি অনুসরণ করে স্পষ্ট, reproducible রিপোর্ট লেখা।</p></div>
+  </div>
+
+  <h2>একটি সংক্ষিপ্ত চেকলিস্ট</h2>
+  <table>
+    <thead><tr><th>বিভাগ</th><th>আইটেম</th></tr></thead>
+    <tbody>
+      <tr><td>Storage</td><td>সংবেদনশীল ডেটা এনক্রিপ্টেড/Keystore-এ সংরক্ষিত (অধ্যায় ৩)</td></tr>
+      <tr><td>Communication</td><td>HTTPS বাধ্যতামূলক, Certificate Pinning আছে (অধ্যায় ৪)</td></tr>
+      <tr><td>Authentication</td><td>সার্ভার-সাইড token যাচাই, MFA বিবেচনা (অধ্যায় ৫)</td></tr>
+      <tr><td>Binary</td><td>Obfuscation ও Integrity Check প্রয়োগ (অধ্যায় ৯)</td></tr>
+      <tr><td>Cryptography</td><td>প্রমাণিত লাইব্রেরি, কোনো hardcoded key নেই (অধ্যায় ১০)</td></tr>
+      <tr><td>Platform</td><td>ন্যূনতম Permission, কোনো অপ্রয়োজনীয় exported component নেই (অধ্যায় ১১)</td></tr>
+      <tr><td>API</td><td>সার্ভার-সাইড validation, rate limiting, BOLA প্রতিরোধ (অধ্যায় ১৩)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Static ও Dynamic Analysis-এর সঠিক ক্রম</h2>
+  <div class="callout info"><div class="ic">💡</div><p>বাস্তবে, একটি দক্ষ পেন্টেস্টার Static ও Dynamic Analysis-এর মধ্যে বারবার যাতায়াত করেন — static analysis-এ পাওয়া একটি সূত্র (যেমন একটি endpoint বা ফ্ল্যাগ) dynamic analysis-এ নিশ্চিত/অস্বীকার করা হয়, এবং এর বিপরীতও সত্য। এই দুই ধাপ ধারাবাহিক নয়, বরং চক্রাকার।</p></div>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>কেন একটি সম্পূর্ণ মোবাইল পেন্টেস্টে শুধু Static Analysis বা শুধু Dynamic Analysis যথেষ্ট নয় তা ব্যাখ্যা করুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>একটি সম্পূর্ণ Mobile Pentesting Methodology Reconnaissance থেকে Reporting পর্যন্ত ছয়টি ধাপ অনুসরণ করে — Static ও Dynamic Analysis পরিপূরকভাবে ব্যবহৃত হয়, এবং এই ডকুমেন্টেশনের সব অধ্যায়ের ধারণা একটি সংক্ষিপ্ত চেকলিস্টে একত্র করা হয়েছে।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>একটি সম্পূর্ণ Mobile Pentest-এর প্রধান ধাপগুলো কী কী?</li>
+      <li>কেন Static ও Dynamic Analysis-এর মধ্যে বারবার যাতায়াত করা প্রয়োজন?</li>
+      <li>Bug Bounty Methodology ডকুমেন্টেশনের কোন নীতি Reporting ধাপে প্রযোজ্য?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter13"><span>পূর্ববর্তী</span>অধ্যায় ১৩ — Mobile API Security</a>
+    <a class="next" href="/chapter15"><span>পরবর্তী</span>অধ্যায় ১৫ — শব্দকোষ ও চিট শিট / FAQ</a>
+  </div>
+</section>
+
+<!-- =========================================================
+     CHAPTER 15 — Glossary, Cheat Sheet and FAQ
+========================================================= -->
+<section class="chapter" id="chapter15">
+  <div class="eyebrow">অধ্যায় ১৫ · Glossary</div>
+  <h1>শব্দকোষ ও চিট শিট / FAQ</h1>
+  <p class="sub">এই ডকুমেন্টেশনে ব্যবহৃত গুরুত্বপূর্ণ পরিভাষার একটি দ্রুত রেফারেন্স।</p>
+
+  <h2>মূল শব্দকোষ</h2>
+  <table>
+    <thead><tr><th>পরিভাষা</th><th>ব্যাখ্যা</th></tr></thead>
+    <tbody>
+      <tr><td><strong>APK / IPA</strong></td><td>Android / iOS অ্যাপ্লিকেশন প্যাকেজ ফাইল ফরম্যাট</td></tr>
+      <tr><td><strong>Sandboxing</strong></td><td>প্রতিটি অ্যাপ্লিকেশনকে একটি বিচ্ছিন্ন পরিবেশে চালানোর নিরাপত্তা মডেল</td></tr>
+      <tr><td><strong>OWASP Mobile Top 10</strong></td><td>মোবাইল অ্যাপ্লিকেশনের ১০টি সবচেয়ে সাধারণ নিরাপত্তা ঝুঁকির তালিকা</td></tr>
+      <tr><td><strong>Insecure Data Storage</strong></td><td>সংবেদনশীল ডেটা ডিভাইসে এনক্রিপশন ছাড়া সংরক্ষণ করার দুর্বলতা</td></tr>
+      <tr><td><strong>Certificate Pinning</strong></td><td>একটি নির্দিষ্ট সার্টিফিকেট/key-কেই একমাত্র বিশ্বস্ত হিসেবে বাধ্যতামূলক করা</td></tr>
+      <tr><td><strong>MITM</strong></td><td>Man-in-the-Middle — নেটওয়ার্ক ট্রাফিক ইন্টারসেপ্ট/পরিবর্তনের আক্রমণ</td></tr>
+      <tr><td><strong>Reverse Engineering</strong></td><td>কম্পাইল করা বাইনারি থেকে মূল কোড/লজিক পুনর্গঠন করা</td></tr>
+      <tr><td><strong>MobSF</strong></td><td>একটি স্বয়ংক্রিয় মোবাইল নিরাপত্তা স্ক্যানিং ফ্রেমওয়ার্ক</td></tr>
+      <tr><td><strong>Frida</strong></td><td>একটি dynamic instrumentation টুলকিট, runtime-এ কোড ইনজেকশনের জন্য ব্যবহৃত</td></tr>
+      <tr><td><strong>Code Tampering</strong></td><td>একটি অ্যাপ্লিকেশন বাইনারি পরিবর্তন করে পুনর্বিতরণ করা</td></tr>
+      <tr><td><strong>Obfuscation</strong></td><td>কোড পড়া কঠিন করতে এর গঠন/নাম পরিবর্তন করা</td></tr>
+      <tr><td><strong>Root/Jailbreak Detection</strong></td><td>ডিভাইস root/jailbroken কিনা অ্যাপ্লিকেশনের নিজস্ব যাচাই</td></tr>
+      <tr><td><strong>Exported Component</strong></td><td>অন্য অ্যাপ্লিকেশন থেকে সরাসরি ট্রিগারযোগ্য Android কম্পোনেন্ট</td></tr>
+      <tr><td><strong>WebView</strong></td><td>একটি অ্যাপ্লিকেশনের ভেতরে embedded ব্রাউজার কম্পোনেন্ট</td></tr>
+      <tr><td><strong>SBOM</strong></td><td>Software Bill of Materials — ব্যবহৃত লাইব্রেরি/ভার্সনের তালিকা</td></tr>
+    </tbody>
+  </table>
+
+  <h2>প্রায়শই জিজ্ঞাসিত প্রশ্ন</h2>
+  <details>
+    <summary>একটি অ্যাপ্লিকেশন App Store/Play Store-এ আছে মানেই কি এটি নিরাপদ?</summary>
+    <p>না। Store রিভিউ প্রক্রিয়া মূলত ম্যালওয়্যার ও নীতি লঙ্ঘন শনাক্ত করার জন্য ডিজাইন করা — এটি একটি গভীর নিরাপত্তা অডিট নয়। এই ডকুমেন্টেশনে আলোচিত অনেক দুর্বলতা (Insecure Storage, Insecure Communication) স্বাভাবিকভাবেই store রিভিউ পাস করে যায়।</p>
+  </details>
+  <details>
+    <summary>একজন শিক্ষার্থী হিসেবে Mobile Security শেখা কীভাবে শুরু করব?</summary>
+    <p>OWASP-এর তৈরি ইচ্ছাকৃতভাবে ঝুঁকিপূর্ণ অ্যাপ্লিকেশন (InsecureBankv2, OWASP MASTG Crackmes) দিয়ে একটি নিজস্ব lab পরিবেশে অনুশীলন করে — কখনো অনুমতি ছাড়া কোনো real অ্যাপ্লিকেশনে এই কৌশল প্রয়োগ না করে।</p>
+  </details>
+  <details>
+    <summary>এই ডকুমেন্টেশনের সাথে এই সিরিজের অন্য কোন ডকুমেন্টেশন সম্পর্কিত?</summary>
+    <p>Common Web Vulnerabilities (XSS/Injection-এর মোবাইল সমতুল্য ধারণা), API Security (ব্যাকএন্ড এন্ডপয়েন্ট ঝুঁকি), Network Security (TLS/MITM ভিত্তি), Authentication (MFA/token ব্যবস্থাপনা), এবং Bug Bounty Methodology (reporting/scope নীতি) — এই পাঁচটি ডকুমেন্টেশনের সাথে এই গাইডের ধারণা সরাসরি সংযুক্ত।</p>
+  </details>
+
+  <div class="summary-box">
+    <h4>কোর্স সম্পন্ন!</h4>
+    <p>অভিনন্দন — আপনি Mobile Application Security ডকুমেন্টেশনের সবগুলো অধ্যায় সম্পন্ন করেছেন। Android/iOS আর্কিটেকচার থেকে শুরু করে OWASP Mobile Top 10, Insecure Storage/Communication, Reverse Engineering, Static/Dynamic Analysis, Cryptography, ও একটি সম্পূর্ণ Pentesting Methodology পর্যন্ত — আপনি এখন মোবাইল অ্যাপ্লিকেশন নিরাপত্তার একটি দৃঢ় ভিত্তি অর্জন করেছেন।</p>
+  </div>
+
+  <div class="pager single">
+    <a class="single" href="/"><span>হোমে ফিরে যান</span>মূল পাতা</a>
+  </div>
+</section>
+
+
+      </div>
+    </div>
+    <footer class="site-footer">© learn.alamincyber.com — Mobile Security Documentation · শুধুমাত্র শিক্ষামূলক ও অনুমোদিত ব্যবহারের জন্য</footer>
+  </div>
+</div>
+
+<script>
+/* ===================== CHAPTER REGISTRY ===================== */
+var CHAPTERS = [
+  {id:"chapter01", num:"০১", title:"Mobile Application Security-র ভিত্তি"},
+  {id:"chapter02", num:"০২", title:"OWASP Mobile Top 10 — ভূমিকা"},
+  {id:"chapter03", num:"০৩", title:"Insecure Data Storage"},
+  {id:"chapter04", num:"০৪", title:"Insecure Communication"},
+  {id:"chapter05", num:"০৫", title:"Insecure Authentication ও Authorization"},
+  {id:"chapter06", num:"০৬", title:"Reverse Engineering — APK/IPA বিশ্লেষণ"},
+  {id:"chapter07", num:"০৭", title:"Static Analysis Tools"},
+  {id:"chapter08", num:"০৮", title:"Dynamic Analysis ও Frida"},
+  {id:"chapter09", num:"০৯", title:"Code Tampering ও Binary Protection"},
+  {id:"chapter10", num:"১০", title:"Insecure Cryptography"},
+  {id:"chapter11", num:"১১", title:"Platform-Specific Misuse"},
+  {id:"chapter12", num:"১২", title:"Third-Party Library ও SDK ঝুঁকি"},
+  {id:"chapter13", num:"১৩", title:"Mobile API Security"},
+  {id:"chapter14", num:"১৪", title:"Mobile Pentesting Methodology ও Checklist"},
+  {id:"chapter15", num:"১৫", title:"শব্দকোষ ও চিট শিট / FAQ"}
+];
+var DOC_INDEX = "https://learn.alamincyber.com/documentation/";
+
+/* ===================== BUILD SIDEBAR ===================== */
+(function buildToc(){
+  var toc = document.getElementById("toc");
+  var liHome = document.createElement("li");
+  liHome.innerHTML = '<a href="/"><span class="num">●</span>Mobile Security Documentation Home</a>';
+  toc.appendChild(liHome);
+  CHAPTERS.forEach(function(ch){
+    var li = document.createElement("li");
+    li.innerHTML = '<a href="/'+ch.id+'" data-id="'+ch.id+'"><span class="num">'+ch.num+'</span>'+ch.title+'</a>';
+    toc.appendChild(li);
+  });
+})();
+
+/* ===================== ROUTING (clean root-relative paths, e.g. /chapter02) ===================== */
+function idToPath(route){ return route === "" ? "/" : "/" + route; }
+function currentRouteFromPath(path){
+  var p = path.replace(/\/+$/,"") || "/";
+  var m = p.match(/chapter(\d{2})/);
+  if (m) return "chapter" + m[1];
+  // Anything that isn't a recognizable /chapterNN path is treated as the landing
+  // page — this covers "/", "/index.html", a nested deployment folder like
+  // "/documentation/csrf/", AND opening the file directly (file://...index.html,
+  // where location.pathname is the full filesystem path). A genuinely bad chapter
+  // number (e.g. /chapter99) still matches the regex above and correctly falls
+  // through to the not-found page via routeExists().
+  return "";
+}
+
+function routeExists(route){
+  if (route === "") return true;
+  return CHAPTERS.some(function(c){ return c.id === route; });
+}
+
+function showRoute(route, opts){
+  opts = opts || {};
+  var valid = routeExists(route) ? route : "__notfound__";
+  var sections = document.querySelectorAll(".chapter");
+  sections.forEach(function(s){ s.classList.remove("active"); });
+
+  var target;
+  if (valid === "") target = document.getElementById("landing");
+  else if (valid === "__notfound__") target = document.getElementById("notfound");
+  else target = document.getElementById(valid);
+
+  if (target) target.classList.add("active");
+
+  // sidebar active state
+  document.querySelectorAll(".toc a").forEach(function(a){
+    a.classList.toggle("active", a.getAttribute("data-id") === valid);
+  });
+
+  // topbar title + breadcrumb
+  var topTitle = document.getElementById("topTitle");
+  var breadcrumb = document.getElementById("breadcrumb");
+  if (valid === ""){
+    topTitle.textContent = "Mobile Security Documentation";
+    breadcrumb.innerHTML = "";
+  } else if (valid === "__notfound__"){
+    topTitle.textContent = "পাওয়া যায়নি";
+    breadcrumb.innerHTML = '<a href="/">Mobile Security Documentation</a> / ৪০৪';
+  } else {
+    var ch = CHAPTERS.filter(function(c){return c.id===valid;})[0];
+    topTitle.textContent = "অধ্যায় "+ch.num+" — "+ch.title;
+    breadcrumb.innerHTML = '<a href="/">Mobile Security Documentation</a> / অধ্যায় '+ch.num;
+  }
+
+  document.title = (valid===""? "Mobile Security Documentation" : (valid==="__notfound__" ? "404" : "অধ্যায় "+CHAPTERS.filter(function(c){return c.id===valid;})[0].num)) + " — Learn Cyber Security";
+
+  if (!opts.noScroll){
+    document.getElementById("content").scrollIntoView({block:"start"});
+    window.scrollTo(0,0);
+  }
+  closeSidebarMobile();
+}
+
+function navigateTo(route, push){
+  var path = idToPath(route);
+  if (push !== false && location.pathname !== path){
+    try {
+      history.pushState({route:route}, "", path);
+    } catch (e) {
+      // Some sandboxed/embedded preview contexts (e.g. an iframe loaded via
+      // srcdoc, whose real document URL is "about:srcdoc") throw a
+      // SecurityError here because the URL doesn't match the document's
+      // actual origin/path. On a real host (GitHub Pages etc.) this never
+      // happens. Fail silently so the app still renders the right chapter —
+      // only the address-bar URL won't update in that sandboxed case.
+    }
+  }
+  showRoute(route);
+}
+
+/* intercept internal nav clicks — any same-origin, root-relative link (href="/...") */
+document.addEventListener("click", function(e){
+  var a = e.target.closest('a[href^="/"]');
+  if (!a) return;
+  if (a.target === "_blank" || a.hasAttribute("download")) return;
+  var url = new URL(a.href, location.origin);
+  if (url.origin !== location.origin) return;
+  e.preventDefault();
+  navigateTo(currentRouteFromPath(url.pathname), true);
+});
+
+window.addEventListener("popstate", function(e){
+  var route = (e.state && typeof e.state.route === "string") ? e.state.route : currentRouteFromPath(location.pathname);
+  showRoute(route, {noScroll:true});
+});
+
+/* ===================== SIDEBAR TOGGLES ===================== */
+var sidebar = document.getElementById("sidebar");
+var scrim = document.getElementById("scrim");
+var mainWrap = document.getElementById("mainWrap");
+
+function openSidebarMobile(){
+  sidebar.classList.add("open");
+  scrim.classList.add("show");
+  document.getElementById("hamburgerBtn").setAttribute("aria-expanded","true");
+}
+function closeSidebarMobile(){
+  sidebar.classList.remove("open");
+  scrim.classList.remove("show");
+  document.getElementById("hamburgerBtn").setAttribute("aria-expanded","false");
+}
+document.getElementById("hamburgerBtn").addEventListener("click", function(){
+  if (sidebar.classList.contains("open")) closeSidebarMobile(); else openSidebarMobile();
+});
+scrim.addEventListener("click", closeSidebarMobile);
+
+document.getElementById("collapseBtn").addEventListener("click", function(){
+  sidebar.classList.toggle("collapsed");
+  mainWrap.classList.toggle("full");
+});
+
+document.addEventListener("keydown", function(e){
+  if (e.key === "Escape") closeSidebarMobile();
+});
+
+/* ===================== COPY CODE BUTTONS ===================== */
+document.addEventListener("click", function(e){
+  var btn = e.target.closest(".copy-btn");
+  if (!btn) return;
+  var block = btn.closest(".codeblock");
+  var codeEl = block.querySelector("pre code") || block.querySelector("pre");
+  var text = codeEl.textContent;
+  navigator.clipboard.writeText(text).then(function(){
+    var old = btn.textContent;
+    btn.textContent = "কপি হয়েছে ✓";
+    btn.classList.add("copied");
+    setTimeout(function(){ btn.textContent = old; btn.classList.remove("copied"); }, 1500);
+  }).catch(function(){
+    btn.textContent = "কপি ব্যর্থ";
+  });
+});
+
+/* initial load — runs last, after sidebar/scrim/listeners above are all set up,
+   since showRoute() -> closeSidebarMobile() depends on them existing */
+(function initRoute(){
+  var route = currentRouteFromPath(location.pathname);
+  // replace current history entry with a state object so popstate works immediately after.
+  // Wrapped in try/catch: a sandboxed preview iframe (document URL "about:srcdoc") throws
+  // a SecurityError here since the target URL can't match its real origin/path — harmless
+  // to skip in that case; on a real host (GitHub Pages etc.) this always succeeds.
+  try {
+    history.replaceState({route:route}, "", idToPath(route));
+  } catch (e) {}
+  showRoute(route, {noScroll:true});
+})();
+</script>
+</body>
+</html>
