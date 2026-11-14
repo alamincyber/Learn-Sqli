@@ -1,1 +1,1350 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cloud Security Documentation </title>
+<meta name="description" content="বাংলায় সম্পূর্ণ Cloud Security শেখার ডকুমেন্টেশন — Shared Responsibility Model, IAM, Cloud Storage Security, Container/Kubernetes Security, Serverless Security, Encryption ও Compliance।">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tiro+Bangla&family=Hind+Siliguri:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0e14; --surface:#111722; --surface-2:#161d2a; --border:#263044;
+  --fg:#e7edf5; --fg-muted:#93a3bd; --accent:#ff5c5c; --accent-fg:#1a0505;
+  --accent-2:#f5a524; --danger:#ff6b6b; --code-bg:#0d1117; --code-fg:#d7e0ea;
+  --link:#5bc2e8; --shadow:0 4px 18px rgba(0,0,0,.45); color-scheme:dark;
+  --font-head:'Tiro Bangla','Noto Serif Bengali',serif;
+  --font-body:'Hind Siliguri','Noto Sans Bengali',sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);line-height:1.8;margin:0;min-height:100vh}
+h1,h2,h3,h4{font-family:var(--font-head);line-height:1.35;color:var(--fg)}
+a{color:var(--link)}
+code,pre{font-family:var(--font-mono)}
+::selection{background:var(--accent);color:var(--accent-fg)}
+img{max-width:100%}
 
+/* ---- App shell ---- */
+.app{display:flex;min-height:100vh}
+.sidebar{
+  width:300px;flex:0 0 300px;background:var(--surface);border-right:1px solid var(--border);
+  padding:16px 14px 24px;position:fixed;top:0;left:0;bottom:0;overflow-y:auto;
+  scrollbar-width:thin;z-index:30;transition:transform .25s ease;
+}
+.sidebar.collapsed{transform:translateX(-100%)}
+.brand{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.brand .mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--accent),#b91c1c);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-family:var(--font-mono);font-size:13px;flex:none}
+.brand .name{font-family:var(--font-head);font-weight:700;font-size:17px}
+.tagline{font-size:12px;color:var(--fg-muted);margin:0 0 16px}
+.sidebar-section-label{font-size:11px;letter-spacing:.06em;color:var(--fg-muted);margin:16px 0 6px;padding:0 6px;text-transform:uppercase}
+.toc{list-style:none;margin:0;padding:0}
+.toc a{display:flex;align-items:center;gap:9px;text-decoration:none;color:var(--fg);padding:9px 10px;border-radius:8px;font-size:14px}
+.toc a .num{font-family:var(--font-mono);font-size:11px;color:var(--fg-muted);flex:none;width:20px}
+.toc a:hover{background:var(--surface-2)}
+.toc a.active{background:var(--accent);color:var(--accent-fg);font-weight:600}
+.toc a.active .num{color:var(--accent-fg)}
+.sidebar-footer{margin-top:22px;padding-top:14px;border-top:1px solid var(--border);font-size:11px;color:var(--fg-muted)}
+
+.main{flex:1 1 auto;min-width:0;margin-left:300px;transition:margin-left .25s ease;display:flex;flex-direction:column;min-height:100vh}
+.main.full{margin-left:0}
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(10,14,20,.88);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 16px;
+}
+
+.backbtn {
+    position: absolute;
+    right: 16px;
+    padding: 0 14px;
+    gap: 6px;
+    margin-left: 0;
+}
+.topbar .title{font-size:14px;color:var(--fg-muted);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
+.iconbtn,.backbtn{appearance:none;border:1px solid var(--border);background:var(--surface);color:var(--fg);height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;font-family:var(--font-body);font-size:13px;text-decoration:none}
+.iconbtn{width:36px}
+.backbtn{padding:0 14px;gap:6px}
+.backbtn:hover,.iconbtn:hover{background:var(--surface-2);border-color:var(--accent)}
+.hamburger{display:none}
+.collapse-btn{display:none}
+@media (min-width:861px){.collapse-btn{display:flex}}
+
+.content{padding:30px 22px 90px;max-width:860px;margin:0 auto;width:100%;flex:1}
+.breadcrumb{font-size:12px;color:var(--fg-muted);margin-bottom:10px}
+.breadcrumb a{color:var(--fg-muted);text-decoration:none}
+.breadcrumb a:hover{color:var(--link)}
+
+.chapter{display:none}
+.chapter.active{display:block;animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.chapter>.eyebrow{font-family:var(--font-mono);font-size:12px;color:var(--accent);letter-spacing:.04em}
+.chapter>h1{font-size:30px;margin:4px 0 6px}
+.chapter>.sub{color:var(--fg-muted);font-size:15.5px;margin:0 0 18px}
+
+h2{font-size:22px;margin-top:40px;border-bottom:1px solid var(--border);padding-bottom:9px}
+h3{font-size:17.5px;margin-top:26px;color:var(--accent)}
+p{margin:12px 0}
+ul,ol{padding-left:22px;margin:12px 0}
+li{margin:6px 0}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13.5px;display:block;overflow-x:auto}
+table thead{background:var(--surface-2)}
+th,td{border:1px solid var(--border);padding:9px 11px;text-align:left}
+th{font-family:var(--font-head)}
+
+.callout{border-radius:10px;padding:14px 16px;margin:18px 0;border:1px solid var(--border);background:var(--surface);display:flex;gap:10px}
+.callout .ic{flex:none;font-size:17px}
+.callout.warn{border-color:#f5a52455;background:rgba(245,165,36,.08)}
+.callout.danger{border-color:#ef444455;background:rgba(239,68,68,.1)}
+.callout.info{border-color:#5bc2e855;background:rgba(91,194,232,.08)}
+.callout.legal{border-color:var(--accent);background:rgba(255,92,92,.08)}
+.callout p{margin:0}
+
+.codeblock{position:relative;margin:16px 0;border-radius:10px;overflow:hidden;border:1px solid var(--border)}
+.codeblock .cb-head{display:flex;justify-content:space-between;align-items:center;background:var(--surface-2);padding:7px 11px;font-size:11.5px;color:var(--fg-muted);font-family:var(--font-mono)}
+.codeblock pre{margin:0;padding:14px;background:var(--code-bg);color:var(--code-fg);overflow-x:auto;font-size:13px;line-height:1.65;max-width:100%}
+.copy-btn{appearance:none;border:1px solid var(--border);background:var(--surface);color:var(--fg);font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer;font-family:var(--font-body)}
+.copy-btn:hover{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.copy-btn.copied{background:#22c55e;color:#06240f;border-color:#22c55e}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+@media (max-width:700px){.grid2,.grid3{grid-template-columns:1fr}}
+.card{border:1px solid var(--border);border-radius:10px;padding:14px;background:var(--surface)}
+.card h4{margin:0 0 8px;font-size:14px}
+
+details{border:1px solid var(--border);border-radius:10px;margin:14px 0;background:var(--surface)}
+details summary{cursor:pointer;padding:12px 14px;font-weight:600;list-style:none}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:"▸ ";color:var(--accent)}
+details[open] summary::before{content:"▾ "}
+details .inner{padding:0 14px 14px}
+
+.exercise{border:1px dashed var(--accent);border-radius:10px;padding:14px 16px;margin:18px 0;background:rgba(255,92,92,.05)}
+.exercise h4{margin:0 0 6px;font-size:14px;color:var(--accent)}
+
+.qa{border-top:1px dashed var(--border);margin-top:28px;padding-top:14px}
+.qa ol{padding-left:20px}
+
+.summary-box{background:var(--surface-2);border-radius:10px;padding:14px 16px;margin:26px 0;border:1px solid var(--border)}
+.summary-box h4{margin:0 0 6px;font-size:13px;color:var(--fg-muted);text-transform:uppercase;letter-spacing:.04em;font-family:var(--font-body)}
+
+.pager{display:flex;justify-content:space-between;gap:12px;margin-top:40px;border-top:1px solid var(--border);padding-top:18px;flex-wrap:wrap}
+.pager a{flex:1;min-width:140px;border:1px solid var(--border);border-radius:10px;padding:13px 15px;text-decoration:none;color:var(--fg);font-size:13.5px;background:var(--surface)}
+.pager a:hover{border-color:var(--accent)}
+.pager a span{display:block;color:var(--fg-muted);font-size:11px;margin-bottom:3px}
+.pager a.next{text-align:right}
+.pager a.single{flex:none;margin-left:auto}
+
+.landing-hero{text-align:center;padding:30px 0 10px}
+.landing-hero .mark-xl{width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,var(--accent),#b91c1c);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-family:var(--font-mono);font-size:22px;margin:0 auto 16px}
+.next-chapter-cta{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:var(--accent-fg);text-decoration:none;font-weight:700;padding:14px 26px;border-radius:12px;font-size:16px;margin-top:20px}
+.next-chapter-cta:hover{filter:brightness(1.08)}
+.cta-center{text-align:center;margin:30px 0}
+
+.notfound{text-align:center;padding:70px 20px}
+.notfound h1{font-size:60px;margin:0}
+
+.scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:25}
+.scrim.show{display:block}
+
+footer.site-footer{text-align:center;font-size:12px;color:var(--fg-muted);padding:22px;border-top:1px solid var(--border)}
+
+@media (max-width:860px){
+  .sidebar{transform:translateX(-100%);width:85%;max-width:320px;box-shadow:var(--shadow)}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-left:0}
+  .hamburger{display:flex}
+  .collapse-btn{display:none}
+  table{font-size:12.5px}
+  .grid3{grid-template-columns:1fr}
+}
+@media print{
+  .sidebar,.topbar,.pager,.copy-btn{display:none!important}
+  .chapter{display:block!important}
+  .main{margin-left:0}
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="scrim" id="scrim"></div>
+
+  <aside class="sidebar" id="sidebar" aria-label="অধ্যায় নেভিগেশন">
+    <div class="brand"><div class="mark">CLD</div><div class="name">Cloud Security Documentation</div></div>
+    <p class="tagline">বাংলায় Cloud Security গাইড — ভিত্তি থেকে Compliance পর্যন্ত</p>
+    <div class="sidebar-section-label">সূচিপত্র</div>
+    <ul class="toc" id="toc"></ul>
+    <div class="sidebar-footer">© learn.alamincyber.com — শুধুমাত্র শিক্ষামূলক উদ্দেশ্যে</div>
+  </aside>
+
+  <div class="main" id="mainWrap">
+    <div class="topbar">
+      <button class="iconbtn hamburger" id="hamburgerBtn" aria-label="মেনু খুলুন/বন্ধ করুন" aria-expanded="false">☰</button>
+      <button class="iconbtn collapse-btn" id="collapseBtn" aria-label="সাইডবার টগল করুন" title="সাইডবার টগল করুন">⟨⟩</button>
+      <a class="backbtn" id="backBtn" href="https://learn.alamincyber.com/documentation/" aria-label="ডকুমেন্টেশন ইনডেক্সে ফিরে যান">← Back</a>
+      <div class="title" id="topTitle">Cloud Security Documentation</div>
+    </div>
+
+    <div class="content" id="content">
+      <div class="breadcrumb" id="breadcrumb"></div>
+      <div id="chapters">
+
+<section class="chapter" id="landing" data-route="">
+  <div class="landing-hero">
+    <div class="mark-xl">CLD</div>
+    <div class="eyebrow" style="justify-content:center;display:flex">Learn Cyber Security · Documentation</div>
+    <h1 style="font-size:34px">Cloud Security ডকুমেন্টেশন</h1>
+    <p class="sub" style="max-width:640px;margin:0 auto">বাংলাদেশের শিক্ষার্থীদের জন্য তৈরি, সম্পূর্ণ বাংলায় লেখা একটি Cloud Security গাইড — AWS/Azure/GCP-এর মতো ক্লাউড পরিবেশে ডেটা ও অ্যাপ্লিকেশন কীভাবে সুরক্ষিত রাখা হয়, Shared Responsibility Model কী, এবং IAM থেকে Container/Kubernetes Security পর্যন্ত আধুনিক ক্লাউড-নেটিভ নিরাপত্তা অনুশীলন — ১৫টি অধ্যায়ে সাজানো।</p>
+  </div>
+
+  <h2>Cloud Security নিয়ে সংক্ষিপ্ত কথা</h2>
+  <p>এই সিরিজের আগের ডকুমেন্টেশনগুলো (Network Security, Common Web Vulnerabilities, API Security) মূলত traditional পরিকাঠামো ও অ্যাপ্লিকেশন নিরাপত্তা নিয়ে আলোচনা করেছে। আধুনিক প্রতিষ্ঠানের একটি বিশাল অংশ এখন AWS, Azure, Google Cloud Platform-এর মতো <strong>cloud provider</strong>-এর উপর নির্ভরশীল — এবং cloud পরিবেশের নিরাপত্তা মডেল traditional on-premise পরিকাঠামো থেকে উল্লেখযোগ্যভাবে ভিন্ন।</p>
+  <p>এখানে ধাপে ধাপে দেখানো হয়েছে — Shared Responsibility Model (কোন নিরাপত্তা দায়িত্ব cloud provider-এর, কোনটি গ্রাহকের), IAM (Identity and Access Management), Cloud Storage Security, Cloud Network Security, সাধারণ Cloud Misconfiguration, Container ও Kubernetes Security, Serverless Security, Cloud Monitoring/Logging, Encryption, Compliance, এবং Multi-Cloud/Hybrid পরিবেশের নিরাপত্তা বিবেচনা।</p>
+
+  <div class="callout info">
+    <div class="ic">💡</div>
+    <div>
+      <p><strong>এই ডকুমেন্টেশনের প্রকৃতি:</strong> এই গাইডটি মূলত ধারণাগত ও provider-নিরপেক্ষ (AWS/Azure/GCP-এর মূল নীতিগুলো সাধারণত একই) — Network Security ডকুমেন্টেশনে আলোচিত Firewall, VLAN, VPN-এর ধারণাগুলো এখানে cloud প্রেক্ষাপটে পুনরায় প্রয়োগ হয়েছে, এবং Common Web Vulnerabilities ডকুমেন্টেশনের Security Misconfiguration অধ্যায়ের সাথে সরাসরি সম্পর্কিত।</p>
+    </div>
+  </div>
+
+  <h2>কীভাবে পড়বেন</h2>
+  <div class="grid3">
+    <div class="card"><h4>🟢 শুরু (১–৫)</h4><p>Cloud Security-র ভিত্তি, Shared Responsibility Model, IAM, Cloud Storage Security, Cloud Network Security।</p></div>
+    <div class="card"><h4>🟡 মধ্যবর্তী (৬–১০)</h4><p>Cloud Misconfiguration, Container Security, Kubernetes Security, Serverless Security, Cloud Monitoring।</p></div>
+    <div class="card"><h4>🔴 প্রয়োগ (১১–১৫)</h4><p>Data Encryption, Compliance, Multi-Cloud Security, Hardening Checklist, শব্দকোষ/FAQ।</p></div>
+  </div>
+
+  <div class="cta-center">
+    <a class="next-chapter-cta" href="/chapter01">অধ্যায় ০১ শুরু করুন — Cloud Security-র ভিত্তি →</a>
+  </div>
+</section>
+
+<section class="chapter" id="notfound" data-route="__notfound__">
+  <div class="notfound">
+    <h1>৪০৪</h1>
+    <h2 style="border:none">এই অধ্যায়টি খুঁজে পাওয়া যায়নি</h2>
+    <p class="sub">আপনি যে chapter URL-এ যেতে চেয়েছেন, তা এই ডকুমেন্টেশনে নেই। অনুগ্রহ করে নিচের বাটন ব্যবহার করে ডকুমেন্টেশন ইনডেক্সে ফিরে যান অথবা সাইডবার থেকে একটি অধ্যায় বেছে নিন।</p>
+    <div class="cta-center">
+      <a class="next-chapter-cta" href="https://learn.alamincyber.com/documentation/">ডকুমেন্টেশন ইনডেক্সে ফিরুন</a>
+    </div>
+  </div>
+</section>
+
+<section class="chapter" id="chapter01">
+  <div class="eyebrow">অধ্যায় ০১ · ভিত্তি</div>
+  <h1>Cloud Computing ও Cloud Security-র ভিত্তি</h1>
+  <p class="sub">নিজের সার্ভার কেনার বদলে, কারো সার্ভার ভাড়া নিয়ে ব্যবহার করলে নিরাপত্তার সমীকরণ কীভাবে বদলে যায়।</p>
+
+  <h2>Cloud Computing কী</h2>
+  <p><strong>Cloud Computing</strong> হলো ইন্টারনেটের মাধ্যমে কম্পিউটিং রিসোর্স (সার্ভার, স্টোরেজ, ডেটাবেজ, নেটওয়ার্কিং) অন-ডিমান্ড ব্যবহার করার মডেল — নিজের ফিজিক্যাল সার্ভার কেনা ও রক্ষণাবেক্ষণ করার বদলে, একটি <strong>Cloud Provider</strong> (AWS, Microsoft Azure, Google Cloud Platform) থেকে প্রয়োজন অনুযায়ী রিসোর্স ভাড়া নেওয়া হয়।</p>
+
+  <h2>Cloud Service মডেলের তিনটি প্রধান ধরন</h2>
+  <table>
+    <thead><tr><th>মডেল</th><th>কী সরবরাহ করে</th><th>উদাহরণ</th></tr></thead>
+    <tbody>
+      <tr><td><strong>IaaS</strong> (Infrastructure as a Service)</td><td>শুধু ভার্চুয়াল সার্ভার/স্টোরেজ — বাকি সব (OS, সফটওয়্যার) গ্রাহক নিজে পরিচালনা করেন</td><td>AWS EC2, Azure VM</td></tr>
+      <tr><td><strong>PaaS</strong> (Platform as a Service)</td><td>একটি সম্পূর্ণ ডেভেলপমেন্ট/রানটাইম পরিবেশ — গ্রাহক শুধু কোড ডেপ্লয় করেন</td><td>AWS Elastic Beanstalk, Heroku</td></tr>
+      <tr><td><strong>SaaS</strong> (Software as a Service)</td><td>সম্পূর্ণ প্রস্তুত সফটওয়্যার, সরাসরি ব্যবহারযোগ্য</td><td>Gmail, Salesforce</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Public, Private ও Hybrid Cloud</h2>
+  <div class="grid3">
+    <div class="card"><h4>🌐 Public Cloud</h4><p>একটি cloud provider-এর শেয়ার্ড পরিকাঠামো, যা একাধিক গ্রাহক ব্যবহার করেন (AWS, Azure)।</p></div>
+    <div class="card"><h4>🔒 Private Cloud</h4><p>একটি একক প্রতিষ্ঠানের জন্য নিবেদিত cloud পরিকাঠামো, নিজস্ব ডেটা সেন্টারে বা dedicated hosted।</p></div>
+    <div class="card"><h4>🔀 Hybrid Cloud</h4><p>Public ও Private উভয়ের সংমিশ্রণ — সংবেদনশীল ডেটা private-এ, বাকি কাজ public cloud-এ।</p></div>
+  </div>
+
+  <h2>কেন Cloud Security আলাদাভাবে গুরুত্বপূর্ণ</h2>
+  <p>Network Security ডকুমেন্টেশনে আলোচিত ঐতিহ্যগত "Castle-and-Moat" মডেলে, একটি প্রতিষ্ঠান তার নিজস্ব ফিজিক্যাল পরিকাঠামোর সম্পূর্ণ নিয়ন্ত্রণে থাকত। Cloud পরিবেশে, পরিকাঠামোর একটি উল্লেখযোগ্য অংশ cloud provider নিয়ন্ত্রণ করেন — এই পরিবর্তন একটি সম্পূর্ণ নতুন নিরাপত্তা মডেল দাবি করে, যা পরবর্তী অধ্যায়ে (Shared Responsibility Model) বিস্তারিত আলোচিত হবে।</p>
+
+  <div class="callout info"><div class="ic">💡</div><p><strong>একটি গুরুত্বপূর্ণ ভুল ধারণা:</strong> অনেকে মনে করেন "cloud মানেই বেশি নিরাপদ, কারণ একটি বড় কোম্পানি (AWS/Google) এটি পরিচালনা করছে" — এটি আংশিক সত্য। Cloud provider তাদের নিজস্ব পরিকাঠামো অত্যন্ত দক্ষতার সাথে সুরক্ষিত রাখে, কিন্তু গ্রাহকের নিজের কনফিগারেশনের ভুল (misconfiguration) — যেমন একটি পাবলিক S3 bucket — সম্পূর্ণভাবে গ্রাহকের নিজের দায়িত্ব, এবং এটিই সবচেয়ে বেশি data breach-এর কারণ।</p></div>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>IaaS, PaaS, ও SaaS মডেলে, প্রতিটিতে গ্রাহকের নিয়ন্ত্রণের পরিমাণ কীভাবে ভিন্ন তা একটি তুলনামূলক তালিকা তৈরি করুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>Cloud Computing ইন্টারনেটের মাধ্যমে অন-ডিমান্ড কম্পিউটিং রিসোর্স সরবরাহ করে — IaaS, PaaS, SaaS তিনটি প্রধান মডেল, এবং Public/Private/Hybrid তিনটি ডেপ্লয়মেন্ট ধরন। Cloud পরিবেশে নিরাপত্তা দায়িত্ব cloud provider ও গ্রাহকের মধ্যে ভাগ হয়ে যায়, যা একটি নতুন নিরাপত্তা মডেল দাবি করে।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>IaaS, PaaS, ও SaaS-এর মধ্যে পার্থক্য কী?</li>
+      <li>Public, Private, ও Hybrid Cloud-এর মধ্যে পার্থক্য কী?</li>
+      <li>কেন "cloud মানেই বেশি নিরাপদ" একটি সম্পূর্ণ সঠিক ধারণা নয়?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/"><span>পূর্ববর্তী</span>হোমপেজ</a>
+    <a class="next" href="/chapter02"><span>পরবর্তী</span>অধ্যায় ০২ — Shared Responsibility Model</a>
+  </div>
+</section>
+
+
+<section class="chapter" id="chapter02">
+  <div class="eyebrow">অধ্যায় ০২ · দায়িত্ব</div>
+  <h1>Shared Responsibility Model</h1>
+  <p class="sub">Cloud Security বোঝার সবচেয়ে গুরুত্বপূর্ণ একক ধারণা — কোন নিরাপত্তা কাজ কার দায়িত্ব।</p>
+
+  <h2>Shared Responsibility Model কী</h2>
+  <p><strong>Shared Responsibility Model</strong> স্পষ্টভাবে সংজ্ঞায়িত করে একটি cloud পরিবেশের নিরাপত্তার কোন অংশ <strong>Cloud Provider</strong>-এর দায়িত্ব, এবং কোন অংশ <strong>গ্রাহক</strong>-এর দায়িত্ব। এই বিভাজন না বোঝা একটি অত্যন্ত সাধারণ ও বিপজ্জনক ভুল — "আমরা ভেবেছিলাম AWS এটি সুরক্ষিত রাখবে" একটি বাস্তব data breach-এর সাধারণ কারণ।</p>
+
+  <h2>"Security OF the Cloud" বনাম "Security IN the Cloud"</h2>
+  <div class="grid2">
+    <div class="card"><h4>🏢 Security OF the Cloud (Provider-এর দায়িত্ব)</h4><p>ফিজিক্যাল ডেটা সেন্টার নিরাপত্তা, hardware, নেটওয়ার্ক পরিকাঠামো, এবং virtualization layer — এই "নিচের" স্তরগুলোর নিরাপত্তা সম্পূর্ণভাবে cloud provider-এর দায়িত্ব।</p></div>
+    <div class="card"><h4>👤 Security IN the Cloud (গ্রাহকের দায়িত্ব)</h4><p>ডেটা encryption, IAM কনফিগারেশন, অ্যাপ্লিকেশন কোড, নেটওয়ার্ক কনফিগারেশন (Security Group), ও OS-level patching (IaaS-এ) — এগুলো গ্রাহকের নিজের দায়িত্ব।</p></div>
+  </div>
+
+  <h2>দায়িত্ব বিভাজন সার্ভিস মডেল অনুযায়ী পরিবর্তিত হয়</h2>
+  <table>
+    <thead><tr><th>স্তর</th><th>IaaS</th><th>PaaS</th><th>SaaS</th></tr></thead>
+    <tbody>
+      <tr><td>Data ও Access Management</td><td>গ্রাহক</td><td>গ্রাহক</td><td>গ্রাহক</td></tr>
+      <tr><td>Application</td><td>গ্রাহক</td><td>গ্রাহক</td><td>Provider</td></tr>
+      <tr><td>Runtime/OS</td><td>গ্রাহক</td><td>Provider</td><td>Provider</td></tr>
+      <tr><td>Virtualization/Hardware</td><td>Provider</td><td>Provider</td><td>Provider</td></tr>
+    </tbody>
+  </table>
+  <p>যত বেশি একটি সার্ভিস মডেল "ম্যানেজড" (SaaS সবচেয়ে বেশি, IaaS সবচেয়ে কম), ততই বেশি নিরাপত্তা দায়িত্ব provider বহন করেন — কিন্তু <strong>Data ও Access Management সবসময়ই গ্রাহকের দায়িত্ব থেকে যায়</strong>, যেকোনো মডেলে।</p>
+
+  <div class="codeblock">
+    <div class="cb-head"><span>ধারণাগত Shared Responsibility বিভাজন</span><button class="copy-btn">কপি</button></div>
+    <pre><code>Provider দায়িত্ব:  ডেটা সেন্টার, হার্ডওয়্যার, নেটওয়ার্ক পরিকাঠামো, virtualization
+গ্রাহক দায়িত্ব:    ডেটা এনক্রিপশন, IAM কনফিগারেশন, অ্যাপ কোড, Security Group</code></pre>
+  </div>
+
+  <h2>বাস্তব উদাহরণ — কোথায় ভুল হয়</h2>
+  <div class="callout warn"><div class="ic">⚠️</div><p><strong>একটি সাধারণ ঘটনা প্রবাহ:</strong> AWS একটি S3 bucket-কে অত্যন্ত নিরাপদ পরিকাঠামোতে হোস্ট করে (provider-এর দায়িত্ব, সঠিকভাবে পালিত) — কিন্তু গ্রাহক সেই bucket-এর অ্যাক্সেস সেটিং ভুলবশত "public" করে রাখেন (গ্রাহকের দায়িত্ব, পালিত হয়নি)। ফলাফল একটি data breach, কিন্তু এটি AWS-এর দোষ নয় — এটি Common Web Vulnerabilities ডকুমেন্টেশনের Security Misconfiguration অধ্যায়ে আলোচিত একই ধরনের ভুল, cloud প্রেক্ষাপটে।</p></div>
+
+  <h2>Shared Responsibility বোঝার ব্যবহারিক মূল্য</h2>
+  <p>একজন নিরাপত্তা পেশাদার হিসেবে, একটি cloud পরিবেশ মূল্যায়ন করার সময়, প্রথম প্রশ্ন হওয়া উচিত — "এই নির্দিষ্ট নিয়ন্ত্রণটি কার দায়িত্ব?" যদি এটি গ্রাহকের দায়িত্ব হয় (যেমন IAM নীতি, encryption সেটিং), তাহলে সেটি সরাসরি পরীক্ষা ও audit করা প্রয়োজন — provider-এর নিরাপত্তার উপর ভরসা করে বসে থাকলে চলবে না।</p>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>IaaS মডেলে OS-level patching কার দায়িত্ব, এবং SaaS মডেলে (যেমন Gmail) একই দায়িত্ব কার — এই পার্থক্যের কারণ ব্যাখ্যা করুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>Shared Responsibility Model নির্ধারণ করে কোন নিরাপত্তা দায়িত্ব cloud provider-এর ("Security OF the Cloud") ও কোনটি গ্রাহকের ("Security IN the Cloud")। Data ও Access Management সবসময় গ্রাহকের দায়িত্বে থাকে, এবং এই বিভাজন ভুল বোঝাই অনেক বাস্তব breach-এর কারণ।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>"Security OF the Cloud" ও "Security IN the Cloud"-এর মধ্যে পার্থক্য কী?</li>
+      <li>কোন নিরাপত্তা দায়িত্ব সবসময় গ্রাহকের থেকে যায়, যেকোনো সার্ভিস মডেলে?</li>
+      <li>একটি publicly accessible S3 bucket-এর জন্য কার দায় — AWS-এর নাকি গ্রাহকের?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter01"><span>পূর্ববর্তী</span>অধ্যায় ০১ — Cloud Computing ভিত্তি</a>
+    <a class="next" href="/chapter03"><span>পরবর্তী</span>অধ্যায় ০৩ — IAM</a>
+  </div>
+</section>
+
+
+<section class="chapter" id="chapter03">
+  <div class="eyebrow">অধ্যায় ০৩ · IAM</div>
+  <h1>IAM — Identity and Access Management</h1>
+  <p class="sub">Cloud Security-তে সবচেয়ে গুরুত্বপূর্ণ একক নিয়ন্ত্রণ ব্যবস্থা — "কে, কী করতে পারবে" তার সূক্ষ্ম নিয়ন্ত্রণ।</p>
+
+  <h2>IAM কী</h2>
+  <p><strong>IAM (Identity and Access Management)</strong> একটি cloud পরিবেশে প্রতিটি ইউজার, সার্ভিস, বা অ্যাপ্লিকেশনের পরিচয় যাচাই (authentication) ও তাদের কী করার অনুমতি আছে (authorization) তা নিয়ন্ত্রণ করে। Authentication &amp; Authorization ডকুমেন্টেশনে আলোচিত RBAC/ABAC-এর ধারণাগুলো cloud IAM-এ সরাসরি প্রয়োগ হয়, কিন্তু আরও বড় স্কেলে — একটি একক cloud অ্যাকাউন্টে হাজার হাজার রিসোর্স ও অনুমতি থাকতে পারে।</p>
+
+  <h2>IAM-এর মূল উপাদান</h2>
+  <table>
+    <thead><tr><th>উপাদান</th><th>বর্ণনা</th></tr></thead>
+    <tbody>
+      <tr><td><strong>User</strong></td><td>একজন ব্যক্তি, যার cloud console/API অ্যাক্সেস আছে</td></tr>
+      <tr><td><strong>Role</strong></td><td>একটি নির্দিষ্ট permission set, যা একটি user বা service "assume" করতে পারে — নির্দিষ্ট সময়ের জন্য, স্থায়ী credential ছাড়া</td></tr>
+      <tr><td><strong>Policy</strong></td><td>একটি নির্দিষ্ট অনুমতির ঘোষণা (JSON ফরম্যাটে প্রায়ই) — কোন resource-এ কোন action অনুমোদিত</td></tr>
+      <tr><td><strong>Group</strong></td><td>একাধিক user-কে একত্রিত করে একসাথে policy প্রয়োগের সুবিধা</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Principle of Least Privilege — IAM-এর কেন্দ্রীয় নীতি</h2>
+  <p>Network Security ডকুমেন্টেশনের Zero Trust অধ্যায়ে আলোচিত Least Privilege নীতি IAM-এর ভিত্তি — প্রতিটি user/service-কে শুধুমাত্র তার কাজের জন্য ঠিক ততটুকু অনুমতি দেওয়া উচিত, কোনো অতিরিক্ত "just in case" অনুমতি নয়। একটি অ্যাপ্লিকেশন যদি শুধু একটি নির্দিষ্ট S3 bucket থেকে পড়ার প্রয়োজন হয়, তাকে পুরো cloud অ্যাকাউন্টে admin অনুমতি দেওয়া একটি গুরুতর ভুল।</p>
+
+  <h2>একটি IAM Policy-র ধারণাগত উদাহরণ</h2>
+  <div class="codeblock">
+    <div class="cb-head"><span>ধারণাগত Policy কাঠামো</span><button class="copy-btn">কপি</button></div>
+    <pre><code>{
+  "Effect": "Allow",
+  "Action": "s3:GetObject",
+  "Resource": "arn:aws:s3:::my-specific-bucket/*"
+}
+// এই নীতি শুধুমাত্র একটি নির্দিষ্ট bucket থেকে অবজেক্ট পড়ার
+// অনুমতি দেয় — পুরো S3 সার্ভিসে নয়, এবং লেখা/মোছার অনুমতি নেই</code></pre>
+  </div>
+
+  <h2>Over-privileged IAM — একটি সাধারণ ও বিপজ্জনক ভুল</h2>
+  <div class="callout danger"><div class="ic">🚨</div><p><strong>বাস্তব ঝুঁকি:</strong> একজন ডেভেলপার দ্রুত কাজ করতে গিয়ে প্রায়ই একটি অ্যাপ্লিকেশন/service account-কে প্রয়োজনের চেয়ে বেশি অনুমতি (যেমন সম্পূর্ণ "AdministratorAccess") দিয়ে দেন, যাতে "permission error" নিয়ে বারবার বিরক্ত না হতে হয়। কিন্তু যদি এই অ্যাপ্লিকেশনের একটি দুর্বলতা (যেমন SSRF, Common Web Vulnerabilities ডকুমেন্টেশনে আলোচিত) কাজে লাগিয়ে attacker সেই credential হাতিয়ে নেন, তিনি পুরো cloud অ্যাকাউন্টের নিয়ন্ত্রণ পেয়ে যেতে পারেন — একটি ছোট অ্যাপ্লিকেশন দুর্বলতা থেকে সম্পূর্ণ cloud takeover।</p></div>
+
+  <h2>MFA (Multi-Factor Authentication) — IAM-এর জন্য অপরিহার্য</h2>
+  <p>Authentication ডকুমেন্টেশনে আলোচিত MFA, cloud IAM-এর ক্ষেত্রে বিশেষভাবে গুরুত্বপূর্ণ — বিশেষত root/administrator অ্যাকাউন্টের জন্য, কারণ একটি আপোসকৃত cloud admin অ্যাকাউন্ট পুরো প্রতিষ্ঠানের সব ডেটা ও পরিকাঠামোতে অ্যাক্সেস দিতে পারে।</p>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>কেন একটি অ্যাপ্লিকেশনকে "just in case" অতিরিক্ত IAM অনুমতি দেওয়া, একটি একক দুর্বলতার impact-কে ব্যাপকভাবে বাড়িয়ে দিতে পারে তা ব্যাখ্যা করুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>IAM একটি cloud পরিবেশে প্রতিটি identity-র পরিচয় ও অনুমতি নিয়ন্ত্রণ করে — User, Role, Policy, Group প্রধান উপাদান। Principle of Least Privilege কেন্দ্রীয় নীতি, এবং Over-privileged IAM configuration সবচেয়ে সাধারণ ও বিপজ্জনক cloud নিরাপত্তা ভুলগুলোর একটি।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>IAM Role ও User-এর মধ্যে পার্থক্য কী?</li>
+      <li>Principle of Least Privilege কী বোঝায়?</li>
+      <li>কেন একটি over-privileged service account একটি নিরাপত্তা দুর্বলতার impact বাড়িয়ে দিতে পারে?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter02"><span>পূর্ববর্তী</span>অধ্যায় ০২ — Shared Responsibility Model</a>
+    <a class="next" href="/chapter04"><span>পরবর্তী</span>অধ্যায় ০৪ — Cloud Storage Security</a>
+  </div>
+</section>
+
+
+<section class="chapter" id="chapter04">
+  <div class="eyebrow">অধ্যায় ০৪ · Storage</div>
+  <h1>Cloud Storage Security</h1>
+  <p class="sub">একটি একক ভুল কনফিগারেশন কীভাবে কোটি কোটি রেকর্ডের একটি ডেটা ব্রিচ ঘটাতে পারে।</p>
+
+  <h2>Object Storage কী</h2>
+  <p>Cloud Storage-এর সবচেয়ে পরিচিত ফর্ম হলো <strong>Object Storage</strong> (AWS S3, Azure Blob Storage, Google Cloud Storage) — ফাইল, ছবি, ব্যাকআপ, লগ ডেটা সংরক্ষণের জন্য ব্যবহৃত একটি অত্যন্ত scalable স্টোরেজ সিস্টেম, যেখানে প্রতিটি ফাইল একটি "bucket"-এর মধ্যে সংরক্ষিত হয়।</p>
+
+  <h2>সবচেয়ে সাধারণ ও বিপজ্জনক ভুল — Public Bucket</h2>
+  <div class="callout danger"><div class="ic">🚨</div><p><strong>বাস্তব প্যাটার্ন:</strong> একটি S3 bucket ডিফল্টভাবে প্রাইভেট থাকে, কিন্তু একজন ডেভেলপার প্রায়ই দ্রুত টেস্টিং বা সহজ অ্যাক্সেসের জন্য bucket-কে "public" করে দেন, এবং পরে প্রোডাকশনে সেই সেটিং ফিরিয়ে আনতে ভুলে যান। এই একক ভুল — Common Web Vulnerabilities ডকুমেন্টেশনের Security Misconfiguration অধ্যায়ে আলোচিত একই প্যাটার্ন — ইতিহাসে একাধিক বড় data breach-এর কারণ হয়েছে, যেখানে কোটি কোটি ইউজার রেকর্ড সরাসরি ইন্টারনেটে উন্মুক্ত হয়ে গিয়েছিল, কোনো "হ্যাকিং" ছাড়াই।</p></div>
+
+  <h2>Bucket Security Checklist</h2>
+  <table>
+    <thead><tr><th>চেক</th><th>লক্ষ্য</th></tr></thead>
+    <tbody>
+      <tr><td>Public Access Block</td><td>নিশ্চিত করা bucket-টি আকস্মিকভাবে পাবলিক না হয়ে যায়, এমনকি individual object policy দিয়েও</td></tr>
+      <tr><td>Bucket Policy ও ACL পর্যালোচনা</td><td>কোন user/role-এর অ্যাক্সেস আছে তা নিয়মিত অডিট করা</td></tr>
+      <tr><td>Encryption at Rest</td><td>সংরক্ষিত ডেটা এনক্রিপ্টেড কি না নিশ্চিত করা (অধ্যায় ১১-এ বিস্তারিত)</td></tr>
+      <tr><td>Versioning ও Logging</td><td>কোন ফাইল কখন অ্যাক্সেস/পরিবর্তিত হয়েছে তার ট্র্যাক রাখা</td></tr>
+      <tr><td>MFA Delete</td><td>গুরুত্বপূর্ণ bucket থেকে ফাইল মোছার জন্য অতিরিক্ত MFA যাচাই বাধ্যতামূলক করা</td></tr>
+    </tbody>
+  </table>
+
+  <h2>স্বয়ংক্রিয় স্ক্যানিং টুলের ভূমিকা</h2>
+  <p>যেহেতু একটি বড় প্রতিষ্ঠানের হাজার হাজার bucket থাকতে পারে, ম্যানুয়ালি প্রতিটি যাচাই করা অবাস্তব — <strong>Cloud Security Posture Management (CSPM)</strong> টুল স্বয়ংক্রিয়ভাবে পুরো cloud অ্যাকাউন্ট স্ক্যান করে, কোনো bucket ভুলভাবে public কি না, বা encryption বন্ধ আছে কি না স্বয়ংক্রিয়ভাবে শনাক্ত করে সতর্ক করে — অনেকটা Hacking Tools ডকুমেন্টেশনের Vulnerability Scanner-এর মতোই, কিন্তু cloud কনফিগারেশনের জন্য বিশেষায়িত।</p>
+
+  <h2>Bug Bounty হান্টারদের জন্য একটি প্রাসঙ্গিক সংযোগ</h2>
+  <p>Bug Bounty Methodology ডকুমেন্টেশনে আলোচিত Asset Discovery-র একটি গুরুত্বপূর্ণ অংশ হলো পাবলিকলি accessible cloud storage bucket খুঁজে বের করা — একটি ভুলভাবে কনফিগার করা bucket, যদি in-scope হয়, একজন হান্টারের জন্য একটি উচ্চ-মূল্যের findings হতে পারে।</p>
+
+  <div class="callout info"><div class="ic">💡</div><p><strong>Default Deny নীতি এখানেও প্রযোজ্য:</strong> Network Security ডকুমেন্টেশনের Firewall অধ্যায়ে আলোচিত "Deny by Default, Allow by Exception" নীতি cloud storage-এও সমানভাবে প্রযোজ্য — bucket-কে ডিফল্টভাবে প্রাইভেট রেখে, শুধু স্পষ্টভাবে প্রয়োজনীয় ক্ষেত্রে, সুনির্দিষ্টভাবে অ্যাক্সেস খুলে দেওয়া উচিত।</p></div>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>কেন একটি CSPM টুল একটি বড় প্রতিষ্ঠানের জন্য প্রায় অপরিহার্য, যেখানে শত শত ডেভেলপার স্বাধীনভাবে নতুন cloud রিসোর্স তৈরি করছেন তা ব্যাখ্যা করুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>Public Bucket একটি অত্যন্ত সাধারণ ও বিপজ্জনক cloud storage ভুল, যা বহু বড় data breach-এর কারণ হয়েছে। Bucket Security Checklist (Public Access Block, Policy Review, Encryption, Logging, MFA Delete) ও CSPM টুল ব্যবহার করে এই ঝুঁকি কমানো যায়।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>কেন একটি Public S3 Bucket এত বিপজ্জনক হতে পারে?</li>
+      <li>CSPM টুল কী কাজ করে?</li>
+      <li>MFA Delete কী এবং কেন এটি গুরুত্বপূর্ণ একটি সুরক্ষা স্তর?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter03"><span>পূর্ববর্তী</span>অধ্যায় ০৩ — IAM</a>
+    <a class="next" href="/chapter05"><span>পরবর্তী</span>অধ্যায় ০৫ — Cloud Network Security</a>
+  </div>
+</section>
+
+
+<section class="chapter" id="chapter05">
+  <div class="eyebrow">অধ্যায় ০৫ · Network</div>
+  <h1>Cloud Network Security</h1>
+  <p class="sub">Network Security ডকুমেন্টেশনের Firewall/VLAN-এর ধারণাগুলো cloud পরিবেশে কীভাবে ভিন্নভাবে বাস্তবায়িত হয়।</p>
+
+  <h2>VPC — Virtual Private Cloud</h2>
+  <p><strong>VPC</strong> একটি গ্রাহকের নিজস্ব, যৌক্তিকভাবে বিচ্ছিন্ন (logically isolated) নেটওয়ার্ক পরিবেশ, cloud provider-এর বৃহত্তর অবকাঠামোর মধ্যে — এটি Network Security ডকুমেন্টেশনে আলোচিত VLAN/Network Segmentation-এর ধারণার cloud সংস্করণ, যেখানে গ্রাহক নিজের IP রেঞ্জ, সাবনেট, ও রাউটিং নিয়ম নিজে সংজ্ঞায়িত করতে পারেন।</p>
+
+  <h2>Security Group ও Network ACL</h2>
+  <table>
+    <thead><tr><th>উপাদান</th><th>কাজ</th><th>Firewall-এর সাথে তুলনা</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Security Group</strong></td><td>একটি individual instance/resource-এর জন্য stateful ফায়ারওয়াল নিয়ম</td><td>Network Security ডকুমেন্টেশনের Host-based Firewall-এর মতো</td></tr>
+      <tr><td><strong>Network ACL</strong></td><td>একটি পুরো সাবনেটের জন্য stateless নিয়ম</td><td>একটি নেটওয়ার্ক পর্যায়ের Packet-Filtering Firewall-এর মতো</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Public বনাম Private Subnet</h2>
+  <div class="grid2">
+    <div class="card"><h4>🌐 Public Subnet</h4><p>সরাসরি ইন্টারনেট থেকে অ্যাক্সেসযোগ্য — সাধারণত load balancer, বা পাবলিক-facing সার্ভিস এখানে থাকে (Network Security ডকুমেন্টেশনের DMZ-এর মতো)।</p></div>
+    <div class="card"><h4>🔒 Private Subnet</h4><p>সরাসরি ইন্টারনেট থেকে অ্যাক্সেসযোগ্য নয় — ডেটাবেজ, অভ্যন্তরীণ অ্যাপ্লিকেশন সার্ভার এখানে রাখা হয়, শুধুমাত্র public subnet থেকেই অ্যাক্সেসযোগ্য।</p></div>
+  </div>
+
+  <h2>একটি সাধারণ, নিরাপদ VPC কাঠামোর উদাহরণ</h2>
+  <div class="codeblock">
+    <div class="cb-head"><span>ধারণাগত কাঠামো</span><button class="copy-btn">কপি</button></div>
+    <pre><code>Internet
+   ↓
+Load Balancer (Public Subnet)
+   ↓
+Application Servers (Private Subnet)
+   ↓
+Database (Private Subnet, সবচেয়ে সীমাবদ্ধ অ্যাক্সেস)</code></pre>
+  </div>
+  <p>এই কাঠামো Network Security ডকুমেন্টেশনের DMZ ও Network Segmentation নীতির সরাসরি cloud প্রয়োগ — ডেটাবেজ কখনো সরাসরি ইন্টারনেট থেকে অ্যাক্সেসযোগ্য নয়।</p>
+
+  <h2>VPC Peering ও Transit Gateway</h2>
+  <p>একাধিক VPC-কে নিরাপদে সংযুক্ত করার প্রয়োজন হলে (যেমন ভিন্ন টিমের ভিন্ন VPC-র মধ্যে যোগাযোগ প্রয়োজন), <strong>VPC Peering</strong> বা <strong>Transit Gateway</strong>-এর মতো সার্ভিস ব্যবহৃত হয় — তবে প্রতিটি নতুন সংযোগ একটি নতুন সম্ভাব্য আক্রমণ পথ, তাই শুধু প্রয়োজনীয় সংযোগই তৈরি করা উচিত (Least Privilege নীতির নেটওয়ার্ক-স্তরের প্রয়োগ)।</p>
+
+  <div class="callout warn"><div class="ic">⚠️</div><p><strong>সাধারণ ভুল:</strong> একটি Security Group-এ সহজে ডিবাগ করার জন্য "0.0.0.0/0" (যেকোনো IP থেকে) একটি সংবেদনশীল পোর্টে (যেমন ডেটাবেজ পোর্ট) অ্যাক্সেস খুলে দেওয়া, এবং পরে তা বন্ধ করতে ভুলে যাওয়া — এটি Network Security ডকুমেন্টেশনে আলোচিত "Deny by Default" নীতির সরাসরি লঙ্ঘন।</p></div>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>কেন একটি ডেটাবেজ সার্ভারকে সবসময় Private Subnet-এ রাখা উচিত, Public Subnet-এ নয়, তা ব্যাখ্যা করুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>VPC একটি গ্রাহকের যৌক্তিকভাবে বিচ্ছিন্ন cloud নেটওয়ার্ক পরিবেশ তৈরি করে। Security Group ও Network ACL ট্রাফিক নিয়ন্ত্রণ করে, এবং Public/Private Subnet বিভাজন Network Security ডকুমেন্টেশনের DMZ/Segmentation নীতির সরাসরি cloud প্রয়োগ।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>VPC কী এবং এটি কোন traditional নেটওয়ার্ক ধারণার সাথে সম্পর্কিত?</li>
+      <li>Security Group ও Network ACL-এর মধ্যে পার্থক্য কী?</li>
+      <li>Public ও Private Subnet-এর মধ্যে পার্থক্য কী?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter04"><span>পূর্ববর্তী</span>অধ্যায় ০৪ — Cloud Storage Security</a>
+    <a class="next" href="/chapter06"><span>পরবর্তী</span>অধ্যায় ০৬ — সাধারণ Cloud Misconfiguration</a>
+  </div>
+</section>
+
+
+<section class="chapter" id="chapter06">
+  <div class="eyebrow">অধ্যায় ০৬ · Misconfiguration</div>
+  <h1>সাধারণ Cloud Misconfiguration</h1>
+  <p class="sub">Cloud breach-এর সবচেয়ে বড় কারণ — জটিল আক্রমণ নয়, বরং সাধারণ, এড়ানো যায় এমন কনফিগারেশন ভুল।</p>
+
+  <h2>কেন Misconfiguration সবচেয়ে বড় ঝুঁকি</h2>
+  <p>একাধিক শিল্প রিপোর্ট ধারাবাহিকভাবে দেখিয়েছে যে বেশিরভাগ cloud data breach সরাসরি কোনো sophisticated exploit বা zero-day vulnerability-র কারণে ঘটে না — বরং সাধারণ, মানবিক ভুলের কারণে ঘটে। Cloud পরিবেশের জটিলতা (শত শত সেটিং, একাধিক সার্ভিস) এই ঝুঁকি আরও বাড়িয়ে দেয়।</p>
+
+  <h2>সবচেয়ে সাধারণ Cloud Misconfiguration</h2>
+  <table>
+    <thead><tr><th>Misconfiguration</th><th>ঝুঁকি</th></tr></thead>
+    <tbody>
+      <tr><td>Publicly accessible storage bucket</td><td>সরাসরি ডেটা লিক (অধ্যায় ৪-এ বিস্তারিত)</td></tr>
+      <tr><td>Overly permissive IAM policy</td><td>একটি একক আপোসকৃত credential দিয়ে ব্যাপক ক্ষতি (অধ্যায় ৩-এ বিস্তারিত)</td></tr>
+      <tr><td>Unencrypted sensitive data</td><td>ডেটা breach হলে সরাসরি readable তথ্য</td></tr>
+      <tr><td>Default credentials পরিবর্তন না করা</td><td>Hacking Tools ডকুমেন্টেশনের Security Misconfiguration অধ্যায়ের একই সমস্যা, cloud সার্ভিসে</td></tr>
+      <tr><td>Logging/Monitoring নিষ্ক্রিয় রাখা</td><td>একটি breach ঘটলেও তা শনাক্ত করতে না পারা (অধ্যায় ১০-এ বিস্তারিত)</td></tr>
+      <tr><td>Unused/orphaned resources</td><td>ভুলে যাওয়া, patch না হওয়া সিস্টেম — attack surface অপ্রয়োজনীয়ভাবে বৃদ্ধি</td></tr>
+    </tbody>
+  </table>
+
+  <h2>"Shadow IT" ও Unmanaged Cloud Resources</h2>
+  <p>একটি বড় প্রতিষ্ঠানে, বিভিন্ন টিম স্বাধীনভাবে নতুন cloud রিসোর্স তৈরি করতে পারে — কখনো কখনো কেন্দ্রীয় IT/Security টিমের অজান্তেই। এই <strong>Shadow IT</strong> রিসোর্সগুলো প্রায়ই hardening checklist অনুসরণ করে না, এবং একটি প্রতিষ্ঠানের সম্পূর্ণ cloud attack surface-এর একটি "অদৃশ্য" অংশ তৈরি করে — Bug Bounty Methodology ডকুমেন্টেশনের Asset Discovery অধ্যায়ের ধারণার একটি প্রাসঙ্গিক প্রতিফলন।</p>
+
+  <h2>Infrastructure as Code (IaC) — একটি সমাধান</h2>
+  <div class="callout info"><div class="ic">💡</div><p><strong>IaC কীভাবে সাহায্য করে:</strong> Cloud পরিকাঠামো ম্যানুয়ালি console-এ ক্লিক করে তৈরি করার বদলে, যদি কোড (Terraform, CloudFormation-এর মতো টুল দিয়ে) আকারে সংজ্ঞায়িত করা হয়, তাহলে প্রতিটি পরিবর্তন রিভিউ ও version control-এর মধ্য দিয়ে যায় — এটি মানবিক ভুল কমায় এবং সব রিসোর্স একটি সামঞ্জস্যপূর্ণ, auditable নিরাপত্তা স্ট্যান্ডার্ড অনুসরণ করে তা নিশ্চিত করতে সাহায্য করে।</p></div>
+
+  <h2>নিয়মিত Configuration Audit-এর গুরুত্ব</h2>
+  <p>অধ্যায় ৪-এ আলোচিত CSPM টুলের মতো, একটি প্রতিষ্ঠানের নিয়মিত (স্বয়ংক্রিয়, ক্রমাগত) পুরো cloud পরিবেশ স্ক্যান করে misconfiguration শনাক্ত করা উচিত — এটি একবারের অডিট নয়, বরং Network Security ডকুমেন্টেশনের Hardening অধ্যায়ে আলোচিত "পুনরাবৃত্তিমূলক প্রক্রিয়া" নীতির cloud সংস্করণ।</p>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>কেন "Shadow IT" রিসোর্স একটি প্রতিষ্ঠানের নিরাপত্তা দলের জন্য বিশেষভাবে উদ্বেগজনক তা ব্যাখ্যা করুন — এগুলো কীভাবে সনাক্ত করা যেতে পারে?</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>Cloud data breach-এর প্রধান কারণ sophisticated আক্রমণ নয়, বরং সাধারণ misconfiguration — public bucket, overly permissive IAM, unencrypted data, disabled logging। Infrastructure as Code ও নিয়মিত automated audit এই ঝুঁকি উল্লেখযোগ্যভাবে কমাতে সাহায্য করে।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>কেন বেশিরভাগ cloud breach সাধারণ misconfiguration-এর কারণে ঘটে, sophisticated আক্রমণ নয়?</li>
+      <li>Shadow IT কী এবং কেন এটি একটি নিরাপত্তা ঝুঁকি?</li>
+      <li>Infrastructure as Code কীভাবে misconfiguration ঝুঁকি কমায়?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter05"><span>পূর্ববর্তী</span>অধ্যায় ০৫ — Cloud Network Security</a>
+    <a class="next" href="/chapter07"><span>পরবর্তী</span>অধ্যায় ০৭ — Container Security</a>
+  </div>
+</section>
+
+
+<section class="chapter" id="chapter07">
+  <div class="eyebrow">অধ্যায় ০৭ · Container</div>
+  <h1>Container Security</h1>
+  <p class="sub">আধুনিক cloud-নেটিভ অ্যাপ্লিকেশনের মৌলিক বিল্ডিং ব্লক — এবং তার নিজস্ব নিরাপত্তা বিবেচনা।</p>
+
+  <h2>Container কী</h2>
+  <p><strong>Container</strong> (Docker-এর মাধ্যমে জনপ্রিয়) একটি অ্যাপ্লিকেশন ও তার সব dependency (লাইব্রেরি, কনফিগারেশন)-কে একটি একক, পোর্টেবল প্যাকেজে বন্দী করে — এটি একটি পূর্ণাঙ্গ ভার্চুয়াল মেশিনের তুলনায় অনেক হালকা, কারণ একাধিক container একই অপারেটিং সিস্টেম kernel শেয়ার করে।</p>
+
+  <h2>VM বনাম Container — একটি দ্রুত তুলনা</h2>
+  <div class="grid2">
+    <div class="card"><h4>💻 Virtual Machine</h4><p>প্রতিটি VM তার নিজস্ব সম্পূর্ণ OS নিয়ে চলে — ভারী, কিন্তু শক্তিশালী isolation দেয়।</p></div>
+    <div class="card"><h4>📦 Container</h4><p>একই OS kernel শেয়ার করে — হালকা ও দ্রুত, কিন্তু isolation VM-এর তুলনায় তুলনামূলক কম শক্তিশালী।</p></div>
+  </div>
+
+  <h2>Container Image Security</h2>
+  <p>একটি container একটি <strong>Image</strong> থেকে তৈরি হয় — এবং Common Web Vulnerabilities ডকুমেন্টেশনের Vulnerable Components অধ্যায়ের একই নীতি এখানে প্রযোজ্য: যদি একটি container image একটি পুরনো, দুর্বলতাযুক্ত base OS বা লাইব্রেরি ব্যবহার করে, সেই দুর্বলতা প্রতিটি তৈরি হওয়া container-এ বহন হয়ে যায়।</p>
+
+  <h2>Image Scanning</h2>
+  <div class="codeblock">
+    <div class="cb-head"><span>ধারণাগত ওয়ার্কফ্লো</span><button class="copy-btn">কপি</button></div>
+    <pre><code>Developer code লেখেন
+   ↓
+Docker Image তৈরি হয়
+   ↓
+CI/CD Pipeline-এ Image Scanning টুল চলে (পরিচিত CVE-র জন্য)
+   ↓
+দুর্বলতা পাওয়া গেলে → Build ব্যর্থ হয়, ডেভেলপারকে জানানো হয়
+   ↓
+পরিষ্কার হলে → Image Registry-তে push হয়, Deploy-এর জন্য প্রস্তুত</code></pre>
+  </div>
+  <p>এই প্রক্রিয়া Bug Bounty Methodology ডকুমেন্টেশনের Automation অধ্যায়ের নীতির সাথে সামঞ্জস্যপূর্ণ — পুনরাবৃত্ত, pattern-ভিত্তিক চেক স্বয়ংক্রিয় করা, যাতে একজন দুর্বলতাযুক্ত image কখনো প্রোডাকশনে না পৌঁছায়।</p>
+
+  <h2>Container নিরাপত্তার মূল নীতি</h2>
+  <table>
+    <thead><tr><th>নীতি</th><th>কেন গুরুত্বপূর্ণ</th></tr></thead>
+    <tbody>
+      <tr><td>Minimal Base Image ব্যবহার</td><td>যত কম সফটওয়্যার, ততই কম সম্ভাব্য দুর্বলতা ও attack surface</td></tr>
+      <tr><td>Container Root User হিসেবে না চালানো</td><td>Container escape হলেও, host-এ root অ্যাক্সেস পাওয়া কঠিন হয়</td></tr>
+      <tr><td>Immutable Containers</td><td>একটি running container-এর ভেতরে সরাসরি পরিবর্তন না করা — পরিবর্তন করতে হলে নতুন image তৈরি করে redeploy করা</td></tr>
+      <tr><td>Secrets সরাসরি Image-এ হার্ডকোড না করা</td><td>Common Web Vulnerabilities ডকুমেন্টেশনের Sensitive Data Exposure অধ্যায়ের একই নীতি — API key/password আলাদা secret management সিস্টেমে রাখা</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn"><div class="ic">⚠️</div><p><strong>Container Escape-এর ঝুঁকি:</strong> যদিও বিরল, একটি গুরুতর দুর্বলতা একজন attacker-কে container-এর isolation ভেঙে হোস্ট মেশিনে প্রবেশের সুযোগ দিতে পারে — Minimal Privilege নীতি (non-root user, সীমিত capabilities) এই ঝুঁকির প্রভাব কমাতে সাহায্য করে।</p></div>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>কেন একটি container-কে root user হিসেবে না চালানো একটি গুরুত্বপূর্ণ নিরাপত্তা অনুশীলন তা ব্যাখ্যা করুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>Container একটি অ্যাপ্লিকেশনকে dependency-সহ প্যাকেজ করে, VM-এর চেয়ে হালকা কিন্তু কম isolation দেয়। Image Scanning দুর্বলতাযুক্ত component CI/CD pipeline-এই শনাক্ত করে, এবং Minimal Base Image, Non-root User, Immutability মূল নিরাপত্তা নীতি।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>VM ও Container-এর মধ্যে isolation-এর দিক থেকে পার্থক্য কী?</li>
+      <li>Image Scanning কী কাজ করে এবং কখন চালানো উচিত?</li>
+      <li>কেন secrets সরাসরি container image-এ হার্ডকোড করা উচিত নয়?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter06"><span>পূর্ববর্তী</span>অধ্যায় ০৬ — সাধারণ Cloud Misconfiguration</a>
+    <a class="next" href="/chapter08"><span>পরবর্তী</span>অধ্যায় ০৮ — Kubernetes ও Orchestration Security</a>
+  </div>
+</section>
+
+
+<section class="chapter" id="chapter08">
+  <div class="eyebrow">অধ্যায় ০৮ · Kubernetes</div>
+  <h1>Kubernetes ও Orchestration Security</h1>
+  <p class="sub">শত শত container একসাথে পরিচালনা করার সময়, নিরাপত্তা জটিলতা একটি নতুন স্তরে পৌঁছায়।</p>
+
+  <h2>Orchestration কেন প্রয়োজন</h2>
+  <p>একটি বড় অ্যাপ্লিকেশনে শত শত, হাজার হাজার container চলতে পারে — এগুলো ম্যানুয়ালি পরিচালনা করা অসম্ভব। <strong>Kubernetes (K8s)</strong> একটি container orchestration platform, যা স্বয়ংক্রিয়ভাবে container deploy, scale, ও manage করে।</p>
+
+  <h2>Kubernetes-এর মূল উপাদান (সংক্ষিপ্ত)</h2>
+  <table>
+    <thead><tr><th>উপাদান</th><th>বর্ণনা</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Pod</strong></td><td>Kubernetes-এর সবচেয়ে ছোট deployable একক, এক বা একাধিক container ধারণ করে</td></tr>
+      <tr><td><strong>Node</strong></td><td>একটি ফিজিক্যাল/ভার্চুয়াল মেশিন, যেখানে Pod চলে</td></tr>
+      <tr><td><strong>Cluster</strong></td><td>একাধিক Node-এর সমষ্টি, যা একসাথে Kubernetes পরিচালনা করে</td></tr>
+      <tr><td><strong>API Server</strong></td><td>পুরো cluster-এর কেন্দ্রীয় নিয়ন্ত্রণ পয়েন্ট — সব অ্যাডমিনিস্ট্রেটিভ request এখানে আসে</td></tr>
+    </tbody>
+  </table>
+
+  <h2>RBAC in Kubernetes</h2>
+  <p>অধ্যায় ৩-এ আলোচিত IAM-এর নীতি Kubernetes-এও প্রযোজ্য — <strong>Kubernetes RBAC (Role-Based Access Control)</strong> নির্ধারণ করে কোন user/service কোন resource-এ কী অ্যাকশন করতে পারবে। একটি ভুলভাবে কনফিগার করা RBAC নীতি (অতিরিক্ত অনুমতি) একটি একক আপোসকৃত Pod থেকে পুরো cluster নিয়ন্ত্রণের সুযোগ তৈরি করতে পারে।</p>
+
+  <h2>Network Policy — Pod-পর্যায়ের Segmentation</h2>
+  <p>ডিফল্টভাবে, একটি Kubernetes cluster-এর মধ্যে সব Pod একে অপরের সাথে অবাধে যোগাযোগ করতে পারে — Network Security ডকুমেন্টেশনের "Flat Network" সমস্যার একটি Kubernetes সংস্করণ। <strong>Network Policy</strong> ব্যবহার করে, কোন Pod কোন অন্য Pod-এর সাথে যোগাযোগ করতে পারবে তা সীমাবদ্ধ করা যায় — Network Segmentation নীতির একটি granular, Pod-পর্যায়ের প্রয়োগ।</p>
+
+  <h2>Secrets Management</h2>
+  <div class="callout warn"><div class="ic">⚠️</div><p><strong>Kubernetes Secrets সম্পর্কে একটি গুরুত্বপূর্ণ সতর্কতা:</strong> Kubernetes-এর built-in "Secret" অবজেক্ট ডিফল্টভাবে শুধু base64-encoded, এনক্রিপ্টেড নয় — base64 encoding কোনো নিরাপত্তা দেয় না, এটি শুধু একটি encoding ফরম্যাট (যে কেউ সহজেই decode করতে পারেন)। সংবেদনশীল তথ্যের জন্য additional encryption at rest, অথবা একটি dedicated secret management সার্ভিস (HashiCorp Vault, AWS Secrets Manager) ব্যবহার করা উচিত।</p></div>
+
+  <h2>Kubernetes Dashboard ও API Server Exposure</h2>
+  <p>Hacking Tools ডকুমেন্টেশনে আলোচিত reconnaissance কৌশলের একটি বাস্তব প্রয়োগ — একটি ভুলভাবে কনফিগার করা, সরাসরি ইন্টারনেট থেকে অ্যাক্সেসযোগ্য Kubernetes API Server বা Dashboard (authentication ছাড়া বা দুর্বল authentication সহ) একজন attacker-কে পুরো cluster-এর নিয়ন্ত্রণ দিতে পারে — এটি ইতিহাসে একাধিক বাস্তব breach-এর কারণ হয়েছে।</p>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>কেন Kubernetes-এর ডিফল্ট "সব Pod একে অপরের সাথে কথা বলতে পারে" আচরণ একটি নিরাপত্তা ঝুঁকি, এবং Network Policy কীভাবে এটি সমাধান করে তা ব্যাখ্যা করুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>Kubernetes শত শত container পরিচালনা করে, কিন্তু নিজস্ব নিরাপত্তা জটিলতা নিয়ে আসে — RBAC misconfiguration, flat network-এর মতো Pod-communication, এবং Secrets শুধু base64-encoded (এনক্রিপ্টেড নয়) থাকার ঝুঁকি। Network Policy ও সঠিক RBAC এই ঝুঁকি কমাতে সাহায্য করে।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>Pod, Node, ও Cluster-এর মধ্যে সম্পর্ক কী?</li>
+      <li>Kubernetes Network Policy কী কাজ করে?</li>
+      <li>কেন Kubernetes Secrets-এর base64 encoding যথেষ্ট নিরাপত্তা নয়?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter07"><span>পূর্ববর্তী</span>অধ্যায় ০৭ — Container Security</a>
+    <a class="next" href="/chapter09"><span>পরবর্তী</span>অধ্যায় ০৯ — Serverless Security</a>
+  </div>
+</section>
+
+
+<section class="chapter" id="chapter09">
+  <div class="eyebrow">অধ্যায় ০৯ · Serverless</div>
+  <h1>Serverless Security</h1>
+  <p class="sub">"সার্ভার নেই" মানে এই নয় যে "নিরাপত্তা নিয়ে ভাবতে হবে না" — শুধু ঝুঁকিগুলো ভিন্ন জায়গায় সরে যায়।</p>
+
+  <h2>Serverless কী</h2>
+  <p><strong>Serverless Computing</strong> (যেমন AWS Lambda, Azure Functions) -এ ডেভেলপার শুধু কোড লেখেন (একটি "ফাংশন"), এবং cloud provider সম্পূর্ণভাবে পরিচালনা করেন — কোনো সার্ভার provision, scale, বা patch করার প্রয়োজন নেই। ফাংশনটি শুধুমাত্র প্রয়োজনের সময় চালু হয় (event-driven), এবং ব্যবহার অনুযায়ী বিল হয়।</p>
+
+  <h2>Shared Responsibility Model-এ Serverless-এর অবস্থান</h2>
+  <p>অধ্যায় ২-এ আলোচিত Shared Responsibility Model-এ, Serverless সবচেয়ে বেশি দায়িত্ব cloud provider-কে দেয় — OS patching, runtime management সম্পূর্ণ provider-এর দায়িত্ব। কিন্তু <strong>Data ও Access Management সবসময় গ্রাহকের দায়িত্বে থেকে যায়</strong> — এমনকি serverless-এও।</p>
+
+  <h2>Serverless-নির্দিষ্ট নিরাপত্তা ঝুঁকি</h2>
+  <table>
+    <thead><tr><th>ঝুঁকি</th><th>বর্ণনা</th></tr></thead>
+    <tbody>
+      <tr><td>Over-permissioned Function</td><td>একটি ফাংশনকে প্রয়োজনের চেয়ে বেশি IAM অনুমতি দেওয়া (অধ্যায় ৩-এর Over-privileged IAM সমস্যার একই প্যাটার্ন)</td></tr>
+      <tr><td>Insecure Dependencies</td><td>একটি ফাংশন প্রায়ই অনেক third-party package ব্যবহার করে — Common Web Vulnerabilities ডকুমেন্টেশনের Vulnerable Components ঝুঁকি এখানেও প্রযোজ্য</td></tr>
+      <tr><td>Event Injection</td><td>Injection ভালনারেবিলিটির একটি নতুন রূপ — একটি ফাংশন যদি event ডেটা (যেমন একটি queue message) যাচাই ছাড়া বিশ্বাস করে</td></tr>
+      <tr><td>Insecure Secrets Storage</td><td>API key/credential ফাংশন কোডে হার্ডকোড করা, environment variable-এ unencrypted রাখা</td></tr>
+      <tr><td>Excessive Function Timeout/Resources</td><td>একটি দুর্বলতা কাজে লাগিয়ে, অপ্রয়োজনীয়ভাবে দীর্ঘ-চলমান ফাংশন ট্রিগার করে খরচ বাড়িয়ে দেওয়া (Denial of Wallet আক্রমণ)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Attack Surface পরিবর্তন — প্রতিটি Function একটি Entry Point</h2>
+  <div class="callout info"><div class="ic">💡</div><p><strong>একটি গুরুত্বপূর্ণ দৃষ্টিভঙ্গি পরিবর্তন:</strong> একটি traditional অ্যাপ্লিকেশনে Attack Surface Mapping (Bug Bounty Methodology ডকুমেন্টেশনে আলোচিত) মূলত একটি একক অ্যাপ্লিকেশনের endpoint নিয়ে কাজ করত। Serverless আর্কিটেকচারে, একটি অ্যাপ্লিকেশন শত শত ছোট, independent ফাংশনে বিভক্ত হতে পারে — প্রতিটি ফাংশন একটি পৃথক entry point, এবং প্রতিটির নিজস্ব IAM permission, input validation, ও monitoring প্রয়োজন।</p></div>
+
+  <h2>"Denial of Wallet" — একটি Serverless-নির্দিষ্ট ঝুঁকি</h2>
+  <p>Network Security ডকুমেন্টেশনে আলোচিত DDoS সাধারণত সার্ভিস অনুপলব্ধ করে দেয় (Denial of Service) — Serverless-এ একটি নতুন সম্পর্কিত ঝুঁকি আছে, <strong>Denial of Wallet</strong>: যেহেতু serverless ব্যবহার অনুযায়ী বিল হয়, একটি attacker ইচ্ছাকৃতভাবে একটি ফাংশন বারবার ট্রিগার করে একটি প্রতিষ্ঠানের cloud বিল অস্বাভাবিকভাবে বাড়িয়ে দিতে পারেন, সার্ভিস ব্যাহত না করেও।</p>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>কেন serverless আর্কিটেকচারে প্রতিটি individual function-এর জন্য আলাদা, সূক্ষ্ম IAM permission নির্ধারণ করা (একটি একক broad permission-এর বদলে) গুরুত্বপূর্ণ তা ব্যাখ্যা করুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>Serverless Computing OS/runtime management cloud provider-কে দেয়, কিন্তু Data ও Access Management গ্রাহকের দায়িত্বে থাকে। Over-permissioned function, insecure dependencies, event injection, ও Denial of Wallet serverless-নির্দিষ্ট ঝুঁকি, এবং প্রতিটি function-কে একটি পৃথক entry point হিসেবে বিবেচনা করা জরুরি।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>Serverless Computing-এ Shared Responsibility কীভাবে বণ্টিত হয়?</li>
+      <li>Event Injection কী এবং এটি কীভাবে traditional Injection-এর সাথে সম্পর্কিত?</li>
+      <li>Denial of Wallet কী?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter08"><span>পূর্ববর্তী</span>অধ্যায় ০৮ — Kubernetes ও Orchestration Security</a>
+    <a class="next" href="/chapter10"><span>পরবর্তী</span>অধ্যায় ১০ — Cloud Monitoring ও Logging</a>
+  </div>
+</section>
+
+
+<section class="chapter" id="chapter10">
+  <div class="eyebrow">অধ্যায় ১০ · Monitoring</div>
+  <h1>Cloud Monitoring ও Logging</h1>
+  <p class="sub">Network Security ডকুমেন্টেশনের SIEM নীতি cloud পরিবেশে কীভাবে প্রয়োগ হয় — "কী ঘটছে" ক্রমাগত জানা।</p>
+
+  <h2>কেন Cloud Logging বিশেষভাবে গুরুত্বপূর্ণ</h2>
+  <p>একটি cloud পরিবেশে, একটি অ্যাকশন (একটি নতুন IAM user তৈরি, একটি Security Group পরিবর্তন, একটি bucket পাবলিক করা) মাত্র কয়েক সেকেন্ডে, একটি API call দিয়ে ঘটতে পারে — কোনো ফিজিক্যাল প্রমাণ ছাড়াই। যদি এই পরিবর্তনগুলো লগ করা না থাকে, একটি breach-এর পর "কী ঘটেছিল" পুনর্গঠন করা প্রায় অসম্ভব হয়ে যায়।</p>
+
+  <h2>Activity Logging — কে, কী, কখন করেছেন</h2>
+  <p>প্রতিটি প্রধান cloud provider একটি কেন্দ্রীয় activity logging সার্ভিস সরবরাহ করে (AWS CloudTrail, Azure Monitor, GCP Cloud Audit Logs) — এটি প্রতিটি API call রেকর্ড করে: কোন user/role, কোন সময়, কোন resource-এ, কী action করেছেন। Hacking Tools ডকুমেন্টেশনের Digital Forensics অধ্যায়ে আলোচিত "Chain of Custody"-র ধারণা এখানেও প্রাসঙ্গিক — এই লগগুলো প্রায়ই একটি incident investigation-এর প্রাথমিক উৎস।</p>
+
+  <h2>Monitoring-এর স্তর</h2>
+  <table>
+    <thead><tr><th>স্তর</th><th>কী মনিটর করে</th></tr></thead>
+    <tbody>
+      <tr><td>Activity/Audit Logs</td><td>কে, কখন, কোন প্রশাসনিক অ্যাকশন নিয়েছেন (API-level)</td></tr>
+      <tr><td>Application Logs</td><td>একটি নির্দিষ্ট অ্যাপ্লিকেশনের ভেতরের ঘটনা (error, request)</td></tr>
+      <tr><td>Network Flow Logs</td><td>VPC-র মধ্যে ট্রাফিক প্যাটার্ন (অধ্যায় ৫-এর Network Security-র সাথে সম্পর্কিত)</td></tr>
+      <tr><td>Threat Detection</td><td>স্বয়ংক্রিয়ভাবে সন্দেহজনক প্যাটার্ন শনাক্তকারী সার্ভিস (যেমন AWS GuardDuty)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Alerting — শুধু লগ রাখা যথেষ্ট নয়</h2>
+  <div class="callout warn"><div class="ic">⚠️</div><p><strong>একটি সাধারণ ভুল:</strong> অনেক প্রতিষ্ঠান logging সক্রিয় করে, কিন্তু কেউ নিয়মিত সেই লগ পর্যালোচনা করেন না — ফলে একটি breach মাসের পর মাস অলক্ষিত থেকে যেতে পারে, যদিও সব প্রমাণ লগে বিদ্যমান ছিল। Network Security ডকুমেন্টেশনের SIEM অধ্যায়ের নীতি অনুযায়ী, সক্রিয় <strong>Alerting</strong> (নির্দিষ্ট সন্দেহজনক প্যাটার্নে স্বয়ংক্রিয় সতর্কতা) ছাড়া logging-এর ব্যবহারিক মূল্য অনেক কম।</p></div>
+
+  <h2>একটি গুরুত্বপূর্ণ Alert-এর উদাহরণ</h2>
+  <div class="codeblock">
+    <div class="cb-head"><span>ধারণাগত Alert Rule</span><button class="copy-btn">কপি</button></div>
+    <pre><code>IF (root/admin অ্যাকাউন্ট থেকে একটি অস্বাভাবিক সময়ে লগইন)
+   OR (একটি IAM policy-তে ব্যাপক নতুন অনুমতি যোগ করা হয়েছে)
+   OR (একটি Security Group-এ 0.0.0.0/0 থেকে একটি সংবেদনশীল পোর্ট খোলা হয়েছে)
+THEN ALERT: নিরাপত্তা টিমকে তাৎক্ষণিক সতর্ক করা</code></pre>
+  </div>
+
+  <h2>Log Immutability ও Centralization</h2>
+  <p>একজন attacker, যদি একটি সিস্টেম আপোস করতে সক্ষম হন, প্রায়ই নিজের কার্যকলাপের প্রমাণ মুছে ফেলার চেষ্টা করেন। তাই লগগুলো একটি পৃথক, সীমিত-অ্যাক্সেস কেন্দ্রীয় অবস্থানে সংরক্ষণ করা উচিত (যেখানে স্বাভাবিক অ্যাডমিন অ্যাক্সেসও সেগুলো মুছতে পারে না) — এটি Chain of Custody-র integrity বজায় রাখে।</p>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>কেন শুধু logging সক্রিয় করা যথেষ্ট নয় — সক্রিয় Alerting ছাড়া logging-এর ব্যবহারিক সীমাবদ্ধতা কী তা ব্যাখ্যা করুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>Cloud Activity Logging (CloudTrail-এর মতো) প্রতিটি API call রেকর্ড করে, যা incident investigation-এর ভিত্তি তৈরি করে। Monitoring একাধিক স্তরে (Activity, Application, Network, Threat Detection) কাজ করে, এবং সক্রিয় Alerting ছাড়া শুধু logging-এর ব্যবহারিক মূল্য সীমিত।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>Activity/Audit Logging কী রেকর্ড করে?</li>
+      <li>কেন শুধু logging যথেষ্ট নয় — Alerting কেন প্রয়োজন?</li>
+      <li>Log Centralization কেন গুরুত্বপূর্ণ?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter09"><span>পূর্ববর্তী</span>অধ্যায় ০৯ — Serverless Security</a>
+    <a class="next" href="/chapter11"><span>পরবর্তী</span>অধ্যায় ১১ — Data Encryption ইন দ্য ক্লাউড</a>
+  </div>
+</section>
+
+
+<section class="chapter" id="chapter11">
+  <div class="eyebrow">অধ্যায় ১১ · Encryption</div>
+  <h1>Data Encryption ইন দ্য ক্লাউড</h1>
+  <p class="sub">Common Web Vulnerabilities ডকুমেন্টেশনের Cryptographic Failures অধ্যায়ের নীতি cloud প্রেক্ষাপটে।</p>
+
+  <h2>Encryption at Rest ও in Transit — একটি পুনরালোচনা</h2>
+  <p>Common Web Vulnerabilities ডকুমেন্টেশনে আলোচিত এই দুটি ধারণা cloud-এ সরাসরি প্রযোজ্য — <strong>at Rest</strong> (storage-এ সংরক্ষিত ডেটা এনক্রিপ্টেড) ও <strong>in Transit</strong> (নেটওয়ার্কে প্রবাহিত ডেটা এনক্রিপ্টেড, TLS দিয়ে — Network Security ডকুমেন্টেশনে বিস্তারিত)। একটি সম্পূর্ণ cloud নিরাপত্তা কৌশলে উভয়ই নিশ্চিত করা প্রয়োজন।</p>
+
+  <h2>Cloud-এ Encryption সহজ করার একটি সুবিধা</h2>
+  <div class="callout info"><div class="ic">💡</div><p><strong>Cloud-এর একটি বাস্তব সুবিধা:</strong> ঐতিহ্যগত on-premise পরিকাঠামোতে, সঠিকভাবে encryption বাস্তবায়ন করা জটিল ছিল — cloud provider এখন প্রায় প্রতিটি storage সার্ভিসে "one-click" encryption at rest সরবরাহ করে। এই সুবিধা থাকা সত্ত্বেও, অধ্যায় ৬-এ আলোচিত misconfiguration-এর কারণে অনেক প্রতিষ্ঠান এটি সক্রিয় করতে ভুলে যান — একটি সহজলভ্য সুরক্ষা অব্যবহৃত থেকে যায়।</p></div>
+
+  <h2>KMS — Key Management Service</h2>
+  <p><strong>KMS</strong> একটি কেন্দ্রীভূত সার্ভিস, যা encryption key তৈরি, সংরক্ষণ, ও ঘোরানো (rotation) পরিচালনা করে — Authentication ডকুমেন্টেশনে আলোচিত key management-এর একটি cloud-নেটিভ সমাধান। KMS ব্যবহার করলে, ডেভেলপারদের নিজেদের cryptography বাস্তবায়ন করতে হয় না (যা প্রায়ই ভুলভাবে করা হয়), বরং একটি পরীক্ষিত, প্রতিষ্ঠিত সিস্টেম ব্যবহার করা যায়।</p>
+
+  <h2>Customer-Managed Key বনাম Provider-Managed Key</h2>
+  <table>
+    <thead><tr><th>ধরন</th><th>নিয়ন্ত্রণ</th><th>ট্রেড-অফ</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Provider-Managed Key</strong></td><td>Cloud provider সম্পূর্ণ key lifecycle পরিচালনা করে</td><td>সহজ, কিন্তু কম নিয়ন্ত্রণ</td></tr>
+      <tr><td><strong>Customer-Managed Key (CMK)</strong></td><td>গ্রাহক নিজে key তৈরি, rotation নীতি, ও অ্যাক্সেস নিয়ন্ত্রণ করেন</td><td>বেশি নিয়ন্ত্রণ ও compliance flexibility, কিন্তু বেশি দায়িত্ব</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Key Rotation-এর গুরুত্ব</h2>
+  <p>একটি encryption key দীর্ঘদিন ধরে অপরিবর্তিত থাকলে, যদি কোনোভাবে সেই key আপোস হয়, সব historical ডেটা ঝুঁকিতে পড়ে। নিয়মিত <strong>Key Rotation</strong> (পুরনো key নিষ্ক্রিয় করে নতুন key দিয়ে প্রতিস্থাপন) এই ঝুঁকি সীমিত করে — একটি আপোসকৃত পুরনো key দিয়ে শুধু একটি নির্দিষ্ট সময়সীমার ডেটা প্রভাবিত হয়, সবকিছু নয়।</p>
+
+  <h2>Field-Level Encryption</h2>
+  <p>পুরো ডেটাবেজ এনক্রিপ্ট করার পাশাপাশি, বিশেষভাবে সংবেদনশীল ক্ষেত্র (যেমন ক্রেডিট কার্ড নম্বর, SSN) আলাদাভাবে, অতিরিক্ত স্তরে এনক্রিপ্ট করা যেতে পারে — এটি Common Web Vulnerabilities ডকুমেন্টেশনের Defense in Depth নীতির একটি প্রয়োগ, যেখানে একটি একক দুর্বলতা (ডেটাবেজ-লেভেল এনক্রিপশন bypass হলেও) সবচেয়ে সংবেদনশীল ডেটা উন্মুক্ত করে না।</p>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>কেন নিয়মিত Key Rotation একটি স্ট্যাটিক, কখনো-পরিবর্তিত-না-হওয়া encryption key-র চেয়ে বেশি নিরাপদ তা ব্যাখ্যা করুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>Cloud provider encryption at rest/in transit সহজলভ্য করেছে, কিন্তু সক্রিয় করা গ্রাহকের দায়িত্ব। KMS কেন্দ্রীভূতভাবে encryption key পরিচালনা করে, Customer-Managed Key অতিরিক্ত নিয়ন্ত্রণ দেয়, এবং নিয়মিত Key Rotation ও Field-Level Encryption অতিরিক্ত সুরক্ষা স্তর তৈরি করে।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>Encryption at Rest ও in Transit-এর মধ্যে পার্থক্য কী?</li>
+      <li>KMS কী কাজ করে?</li>
+      <li>Key Rotation কেন গুরুত্বপূর্ণ?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter10"><span>পূর্ববর্তী</span>অধ্যায় ১০ — Cloud Monitoring ও Logging</a>
+    <a class="next" href="/chapter12"><span>পরবর্তী</span>অধ্যায় ১২ — Cloud Compliance ও Governance</a>
+  </div>
+</section>
+
+
+<section class="chapter" id="chapter12">
+  <div class="eyebrow">অধ্যায় ১২ · Compliance</div>
+  <h1>Cloud Compliance ও Governance</h1>
+  <p class="sub">শুধু "নিরাপদ" হওয়া যথেষ্ট নয় — অনেক ক্ষেত্রে নির্দিষ্ট আইনি ও শিল্প মানদণ্ড মেনে চলার প্রমাণও দিতে হয়।</p>
+
+  <h2>Compliance কী এবং কেন গুরুত্বপূর্ণ</h2>
+  <p><strong>Compliance</strong> হলো নির্দিষ্ট আইন, রেগুলেশন, বা শিল্প মানদণ্ডের প্রয়োজনীয়তা পূরণ করা — একটি প্রতিষ্ঠান শুধু "নিরাপদ অনুভব করা" যথেষ্ট নয়, বরং নির্দিষ্ট, auditable মানদণ্ড মেনে চলার প্রমাণ দিতে সক্ষম হতে হয়, বিশেষত যদি তারা সংবেদনশীল ডেটা (স্বাস্থ্য তথ্য, আর্থিক তথ্য) পরিচালনা করে।</p>
+
+  <h2>পরিচিত Compliance Framework</h2>
+  <table>
+    <thead><tr><th>Framework</th><th>কাদের জন্য প্রাসঙ্গিক</th></tr></thead>
+    <tbody>
+      <tr><td><strong>GDPR</strong></td><td>ইউরোপীয় ইউজারদের ব্যক্তিগত ডেটা পরিচালনাকারী যেকোনো প্রতিষ্ঠান</td></tr>
+      <tr><td><strong>PCI-DSS</strong></td><td>ক্রেডিট কার্ড ডেটা পরিচালনাকারী প্রতিষ্ঠান</td></tr>
+      <tr><td><strong>HIPAA</strong></td><td>স্বাস্থ্য তথ্য পরিচালনাকারী প্রতিষ্ঠান (মার্কিন যুক্তরাষ্ট্র)</td></tr>
+      <tr><td><strong>ISO 27001</strong></td><td>একটি সাধারণ তথ্য নিরাপত্তা ব্যবস্থাপনা মানদণ্ড, বিশ্বব্যাপী স্বীকৃত</td></tr>
+      <tr><td><strong>SOC 2</strong></td><td>SaaS/cloud সার্ভিস প্রদানকারীদের জন্য একটি সাধারণ মানদণ্ড, গ্রাহকদের আস্থা প্রদানের জন্য</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Compliance বনাম Security — একটি গুরুত্বপূর্ণ পার্থক্য</h2>
+  <div class="callout warn"><div class="ic">⚠️</div><p><strong>"Compliant মানেই সম্পূর্ণ নিরাপদ নয়":</strong> একটি প্রতিষ্ঠান একটি নির্দিষ্ট compliance checklist-এর সব আইটেম পূরণ করেও, এখনও গুরুতর নিরাপত্তা দুর্বলতার শিকার হতে পারে — compliance একটি ন্যূনতম বেসলাইন নির্ধারণ করে, নিরাপত্তার সর্বোচ্চ মান নয়। Compliance-কে "চেকবক্স টিক দেওয়া" হিসেবে না দেখে, প্রকৃত নিরাপত্তা অনুশীলনের একটি উপসেট হিসেবে দেখা উচিত।</p></div>
+
+  <h2>Cloud Governance — নীতি কেন্দ্রীয়ভাবে প্রয়োগ করা</h2>
+  <p><strong>Governance</strong> হলো একটি প্রতিষ্ঠানের নির্ধারিত নিরাপত্তা/compliance নীতি পুরো cloud পরিবেশে ধারাবাহিকভাবে প্রয়োগের প্রক্রিয়া। Policy as Code-এর মতো টুল (Open Policy Agent-এর মতো) ব্যবহার করে, একটি প্রতিষ্ঠান স্বয়ংক্রিয়ভাবে নিশ্চিত করতে পারে যে নতুন তৈরি হওয়া কোনো resource প্রতিষ্ঠানের নীতি লঙ্ঘন করছে না (যেমন encryption বাধ্যতামূলক, নির্দিষ্ট region-এর বাইরে resource তৈরি নিষিদ্ধ)।</p>
+
+  <h2>Audit-এর জন্য প্রস্তুতি</h2>
+  <p>একটি compliance audit-এর সময়, একটি প্রতিষ্ঠানকে প্রমাণ দেখাতে হয় যে তারা তাদের নীতি অনুসরণ করছেন — এই কারণে অধ্যায় ১০-এ আলোচিত Activity Logging এত গুরুত্বপূর্ণ: একটি সুসংগঠিত, centralized লগ সিস্টেম একটি audit-এর সময় প্রয়োজনীয় প্রমাণ দ্রুত সরবরাহ করতে সাহায্য করে।</p>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>কেন "আমরা ISO 27001 compliant" একটি প্রতিষ্ঠানকে সম্পূর্ণভাবে breach-প্রুফ প্রমাণ করে না তা ব্যাখ্যা করুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>Compliance Framework (GDPR, PCI-DSS, HIPAA, ISO 27001, SOC 2) নির্দিষ্ট আইনি/শিল্প মানদণ্ড নির্ধারণ করে, কিন্তু compliance সর্বোচ্চ নিরাপত্তার গ্যারান্টি নয়, একটি ন্যূনতম বেসলাইন। Cloud Governance ও Policy as Code নীতি পুরো cloud পরিবেশে ধারাবাহিকভাবে প্রয়োগ করতে সাহায্য করে।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>GDPR, PCI-DSS, ও HIPAA প্রতিটি কাদের জন্য প্রাসঙ্গিক?</li>
+      <li>কেন "Compliant" ও "সম্পূর্ণ নিরাপদ" সমার্থক নয়?</li>
+      <li>Policy as Code কীভাবে Cloud Governance-এ সাহায্য করে?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter11"><span>পূর্ববর্তী</span>অধ্যায় ১১ — Data Encryption ইন দ্য ক্লাউড</a>
+    <a class="next" href="/chapter13"><span>পরবর্তী</span>অধ্যায় ১৩ — Multi-Cloud ও Hybrid Cloud Security</a>
+  </div>
+</section>
+
+
+<section class="chapter" id="chapter13">
+  <div class="eyebrow">অধ্যায় ১৩ · Multi-Cloud</div>
+  <h1>Multi-Cloud ও Hybrid Cloud Security</h1>
+  <p class="sub">একাধিক cloud provider বা cloud ও on-premise একসাথে ব্যবহার করলে কী অতিরিক্ত ঝুঁকি তৈরি হয়।</p>
+
+  <h2>Multi-Cloud ও Hybrid Cloud কী</h2>
+  <table>
+    <thead><tr><th>পরিভাষা</th><th>সংজ্ঞা</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Multi-Cloud</strong></td><td>একাধিক cloud provider (যেমন AWS + Azure) একসাথে ব্যবহার করা</td></tr>
+      <tr><td><strong>Hybrid Cloud</strong></td><td>Public cloud ও প্রতিষ্ঠানের নিজস্ব on-premise পরিকাঠামো একসাথে ব্যবহার করা</td></tr>
+    </tbody>
+  </table>
+  <p>প্রতিষ্ঠানগুলো এই পথ বেছে নেয় বিভিন্ন কারণে — vendor lock-in এড়ানো, নির্দিষ্ট সার্ভিসের জন্য সেরা provider বেছে নেওয়া, বা নির্দিষ্ট ডেটা আইনগত কারণে on-premise রাখার প্রয়োজন।</p>
+
+  <h2>বাড়তি জটিলতা, বাড়তি ঝুঁকি</h2>
+  <div class="callout warn"><div class="ic">⚠️</div><p><strong>মূল চ্যালেঞ্জ — সামঞ্জস্য (Consistency):</strong> প্রতিটি cloud provider-এর নিজস্ব IAM মডেল, নিজস্ব নিরাপত্তা টুল, নিজস্ব terminology আছে। একটি একক, সামঞ্জস্যপূর্ণ নিরাপত্তা নীতি একাধিক পরিবেশে বজায় রাখা কঠিন — একটি পরিবেশে কঠোর একটি নিয়ম অন্য পরিবেশে ভুলবশত অনুপস্থিত থাকতে পারে, যা একটি অসামঞ্জস্যপূর্ণ আক্রমণ-তল (attack surface) তৈরি করে।</p></div>
+
+  <h2>Multi-Cloud/Hybrid-এর সাধারণ নিরাপত্তা সমস্যা</h2>
+  <ul>
+    <li><strong>অসামঞ্জস্যপূর্ণ Access Control</strong> — একটি provider-এ একটি user-এর অনুমতি সীমিত, কিন্তু অন্য provider-এ ভুলভাবে বিস্তৃত</li>
+    <li><strong>দৃশ্যমানতার ফাঁক (Visibility Gap)</strong> — একটি একক কেন্দ্রীয় ড্যাশবোর্ড ছাড়া, কোন পরিবেশে কী ঘটছে তা পুরোপুরি বোঝা কঠিন (অধ্যায় ১০-এর Monitoring সমস্যার একটি বর্ধিত রূপ)</li>
+    <li><strong>ডেটা ট্রান্সফার ঝুঁকি</strong> — পরিবেশের মধ্যে ডেটা স্থানান্তরের সময় encryption in transit (অধ্যায় ১১) নিশ্চিত করা আবশ্যক</li>
+    <li><strong>বিভিন্ন Compliance প্রয়োজনীয়তা</strong> — ভিন্ন region/provider ভিন্ন compliance নিয়ম মেনে চলতে পারে</li>
+  </ul>
+
+  <h2>সমাধানের দিকনির্দেশ</h2>
+  <div class="grid2">
+    <div class="card"><h4>কেন্দ্রীয় Identity Provider</h4><p>একটি একক Identity Provider (SSO) দিয়ে সব cloud পরিবেশে অ্যাক্সেস নিয়ন্ত্রণ করলে, একাধিক আলাদা IAM সিস্টেম পরিচালনার জটিলতা কমে — Authentication ডকুমেন্টেশনের SSO অধ্যায়ের প্রয়োগ।</p></div>
+    <div class="card"><h4>Cross-Cloud CSPM</h4><p>একটি CSPM টুল (অধ্যায় ৪-এ আলোচিত) যা একাধিক provider জুড়ে misconfiguration স্ক্যান করতে পারে, একটি একক দৃশ্যমানতা স্তর তৈরি করে।</p></div>
+  </div>
+
+  <h2>Infrastructure as Code-এর ভূমিকা</h2>
+  <p>অধ্যায় ৬-এ আলোচিত Infrastructure as Code (IaC) multi-cloud পরিবেশেও সহায়ক — একটি প্রমিত, সংস্করণ-নিয়ন্ত্রিত টেমপ্লেট ব্যবহার করে, একটি প্রতিষ্ঠান বিভিন্ন provider জুড়ে একই নিরাপত্তা নীতি ধারাবাহিকভাবে প্রয়োগ করতে পারে, মানবিক ভুলের সম্ভাবনা কমিয়ে।</p>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>কেন একাধিক cloud provider ব্যবহার করলে "সামঞ্জস্যপূর্ণ নিরাপত্তা নীতি" বজায় রাখা বিশেষভাবে চ্যালেঞ্জিং হয়ে ওঠে তা ব্যাখ্যা করুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>Multi-Cloud ও Hybrid Cloud পরিবেশ vendor lock-in এড়ানো ও flexibility দেয়, কিন্তু সামঞ্জস্যপূর্ণ Access Control, কেন্দ্রীভূত দৃশ্যমানতা, ও ডেটা ট্রান্সফার নিরাপত্তা নিশ্চিত করা কঠিন করে তোলে — কেন্দ্রীয় Identity Provider, Cross-Cloud CSPM, ও Infrastructure as Code এই জটিলতা কমাতে সাহায্য করে।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>Multi-Cloud ও Hybrid Cloud-এর মধ্যে পার্থক্য কী?</li>
+      <li>Multi-Cloud পরিবেশে Access Control সামঞ্জস্য বজায় রাখা কঠিন কেন?</li>
+      <li>Cross-Cloud CSPM কী সমস্যা সমাধান করে?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter12"><span>পূর্ববর্তী</span>অধ্যায় ১২ — Cloud Compliance ও Governance</a>
+    <a class="next" href="/chapter14"><span>পরবর্তী</span>অধ্যায় ১৪ — Cloud Security Hardening Checklist</a>
+  </div>
+</section>
+
+
+<section class="chapter" id="chapter14">
+  <div class="eyebrow">অধ্যায় ১৪ · Hardening</div>
+  <h1>Cloud Security Hardening Checklist</h1>
+  <p class="sub">এই ডকুমেন্টেশনের সব অধ্যায়ের ধারণা একত্র করে, একটি ব্যবহারিক চেকলিস্ট।</p>
+
+  <h2>কেন একটি চেকলিস্ট</h2>
+  <p>এখন পর্যন্ত আলোচিত প্রতিটি ধারণা (IAM, Storage, Network, Container, Monitoring, Encryption, Compliance) একত্র করে, একটি সহজে অনুসরণযোগ্য checklist তৈরি করা হয়েছে — এটি কোনো প্রতিষ্ঠানের জন্য "কোথা থেকে শুরু করব" প্রশ্নের একটি ব্যবহারিক উত্তর, যদিও এটি একটি সম্পূর্ণ নিরাপত্তা অডিটের বিকল্প নয়।</p>
+
+  <h2>Identity ও Access</h2>
+  <table>
+    <thead><tr><th>আইটেম</th><th>বিস্তারিত</th></tr></thead>
+    <tbody>
+      <tr><td>Root/Master অ্যাকাউন্টে MFA</td><td>প্রাথমিক, সবচেয়ে শক্তিশালী অ্যাকাউন্টে MFA বাধ্যতামূলক</td></tr>
+      <tr><td>Principle of Least Privilege</td><td>প্রতিটি role/policy পর্যায়ক্রমে পর্যালোচনা করে অপ্রয়োজনীয় অনুমতি সরানো</td></tr>
+      <tr><td>অব্যবহৃত credential সরানো</td><td>পুরনো access key ও অব্যবহৃত user অ্যাকাউন্ট নিষ্ক্রিয় করা</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Storage ও Network</h2>
+  <table>
+    <thead><tr><th>আইটেম</th><th>বিস্তারিত</th></tr></thead>
+    <tbody>
+      <tr><td>Public Access Block</td><td>সব storage bucket-এ ডিফল্টভাবে পাবলিক অ্যাক্সেস বন্ধ</td></tr>
+      <tr><td>Encryption at Rest সক্রিয়</td><td>সব storage ও database-এ এনক্রিপশন সক্রিয় করা</td></tr>
+      <tr><td>Security Group audit</td><td>কোনো নিয়মে 0.0.0.0/0 অপ্রয়োজনীয়ভাবে খোলা আছে কিনা পরীক্ষা</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Container/Kubernetes ও Serverless</h2>
+  <table>
+    <thead><tr><th>আইটেম</th><th>বিস্তারিত</th></tr></thead>
+    <tbody>
+      <tr><td>Image scanning</td><td>CI/CD pipeline-এ স্বয়ংক্রিয় vulnerability স্ক্যান</td></tr>
+      <tr><td>RBAC কনফিগারেশন</td><td>Kubernetes-এ সঠিকভাবে Role-Based Access Control সেট করা</td></tr>
+      <tr><td>Serverless function অনুমতি</td><td>প্রতিটি function-এর জন্য ন্যূনতম প্রয়োজনীয় IAM অনুমতি</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Monitoring ও Governance</h2>
+  <table>
+    <thead><tr><th>আইটেম</th><th>বিস্তারিত</th></tr></thead>
+    <tbody>
+      <tr><td>Activity Logging সক্রিয়</td><td>সব গুরুত্বপূর্ণ অ্যাকশন লগ হচ্ছে তা নিশ্চিত করা</td></tr>
+      <tr><td>Alerting কনফিগার করা</td><td>সন্দেহজনক প্যাটার্নে স্বয়ংক্রিয় সতর্কতা</td></tr>
+      <tr><td>Infrastructure as Code ব্যবহার</td><td>সামঞ্জস্যপূর্ণ, auditable কনফিগারেশন</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout info"><div class="ic">💡</div><p>এই checklist একটি শুরুর বিন্দু — প্রকৃত বাস্তবায়নে, প্রতিটি প্রতিষ্ঠানের নিজস্ব risk assessment অনুযায়ী অগ্রাধিকার ঠিক করা উচিত, এবং Common Web Vulnerabilities ডকুমেন্টেশনের Vulnerability Management অধ্যায়ে আলোচিত নিয়মিত পর্যালোচনা প্রক্রিয়ার অংশ হিসেবে এটি ব্যবহার করা উচিত।</p></div>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>এই checklist থেকে তিনটি আইটেম বেছে নিন এবং প্রতিটির জন্য ব্যাখ্যা করুন কেন এটি গুরুত্বপূর্ণ।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>এই checklist Identity/Access, Storage/Network, Container/Serverless, ও Monitoring/Governance — এই চারটি ক্ষেত্র জুড়ে এই ডকুমেন্টেশনের মূল ধারণাগুলোকে একটি ব্যবহারিক শুরুর বিন্দুতে একত্র করে।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>কেন একটি checklist একটি সম্পূর্ণ নিরাপত্তা অডিটের বিকল্প নয়?</li>
+      <li>Public Access Block কেন একটি গুরুত্বপূর্ণ প্রাথমিক পদক্ষেপ?</li>
+      <li>Image Scanning কোথায় যুক্ত করা উচিত?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter13"><span>পূর্ববর্তী</span>অধ্যায় ১৩ — Multi-Cloud ও Hybrid Cloud Security</a>
+    <a class="next" href="/chapter15"><span>পরবর্তী</span>অধ্যায় ১৫ — শব্দকোষ ও চিট শিট / FAQ</a>
+  </div>
+</section>
+
+
+<section class="chapter" id="chapter15">
+  <div class="eyebrow">অধ্যায় ১৫ · Glossary</div>
+  <h1>শব্দকোষ ও চিট শিট / FAQ</h1>
+  <p class="sub">এই ডকুমেন্টেশনে ব্যবহৃত গুরুত্বপূর্ণ পরিভাষার একটি দ্রুত রেফারেন্স।</p>
+
+  <h2>মূল শব্দকোষ</h2>
+  <table>
+    <thead><tr><th>পরিভাষা</th><th>ব্যাখ্যা</th></tr></thead>
+    <tbody>
+      <tr><td><strong>IaaS/PaaS/SaaS</strong></td><td>Cloud সার্ভিস মডেল — পরিকাঠামো, প্ল্যাটফর্ম, সফটওয়্যার</td></tr>
+      <tr><td><strong>Shared Responsibility Model</strong></td><td>Provider ও গ্রাহকের মধ্যে নিরাপত্তা দায়িত্বের বিভাজন</td></tr>
+      <tr><td><strong>IAM</strong></td><td>Identity and Access Management — কে কী করতে পারেন তা নিয়ন্ত্রণ</td></tr>
+      <tr><td><strong>Least Privilege</strong></td><td>শুধু প্রয়োজনীয় ন্যূনতম অনুমতি দেওয়ার নীতি</td></tr>
+      <tr><td><strong>VPC</strong></td><td>Virtual Private Cloud — cloud-এ একটি বিচ্ছিন্ন নেটওয়ার্ক পরিবেশ</td></tr>
+      <tr><td><strong>Security Group / NACL</strong></td><td>Cloud নেটওয়ার্ক ট্রাফিক নিয়ন্ত্রণকারী ফায়ারওয়াল-জাতীয় নিয়ম</td></tr>
+      <tr><td><strong>CSPM</strong></td><td>Cloud Security Posture Management — misconfiguration স্বয়ংক্রিয় শনাক্তকারী টুল</td></tr>
+      <tr><td><strong>IaC</strong></td><td>Infrastructure as Code — কোড দিয়ে পরিকাঠামো সংজ্ঞায়িত করা</td></tr>
+      <tr><td><strong>Container</strong></td><td>একটি অ্যাপ্লিকেশন ও তার dependency একসাথে প্যাকেজ করা হালকা ইউনিট</td></tr>
+      <tr><td><strong>Kubernetes (K8s)</strong></td><td>Container orchestration প্ল্যাটফর্ম</td></tr>
+      <tr><td><strong>RBAC</strong></td><td>Role-Based Access Control</td></tr>
+      <tr><td><strong>Serverless</strong></td><td>পরিকাঠামো পরিচালনা ছাড়াই কোড চালানোর মডেল (যেমন AWS Lambda)</td></tr>
+      <tr><td><strong>KMS</strong></td><td>Key Management Service — encryption key কেন্দ্রীয়ভাবে পরিচালনা</td></tr>
+      <tr><td><strong>CSPM / Compliance</strong></td><td>GDPR, PCI-DSS, HIPAA, ISO 27001, SOC 2 — নির্দিষ্ট মানদণ্ড মেনে চলার প্রমাণ</td></tr>
+      <tr><td><strong>Multi-Cloud / Hybrid Cloud</strong></td><td>একাধিক provider বা cloud+on-premise একসাথে ব্যবহার</td></tr>
+    </tbody>
+  </table>
+
+  <h2>প্রায়শই জিজ্ঞাসিত প্রশ্ন</h2>
+  <details>
+    <summary>Cloud কি on-premise-এর চেয়ে বেশি নিরাপদ?</summary>
+    <p>না বা হ্যাঁ — কোনোটিই সরলভাবে সঠিক নয়। Cloud provider-রা সাধারণত অবকাঠামোগত নিরাপত্তায় (অধ্যায় ২) বিশাল বিনিয়োগ করে, কিন্তু Shared Responsibility Model-এর "গ্রাহকের অংশ" (কনফিগারেশন, IAM) ভুল হলে একটি cloud পরিবেশও সমানভাবে ঝুঁকিপূর্ণ হতে পারে।</p>
+  </details>
+  <details>
+    <summary>একজন শিক্ষার্থী হিসেবে Cloud Security শেখা কীভাবে শুরু করব?</summary>
+    <p>একটি ফ্রি-টিয়ার cloud অ্যাকাউন্ট (AWS/Azure/GCP) তৈরি করে, ছোট প্রজেক্টে IAM, Security Group, ও S3-জাতীয় storage কনফিগার করার মাধ্যমে ব্যবহারিক অভিজ্ঞতা অর্জন করা যায় — তবে সবসময় free-tier সীমার মধ্যে থেকে, যাতে অপ্রত্যাশিত বিল না আসে।</p>
+  </details>
+  <details>
+    <summary>এই ডকুমেন্টেশনের সাথে এই সিরিজের অন্য কোন ডকুমেন্টেশন সম্পর্কিত?</summary>
+    <p>Network Security (VPC/Firewall-এর ভিত্তি), Common Web Vulnerabilities (Security Misconfiguration, Encryption), Authentication/Authorization (MFA, SSO), এবং Bug Bounty Methodology (Attack Surface Mapping, Asset Discovery) — এই চারটি ডকুমেন্টেশনের সাথে এই গাইডের ধারণাগুলো সরাসরি সংযুক্ত।</p>
+  </details>
+
+  <div class="summary-box">
+    <h4>কোর্স সম্পন্ন!</h4>
+    <p>অভিনন্দন — আপনি Cloud Security ডকুমেন্টেশনের সবগুলো অধ্যায় সম্পন্ন করেছেন। Shared Responsibility Model থেকে শুরু করে IAM, Storage/Network Security, Container/Kubernetes/Serverless Security, Monitoring, Encryption, Compliance, ও Multi-Cloud পরিবেশ পর্যন্ত — আপনি এখন আধুনিক cloud-নেটিভ নিরাপত্তার একটি দৃঢ় ভিত্তি অর্জন করেছেন।</p>
+  </div>
+
+  <div class="pager single">
+    <a class="single" href="/"><span>হোমে ফিরে যান</span>মূল পাতা</a>
+  </div>
+</section>
+
+      </div>
+    </div>
+    <footer class="site-footer">© learn.alamincyber.com — Cloud Security Documentation · শুধুমাত্র শিক্ষামূলক ও অনুমোদিত ব্যবহারের জন্য</footer>
+  </div>
+</div>
+
+<script>
+/* ===================== CHAPTER REGISTRY ===================== */
+var CHAPTERS = [
+  {id:"chapter01", num:"০১", title:"Cloud Computing ও Cloud Security-র ভিত্তি"},
+  {id:"chapter02", num:"০২", title:"Shared Responsibility Model"},
+  {id:"chapter03", num:"০৩", title:"IAM — Identity and Access Management"},
+  {id:"chapter04", num:"০৪", title:"Cloud Storage Security"},
+  {id:"chapter05", num:"০৫", title:"Cloud Network Security"},
+  {id:"chapter06", num:"০৬", title:"সাধারণ Cloud Misconfiguration"},
+  {id:"chapter07", num:"০৭", title:"Container Security"},
+  {id:"chapter08", num:"০৮", title:"Kubernetes ও Orchestration Security"},
+  {id:"chapter09", num:"০৯", title:"Serverless Security"},
+  {id:"chapter10", num:"১০", title:"Cloud Monitoring ও Logging"},
+  {id:"chapter11", num:"১১", title:"Data Encryption ইন দ্য ক্লাউড"},
+  {id:"chapter12", num:"১২", title:"Cloud Compliance ও Governance"},
+  {id:"chapter13", num:"১৩", title:"Multi-Cloud ও Hybrid Cloud Security"},
+  {id:"chapter14", num:"১৪", title:"Cloud Security Hardening Checklist"},
+  {id:"chapter15", num:"১৫", title:"শব্দকোষ ও চিট শিট / FAQ"}
+];
+var DOC_INDEX = "https://learn.alamincyber.com/documentation/";
+
+/* ===================== BUILD SIDEBAR ===================== */
+(function buildToc(){
+  var toc = document.getElementById("toc");
+  var liHome = document.createElement("li");
+  liHome.innerHTML = '<a href="/"><span class="num">●</span>Cloud Security Documentation Home</a>';
+  toc.appendChild(liHome);
+  CHAPTERS.forEach(function(ch){
+    var li = document.createElement("li");
+    li.innerHTML = '<a href="/'+ch.id+'" data-id="'+ch.id+'"><span class="num">'+ch.num+'</span>'+ch.title+'</a>';
+    toc.appendChild(li);
+  });
+})();
+
+/* ===================== ROUTING (clean root-relative paths, e.g. /chapter02) ===================== */
+function idToPath(route){ return route === "" ? "/" : "/" + route; }
+function currentRouteFromPath(path){
+  var p = path.replace(/\/+$/,"") || "/";
+  var m = p.match(/chapter(\d{2})/);
+  if (m) return "chapter" + m[1];
+  // Anything that isn't a recognizable /chapterNN path is treated as the landing
+  // page — this covers "/", "/index.html", a nested deployment folder like
+  // "/documentation/xss/", AND opening the file directly (file://...index.html,
+  // where location.pathname is the full filesystem path). A genuinely bad chapter
+  // number (e.g. /chapter99) still matches the regex above and correctly falls
+  // through to the not-found page via routeExists().
+  return "";
+}
+
+function routeExists(route){
+  if (route === "") return true;
+  return CHAPTERS.some(function(c){ return c.id === route; });
+}
+
+function showRoute(route, opts){
+  opts = opts || {};
+  var valid = routeExists(route) ? route : "__notfound__";
+  var sections = document.querySelectorAll(".chapter");
+  sections.forEach(function(s){ s.classList.remove("active"); });
+
+  var target;
+  if (valid === "") target = document.getElementById("landing");
+  else if (valid === "__notfound__") target = document.getElementById("notfound");
+  else target = document.getElementById(valid);
+
+  if (target) target.classList.add("active");
+
+  // sidebar active state
+  document.querySelectorAll(".toc a").forEach(function(a){
+    a.classList.toggle("active", a.getAttribute("data-id") === valid);
+  });
+
+  // topbar title + breadcrumb
+  var topTitle = document.getElementById("topTitle");
+  var breadcrumb = document.getElementById("breadcrumb");
+  if (valid === ""){
+    topTitle.textContent = "Cloud Security Documentation";
+    breadcrumb.innerHTML = "";
+  } else if (valid === "__notfound__"){
+    topTitle.textContent = "পাওয়া যায়নি";
+    breadcrumb.innerHTML = '<a href="/">Cloud Security Documentation</a> / ৪০৪';
+  } else {
+    var ch = CHAPTERS.filter(function(c){return c.id===valid;})[0];
+    topTitle.textContent = "অধ্যায় "+ch.num+" — "+ch.title;
+    breadcrumb.innerHTML = '<a href="/">Cloud Security Documentation</a> / অধ্যায় '+ch.num;
+  }
+
+  document.title = (valid===""? "Cloud Security Documentation" : (valid==="__notfound__" ? "404" : "অধ্যায় "+CHAPTERS.filter(function(c){return c.id===valid;})[0].num)) + " — Learn Cyber Security";
+
+  if (!opts.noScroll){
+    document.getElementById("content").scrollIntoView({block:"start"});
+    window.scrollTo(0,0);
+  }
+  closeSidebarMobile();
+}
+
+function navigateTo(route, push){
+  var path = idToPath(route);
+  if (push !== false && location.pathname !== path){
+    try {
+      history.pushState({route:route}, "", path);
+    } catch (e) {
+      // Some sandboxed/embedded preview contexts (e.g. an iframe loaded via
+      // srcdoc, whose real document URL is "about:srcdoc") throw a
+      // SecurityError here because the URL doesn't match the document's
+      // actual origin/path. On a real host (GitHub Pages etc.) this never
+      // happens. Fail silently so the app still renders the right chapter —
+      // only the address-bar URL won't update in that sandboxed case.
+    }
+  }
+  showRoute(route);
+}
+
+/* intercept internal nav clicks — any same-origin, root-relative link (href="/...") */
+document.addEventListener("click", function(e){
+  var a = e.target.closest('a[href^="/"]');
+  if (!a) return;
+  if (a.target === "_blank" || a.hasAttribute("download")) return;
+  var url = new URL(a.href, location.origin);
+  if (url.origin !== location.origin) return;
+  e.preventDefault();
+  navigateTo(currentRouteFromPath(url.pathname), true);
+});
+
+window.addEventListener("popstate", function(e){
+  var route = (e.state && typeof e.state.route === "string") ? e.state.route : currentRouteFromPath(location.pathname);
+  showRoute(route, {noScroll:true});
+});
+
+/* ===================== SIDEBAR TOGGLES ===================== */
+var sidebar = document.getElementById("sidebar");
+var scrim = document.getElementById("scrim");
+var mainWrap = document.getElementById("mainWrap");
+
+function openSidebarMobile(){
+  sidebar.classList.add("open");
+  scrim.classList.add("show");
+  document.getElementById("hamburgerBtn").setAttribute("aria-expanded","true");
+}
+function closeSidebarMobile(){
+  sidebar.classList.remove("open");
+  scrim.classList.remove("show");
+  document.getElementById("hamburgerBtn").setAttribute("aria-expanded","false");
+}
+document.getElementById("hamburgerBtn").addEventListener("click", function(){
+  if (sidebar.classList.contains("open")) closeSidebarMobile(); else openSidebarMobile();
+});
+scrim.addEventListener("click", closeSidebarMobile);
+
+document.getElementById("collapseBtn").addEventListener("click", function(){
+  sidebar.classList.toggle("collapsed");
+  mainWrap.classList.toggle("full");
+});
+
+document.addEventListener("keydown", function(e){
+  if (e.key === "Escape") closeSidebarMobile();
+});
+
+/* ===================== COPY CODE BUTTONS ===================== */
+document.addEventListener("click", function(e){
+  var btn = e.target.closest(".copy-btn");
+  if (!btn) return;
+  var block = btn.closest(".codeblock");
+  var codeEl = block.querySelector("pre code") || block.querySelector("pre");
+  var text = codeEl.textContent;
+  navigator.clipboard.writeText(text).then(function(){
+    var old = btn.textContent;
+    btn.textContent = "কপি হয়েছে ✓";
+    btn.classList.add("copied");
+    setTimeout(function(){ btn.textContent = old; btn.classList.remove("copied"); }, 1500);
+  }).catch(function(){
+    btn.textContent = "কপি ব্যর্থ";
+  });
+});
+
+/* initial load — runs last, after sidebar/scrim/listeners above are all set up,
+   since showRoute() -> closeSidebarMobile() depends on them existing */
+(function initRoute(){
+  var route = currentRouteFromPath(location.pathname);
+  // replace current history entry with a state object so popstate works immediately after.
+  // Wrapped in try/catch: a sandboxed preview iframe (document URL "about:srcdoc") throws
+  // a SecurityError here since the target URL can't match its real origin/path — harmless
+  // to skip in that case; on a real host (GitHub Pages etc.) this always succeeds.
+  try {
+    history.replaceState({route:route}, "", idToPath(route));
+  } catch (e) {}
+  showRoute(route, {noScroll:true});
+})();
+</script>
+</body>
+</html>
