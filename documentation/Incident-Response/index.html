@@ -1,1 +1,1328 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Incident Response & Digital Forensics Documentation</title>
+<meta name="description" content="বাংলায় সম্পূর্ণ Incident Response ও Digital Forensics শেখার ডকুমেন্টেশন — IR Lifecycle, Chain of Custody, Evidence Collection, Memory/Disk/Network Forensics, Malware Triage, ও Reporting।">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tiro+Bangla&family=Hind+Siliguri:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0e14; --surface:#111722; --surface-2:#161d2a; --border:#263044;
+  --fg:#e7edf5; --fg-muted:#93a3bd; --accent:#ff5c5c; --accent-fg:#1a0505;
+  --accent-2:#f5a524; --danger:#ff6b6b; --code-bg:#0d1117; --code-fg:#d7e0ea;
+  --link:#5bc2e8; --shadow:0 4px 18px rgba(0,0,0,.45); color-scheme:dark;
+  --font-head:'Tiro Bangla','Noto Serif Bengali',serif;
+  --font-body:'Hind Siliguri','Noto Sans Bengali',sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);line-height:1.8;margin:0;min-height:100vh}
+h1,h2,h3,h4{font-family:var(--font-head);line-height:1.35;color:var(--fg)}
+a{color:var(--link)}
+code,pre{font-family:var(--font-mono)}
+::selection{background:var(--accent);color:var(--accent-fg)}
+img{max-width:100%}
 
+/* ---- App shell ---- */
+.app{display:flex;min-height:100vh}
+.sidebar{
+  width:300px;flex:0 0 300px;background:var(--surface);border-right:1px solid var(--border);
+  padding:16px 14px 24px;position:fixed;top:0;left:0;bottom:0;overflow-y:auto;
+  scrollbar-width:thin;z-index:30;transition:transform .25s ease;
+}
+.sidebar.collapsed{transform:translateX(-100%)}
+.brand{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.brand .mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--accent),#b91c1c);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-family:var(--font-mono);font-size:13px;flex:none}
+.brand .name{font-family:var(--font-head);font-weight:700;font-size:17px}
+.tagline{font-size:12px;color:var(--fg-muted);margin:0 0 16px}
+.sidebar-section-label{font-size:11px;letter-spacing:.06em;color:var(--fg-muted);margin:16px 0 6px;padding:0 6px;text-transform:uppercase}
+.toc{list-style:none;margin:0;padding:0}
+.toc a{display:flex;align-items:center;gap:9px;text-decoration:none;color:var(--fg);padding:9px 10px;border-radius:8px;font-size:14px}
+.toc a .num{font-family:var(--font-mono);font-size:11px;color:var(--fg-muted);flex:none;width:20px}
+.toc a:hover{background:var(--surface-2)}
+.toc a.active{background:var(--accent);color:var(--accent-fg);font-weight:600}
+.toc a.active .num{color:var(--accent-fg)}
+.sidebar-footer{margin-top:22px;padding-top:14px;border-top:1px solid var(--border);font-size:11px;color:var(--fg-muted)}
+
+.main{flex:1 1 auto;min-width:0;margin-left:300px;transition:margin-left .25s ease;display:flex;flex-direction:column;min-height:100vh}
+.main.full{margin-left:0}
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(10,14,20,.88);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 16px;
+}
+
+.backbtn {
+    position: absolute;
+    right: 16px;
+    padding: 0 14px;
+    gap: 6px;
+    margin-left: 0;
+}
+.topbar .title{font-size:14px;color:var(--fg-muted);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
+.iconbtn,.backbtn{appearance:none;border:1px solid var(--border);background:var(--surface);color:var(--fg);height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;font-family:var(--font-body);font-size:13px;text-decoration:none}
+.iconbtn{width:36px}
+.backbtn{padding:0 14px;gap:6px}
+.backbtn:hover,.iconbtn:hover{background:var(--surface-2);border-color:var(--accent)}
+.hamburger{display:none}
+.collapse-btn{display:none}
+@media (min-width:861px){.collapse-btn{display:flex}}
+
+.content{padding:30px 22px 90px;max-width:860px;margin:0 auto;width:100%;flex:1}
+.breadcrumb{font-size:12px;color:var(--fg-muted);margin-bottom:10px}
+.breadcrumb a{color:var(--fg-muted);text-decoration:none}
+.breadcrumb a:hover{color:var(--link)}
+
+.chapter{display:none}
+.chapter.active{display:block;animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.chapter>.eyebrow{font-family:var(--font-mono);font-size:12px;color:var(--accent);letter-spacing:.04em}
+.chapter>h1{font-size:30px;margin:4px 0 6px}
+.chapter>.sub{color:var(--fg-muted);font-size:15.5px;margin:0 0 18px}
+
+h2{font-size:22px;margin-top:40px;border-bottom:1px solid var(--border);padding-bottom:9px}
+h3{font-size:17.5px;margin-top:26px;color:var(--accent)}
+p{margin:12px 0}
+ul,ol{padding-left:22px;margin:12px 0}
+li{margin:6px 0}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13.5px;display:block;overflow-x:auto}
+table thead{background:var(--surface-2)}
+th,td{border:1px solid var(--border);padding:9px 11px;text-align:left}
+th{font-family:var(--font-head)}
+
+.callout{border-radius:10px;padding:14px 16px;margin:18px 0;border:1px solid var(--border);background:var(--surface);display:flex;gap:10px}
+.callout .ic{flex:none;font-size:17px}
+.callout.warn{border-color:#f5a52455;background:rgba(245,165,36,.08)}
+.callout.danger{border-color:#ef444455;background:rgba(239,68,68,.1)}
+.callout.info{border-color:#5bc2e855;background:rgba(91,194,232,.08)}
+.callout.legal{border-color:var(--accent);background:rgba(255,92,92,.08)}
+.callout p{margin:0}
+
+.codeblock{position:relative;margin:16px 0;border-radius:10px;overflow:hidden;border:1px solid var(--border)}
+.codeblock .cb-head{display:flex;justify-content:space-between;align-items:center;background:var(--surface-2);padding:7px 11px;font-size:11.5px;color:var(--fg-muted);font-family:var(--font-mono)}
+.codeblock pre{margin:0;padding:14px;background:var(--code-bg);color:var(--code-fg);overflow-x:auto;font-size:13px;line-height:1.65;max-width:100%}
+.copy-btn{appearance:none;border:1px solid var(--border);background:var(--surface);color:var(--fg);font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer;font-family:var(--font-body)}
+.copy-btn:hover{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.copy-btn.copied{background:#22c55e;color:#06240f;border-color:#22c55e}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+@media (max-width:700px){.grid2,.grid3{grid-template-columns:1fr}}
+.card{border:1px solid var(--border);border-radius:10px;padding:14px;background:var(--surface)}
+.card h4{margin:0 0 8px;font-size:14px}
+
+details{border:1px solid var(--border);border-radius:10px;margin:14px 0;background:var(--surface)}
+details summary{cursor:pointer;padding:12px 14px;font-weight:600;list-style:none}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:"▸ ";color:var(--accent)}
+details[open] summary::before{content:"▾ "}
+details .inner{padding:0 14px 14px}
+
+.exercise{border:1px dashed var(--accent);border-radius:10px;padding:14px 16px;margin:18px 0;background:rgba(255,92,92,.05)}
+.exercise h4{margin:0 0 6px;font-size:14px;color:var(--accent)}
+
+.qa{border-top:1px dashed var(--border);margin-top:28px;padding-top:14px}
+.qa ol{padding-left:20px}
+
+.summary-box{background:var(--surface-2);border-radius:10px;padding:14px 16px;margin:26px 0;border:1px solid var(--border)}
+.summary-box h4{margin:0 0 6px;font-size:13px;color:var(--fg-muted);text-transform:uppercase;letter-spacing:.04em;font-family:var(--font-body)}
+
+.pager{display:flex;justify-content:space-between;gap:12px;margin-top:40px;border-top:1px solid var(--border);padding-top:18px;flex-wrap:wrap}
+.pager a{flex:1;min-width:140px;border:1px solid var(--border);border-radius:10px;padding:13px 15px;text-decoration:none;color:var(--fg);font-size:13.5px;background:var(--surface)}
+.pager a:hover{border-color:var(--accent)}
+.pager a span{display:block;color:var(--fg-muted);font-size:11px;margin-bottom:3px}
+.pager a.next{text-align:right}
+.pager a.single{flex:none;margin-left:auto}
+
+.landing-hero{text-align:center;padding:30px 0 10px}
+.landing-hero .mark-xl{width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,var(--accent),#b91c1c);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-family:var(--font-mono);font-size:22px;margin:0 auto 16px}
+.next-chapter-cta{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:var(--accent-fg);text-decoration:none;font-weight:700;padding:14px 26px;border-radius:12px;font-size:16px;margin-top:20px}
+.next-chapter-cta:hover{filter:brightness(1.08)}
+.cta-center{text-align:center;margin:30px 0}
+
+.notfound{text-align:center;padding:70px 20px}
+.notfound h1{font-size:60px;margin:0}
+
+.scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:25}
+.scrim.show{display:block}
+
+footer.site-footer{text-align:center;font-size:12px;color:var(--fg-muted);padding:22px;border-top:1px solid var(--border)}
+
+@media (max-width:860px){
+  .sidebar{transform:translateX(-100%);width:85%;max-width:320px;box-shadow:var(--shadow)}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-left:0}
+  .hamburger{display:flex}
+  .collapse-btn{display:none}
+  table{font-size:12.5px}
+  .grid3{grid-template-columns:1fr}
+}
+@media print{
+  .sidebar,.topbar,.pager,.copy-btn{display:none!important}
+  .chapter{display:block!important}
+  .main{margin-left:0}
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="scrim" id="scrim"></div>
+
+  <aside class="sidebar" id="sidebar" aria-label="অধ্যায় নেভিগেশন">
+    <div class="brand"><div class="mark">IRF</div><div class="name">IR &amp; Forensics Documentation</div></div>
+    <p class="tagline">বাংলায় সম্পূর্ণ ওয়েব অ্যাপ্লিকেশন গাইড — ভিত্তি থেকে আধুনিক ডেভেলপমেন্ট পর্যন্ত</p>
+    <div class="sidebar-section-label">সূচিপত্র</div>
+    <ul class="toc" id="toc"></ul>
+    <div class="sidebar-footer">© learn.alamincyber.com — শুধুমাত্র শিক্ষামূলক উদ্দেশ্যে</div>
+  </aside>
+
+  <div class="main" id="mainWrap">
+    <div class="topbar">
+      <button class="iconbtn hamburger" id="hamburgerBtn" aria-label="মেনু খুলুন/বন্ধ করুন" aria-expanded="false">☰</button>
+      <button class="iconbtn collapse-btn" id="collapseBtn" aria-label="সাইডবার টগল করুন" title="সাইডবার টগল করুন">⟨⟩</button>
+      <a class="backbtn" id="backBtn" href="https://learn.alamincyber.com/documentation/" aria-label="ডকুমেন্টেশন ইনডেক্সে ফিরে যান">← Back</a>
+      <div class="title" id="topTitle">IR &amp; Forensics Documentation</div>
+    </div>
+
+    <div class="content" id="content">
+      <div class="breadcrumb" id="breadcrumb"></div>
+      <div id="chapters">
+
+<section class="chapter" id="landing" data-route="">
+  <div class="landing-hero">
+    <div class="mark-xl">IRF</div>
+    <div class="eyebrow" style="justify-content:center;display:flex">Learn Cyber Security · Documentation</div>
+    <h1 style="font-size:34px">Incident Response ও Digital Forensics ডকুমেন্টেশন</h1>
+    <p class="sub" style="max-width:640px;margin:0 auto">বাংলাদেশের শিক্ষার্থীদের জন্য তৈরি, সম্পূর্ণ বাংলায় লেখা একটি Incident Response ও Digital Forensics গাইড — একটি নিরাপত্তা ঘটনা ঘটে যাওয়ার পর কী করতে হয়, কীভাবে প্রমাণ সংগ্রহ ও বিশ্লেষণ করতে হয়, এবং কীভাবে একটি পদ্ধতিগত, আইনত গ্রহণযোগ্য তদন্ত পরিচালনা করতে হয় — ১৫টি অধ্যায়ে সাজানো।</p>
+  </div>
+
+  <h2>Incident Response ও Digital Forensics নিয়ে সংক্ষিপ্ত কথা</h2>
+  <p>এই সিরিজের আগের ডকুমেন্টেশনগুলো মূলত একটি দুর্বলতা কীভাবে প্রতিরোধ (Secure Coding Practices) বা শনাক্ত (Common Web Vulnerabilities, Bug Bounty Methodology) করতে হয় তা নিয়ে আলোচনা করেছে — এই ডকুমেন্টেশন ভিন্ন একটি প্রশ্নের উত্তর দেয়: <strong>প্রতিরোধ ব্যর্থ হলে, এরপর কী হয়?</strong> একটি breach ঘটে যাওয়ার পর, একটি প্রতিষ্ঠান কীভাবে সাড়া দেয়, ক্ষতি সীমিত করে, এবং ঠিক কী ঘটেছিল তা পুনর্গঠন করে।</p>
+  <p>এখানে ধাপে ধাপে দেখানো হয়েছে — Incident Response-র ভিত্তি ও Lifecycle, একটি IR দলের ভূমিকা, Digital Forensics-র মূল নীতি ও Chain of Custody, Evidence Collection/Preservation, Memory Forensics, Disk Forensics, Network Forensics, Log Analysis, Malware Triage, এবং সবশেষে একটি সম্পূর্ণ Incident Report লেখার পদ্ধতি।</p>
+
+  <div class="callout info">
+    <div class="ic">💡</div>
+    <div>
+      <p><strong>এই ডকুমেন্টেশনের প্রকৃতি:</strong> এই গাইডটি ধারণাগত ও পদ্ধতিগত নীতির উপর কেন্দ্রীভূত, কোনো নির্দিষ্ট ফরেনসিক টুলের গভীর টিউটোরিয়াল নয়। Hacking Tools ডকুমেন্টেশনের Digital Forensics অধ্যায়ে Chain of Custody-র প্রাথমিক পরিচিতি দেওয়া হয়েছিল — এই ডকুমেন্টেশন সেই ধারণার একটি সম্পূর্ণ, বিস্তারিত সংস্করণ।</p>
+    </div>
+  </div>
+
+  <h2>কীভাবে পড়বেন</h2>
+  <div class="grid3">
+    <div class="card"><h4>🟢 শুরু (১–৫)</h4><p>IR-র ভিত্তি, IR Lifecycle, IR টিম, Digital Forensics-র ভিত্তি, Chain of Custody।</p></div>
+    <div class="card"><h4>🟡 মধ্যবর্তী (৬–১০)</h4><p>Evidence Collection, Memory Forensics, Disk Forensics, Network Forensics, Log Analysis।</p></div>
+    <div class="card"><h4>🔴 প্রয়োগ (১১–১৫)</h4><p>Malware Triage, Timeline Reconstruction, Containment/Eradication/Recovery, Incident Report, শব্দকোষ/FAQ।</p></div>
+  </div>
+
+  <div class="cta-center">
+    <a class="next-chapter-cta" href="/chapter01">অধ্যায় ০১ শুরু করুন — Incident Response-র ভিত্তি →</a>
+  </div>
+</section>
+
+<section class="chapter" id="notfound" data-route="__notfound__">
+  <div class="notfound">
+    <h1>৪০৪</h1>
+    <h2 style="border:none">এই অধ্যায়টি খুঁজে পাওয়া যায়নি</h2>
+    <p class="sub">আপনি যে chapter URL-এ যেতে চেয়েছেন, তা এই ডকুমেন্টেশনে নেই। অনুগ্রহ করে নিচের বাটন ব্যবহার করে ডকুমেন্টেশন ইনডেক্সে ফিরে যান অথবা সাইডবার থেকে একটি অধ্যায় বেছে নিন।</p>
+    <div class="cta-center">
+      <a class="next-chapter-cta" href="https://learn.alamincyber.com/documentation/">ডকুমেন্টেশন ইনডেক্সে ফিরুন</a>
+    </div>
+  </div>
+</section>
+
+<section class="chapter" id="chapter01">
+  <div class="eyebrow">অধ্যায় ০১ · ভিত্তি</div>
+  <h1>Incident Response-র ভিত্তি</h1>
+  <p class="sub">প্রতিরোধ কখনো ১০০% নিশ্চিত নয় — তাই একটি ঘটনা ঘটার পর কীভাবে সাড়া দিতে হয় তা জানা সমান গুরুত্বপূর্ণ।</p>
+
+  <h2>"Incident" কী — একটি সংজ্ঞা</h2>
+  <p>একটি <strong>Security Incident</strong> হলো যেকোনো ঘটনা, যা একটি সিস্টেমের Confidentiality, Integrity, বা Availability-কে (Cryptography Basics ডকুমেন্টেশনের CIA ত্রয়ী) প্রকৃতপক্ষে বা সম্ভাব্যভাবে প্রভাবিত করে — একটি ডেটা breach, র‍্যানসমওয়্যার আক্রমণ, একটি compromised অ্যাকাউন্ট, বা এমনকি একটি সন্দেহজনক, অস্বাভাবিক নেটওয়ার্ক আচরণ।</p>
+
+  <h2>প্রতিরোধ কখনো সম্পূর্ণ নয়</h2>
+  <p>Secure Coding Practices, Network Security, ও Cloud Security ডকুমেন্টেশনে আলোচিত সব প্রতিরোধমূলক নিয়ন্ত্রণ সত্ত্বেও — একটি অজানা (zero-day) দুর্বলতা, একটি মানবিক ভুল, বা একটি অত্যন্ত দক্ষ attacker-এর কারণে breach ঘটতে পারে। <strong>Incident Response (IR)</strong> ধরে নেয় যে, "যদি" নয়, বরং "কখন" একটি ঘটনা ঘটবে — এবং সেই মুহূর্তের জন্য প্রস্তুতি নেয়।</p>
+
+  <h2>IR কেন একটি পরিকল্পিত প্রক্রিয়া হওয়া উচিত</h2>
+  <div class="callout warn"><div class="ic">⚠️</div><p><strong>একটি সাধারণ ভুল — আতঙ্কিত প্রতিক্রিয়া:</strong> একটি breach আবিষ্কারের পর, প্রাথমিক প্রতিক্রিয়া প্রায়ই আতঙ্কিত হয়ে থাকে — সার্ভার বন্ধ করে দেওয়া, ফাইল মুছে ফেলা, বা সিস্টেম পুনরায় ইনস্টল করা, এসবই প্রমাণ (অধ্যায় ৪-৬) ধ্বংস করে দিতে পারে এবং ভবিষ্যতে একই আক্রমণ প্রতিরোধ করা কঠিন করে তোলে। একটি পূর্ব-পরিকল্পিত, লিখিত IR পরিকল্পনা এই আতঙ্কিত প্রতিক্রিয়া এড়াতে সাহায্য করে।</p></div>
+
+  <h2>Incident Response বনাম Digital Forensics</h2>
+  <table>
+    <thead><tr><th>ক্ষেত্র</th><th>মূল প্রশ্ন</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Incident Response</strong></td><td>"এখন কী করতে হবে?" — ক্ষতি সীমিত করা, সিস্টেম পুনরুদ্ধার করা</td></tr>
+      <tr><td><strong>Digital Forensics</strong></td><td>"ঠিক কী ঘটেছিল?" — প্রমাণ সংগ্রহ করে, আইনত গ্রহণযোগ্যভাবে, ঘটনা পুনর্গঠন করা</td></tr>
+    </tbody>
+  </table>
+  <p>দুটো ক্ষেত্র গভীরভাবে সম্পর্কিত — একটি কার্যকর IR প্রক্রিয়া প্রায়ই Forensics কৌশল ব্যবহার করে বোঝার জন্য যে attacker কীভাবে প্রবেশ করেছেন, এবং একটি Forensics তদন্ত প্রায়ই একটি IR প্রক্রিয়ার অংশ হিসেবে পরিচালিত হয়।</p>
+
+  <h2>Preparation — সবচেয়ে গুরুত্বপূর্ণ ধাপ</h2>
+  <p>পরবর্তী অধ্যায়ে বিস্তারিত আলোচিত IR Lifecycle-এর প্রথম ধাপ হলো <strong>Preparation</strong> — একটি লিখিত পরিকল্পনা, প্রশিক্ষিত একটি দল, ও প্রয়োজনীয় টুল আগে থেকেই প্রস্তুত থাকা। একটি ঘটনা ঘটে যাওয়ার সময় নতুন করে পরিকল্পনা তৈরি করার চেষ্টা করা অনেক বেশি ঝুঁকিপূর্ণ ও ধীর।</p>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>কেন একটি breach আবিষ্কারের সাথে সাথে সার্ভার বন্ধ করে দেওয়া একটি সম্ভাব্য ক্ষতিকর প্রতিক্রিয়া হতে পারে তা ব্যাখ্যা করুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>Incident Response ধরে নেয় যে প্রতিরোধ কখনো সম্পূর্ণ নয়, এবং একটি ঘটনার জন্য পূর্ব-পরিকল্পনা অপরিহার্য। IR ("এখন কী করব") ও Digital Forensics ("কী ঘটেছিল") আলাদা কিন্তু গভীরভাবে সম্পর্কিত ক্ষেত্র।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>একটি Security Incident কী?</li>
+      <li>Incident Response ও Digital Forensics-এর মূল পার্থক্য কী?</li>
+      <li>কেন "Preparation" IR-র সবচেয়ে গুরুত্বপূর্ণ ধাপগুলোর একটি?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev single" href="/"><span>পূর্ববর্তী</span>হোম</a>
+    <a class="next" href="/chapter02"><span>পরবর্তী</span>অধ্যায় ০২ — IR Lifecycle (PICERL)</a>
+  </div>
+</section>
+
+
+<section class="chapter" id="chapter02">
+  <div class="eyebrow">অধ্যায় ০২ · Lifecycle</div>
+  <h1>IR Lifecycle (PICERL)</h1>
+  <p class="sub">একটি শিল্প-স্বীকৃত কাঠামো, যা একটি সম্পূর্ণ Incident Response প্রক্রিয়াকে ছয়টি স্পষ্ট ধাপে ভাগ করে।</p>
+
+  <h2>PICERL — ছয়টি ধাপের সংক্ষিপ্ত রূপ</h2>
+  <div class="codeblock">
+    <div class="cb-head"><span>PICERL Framework</span><button class="copy-btn">কপি</button></div>
+    <pre><code>P - Preparation     (প্রস্তুতি)
+I - Identification  (শনাক্তকরণ)
+C - Containment     (নিয়ন্ত্রণ)
+E - Eradication     (নির্মূলকরণ)
+R - Recovery        (পুনরুদ্ধার)
+L - Lessons Learned (শিক্ষা গ্রহণ)</code></pre>
+  </div>
+
+  <h2>প্রতিটি ধাপের সংক্ষিপ্ত বিবরণ</h2>
+  <table>
+    <thead><tr><th>ধাপ</th><th>মূল কার্যক্রম</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Preparation</strong></td><td>IR পরিকল্পনা, দল, টুল আগে থেকে প্রস্তুত রাখা (অধ্যায় ১)</td></tr>
+      <tr><td><strong>Identification</strong></td><td>একটি ঘটনা সত্যিই ঘটেছে কিনা নিশ্চিত হওয়া, এবং এর পরিধি বোঝা</td></tr>
+      <tr><td><strong>Containment</strong></td><td>ক্ষতি আরও ছড়ানো বন্ধ করা (অধ্যায় ১৩)</td></tr>
+      <tr><td><strong>Eradication</strong></td><td>আক্রমণের মূল কারণ (malware, ব্যাকডোর) সম্পূর্ণ অপসারণ (অধ্যায় ১৩)</td></tr>
+      <tr><td><strong>Recovery</strong></td><td>স্বাভাবিক কার্যক্রমে নিরাপদে ফিরে আসা (অধ্যায় ১৩)</td></tr>
+      <tr><td><strong>Lessons Learned</strong></td><td>ঘটনা পর্যালোচনা করে ভবিষ্যতের জন্য উন্নতি করা</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Containment-এর দুটি ধরন</h2>
+  <div class="callout info"><div class="ic">💡</div><p>Containment-এ প্রায়ই একটি সিদ্ধান্ত নিতে হয় — <strong>Short-term Containment</strong> (তাৎক্ষণিকভাবে একটি সংক্রমিত সিস্টেমকে নেটওয়ার্ক থেকে বিচ্ছিন্ন করা) বনাম <strong>Long-term Containment</strong> (সিস্টেমটি সাময়িকভাবে চালু রেখে, attacker-এর কার্যকলাপ পর্যবেক্ষণ করে আরও তথ্য সংগ্রহ করা, তারপর নিয়ন্ত্রিতভাবে বিচ্ছিন্ন করা)। এই সিদ্ধান্ত ব্যবসায়িক প্রভাব ও তদন্তের প্রয়োজনের মধ্যে একটি ভারসাম্য।</p></div>
+
+  <h2>চক্রাকার প্রক্রিয়া, রৈখিক নয়</h2>
+  <div class="callout warn"><div class="ic">⚠️</div><p>PICERL দেখতে রৈখিক মনে হলেও, বাস্তবে এটি প্রায়ই চক্রাকার — Eradication-এর সময় একটি নতুন সংক্রমিত সিস্টেম আবিষ্কৃত হলে, দলকে আবার Identification-এ ফিরে যেতে হতে পারে। Lessons Learned ধাপ পরবর্তী ঘটনার Preparation-কে উন্নত করে, একটি ক্রমাগত চক্র তৈরি করে।</p></div>
+
+  <h2>Lessons Learned-এর গুরুত্ব</h2>
+  <p>একটি ঘটনা সমাধান হওয়ার পর, অনেক প্রতিষ্ঠান দ্রুত "স্বাভাবিক অবস্থায়" ফিরে যেতে চান এবং Lessons Learned ধাপ বাদ দিয়ে দেন — কিন্তু এই ধাপ ছাড়া, একই দুর্বলতা/প্রক্রিয়াগত ত্রুটি পুনরাবৃত্তি হওয়ার ঝুঁকি থেকে যায়।</p>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>Short-term ও Long-term Containment-এর মধ্যে কখন কোনটি বেছে নেওয়া উচিত তা একটি উদাহরণ দিয়ে ব্যাখ্যা করুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>PICERL ফ্রেমওয়ার্ক একটি IR প্রক্রিয়াকে ছয়টি ধাপে ভাগ করে — Preparation, Identification, Containment, Eradication, Recovery, ও Lessons Learned। এই প্রক্রিয়া বাস্তবে প্রায়ই চক্রাকার, রৈখিক নয়।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>PICERL-এর ছয়টি ধাপ কী কী?</li>
+      <li>Short-term ও Long-term Containment-এর মধ্যে পার্থক্য কী?</li>
+      <li>কেন Lessons Learned ধাপ বাদ দেওয়া ঝুঁকিপূর্ণ?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter01"><span>পূর্ববর্তী</span>অধ্যায় ০১ — Incident Response-র ভিত্তি</a>
+    <a class="next" href="/chapter03"><span>পরবর্তী</span>অধ্যায় ০৩ — IR টিম ও ভূমিকা</a>
+  </div>
+</section>
+
+
+<section class="chapter" id="chapter03">
+  <div class="eyebrow">অধ্যায় ০৩ · টিম</div>
+  <h1>IR টিম ও ভূমিকা</h1>
+  <p class="sub">একটি সফল Incident Response শুধু টুলের উপর নয়, সঠিকভাবে সংগঠিত একটি দলের উপর নির্ভরশীল।</p>
+
+  <h2>CSIRT/CERT — একটি কেন্দ্রীভূত দল</h2>
+  <p>অনেক প্রতিষ্ঠানে একটি নিবেদিত <strong>CSIRT (Computer Security Incident Response Team)</strong> বা <strong>CERT (Computer Emergency Response Team)</strong> থাকে, যারা একটি ঘটনা ঘটলে সমন্বিতভাবে সাড়া দেওয়ার জন্য প্রশিক্ষিত ও প্রস্তুত।</p>
+
+  <h2>একটি IR দলের প্রধান ভূমিকা</h2>
+  <table>
+    <thead><tr><th>ভূমিকা</th><th>দায়িত্ব</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Incident Commander</strong></td><td>সামগ্রিক সমন্বয়, সিদ্ধান্ত গ্রহণ, যোগাযোগ পরিচালনা</td></tr>
+      <tr><td><strong>Forensic Analyst</strong></td><td>প্রমাণ সংগ্রহ ও বিশ্লেষণ (অধ্যায় ৪-১২)</td></tr>
+      <tr><td><strong>Communications Lead</strong></td><td>অভ্যন্তরীণ ও বহিরাগত (গ্রাহক, মিডিয়া, নিয়ন্ত্রক সংস্থা) যোগাযোগ</td></tr>
+      <tr><td><strong>Legal Counsel</strong></td><td>আইনি দায়বদ্ধতা, রিপোর্টিং বাধ্যবাধকতা মূল্যায়ন</td></tr>
+      <tr><td><strong>IT/System Owner</strong></td><td>প্রভাবিত সিস্টেম সম্পর্কে প্রযুক্তিগত প্রেক্ষাপট প্রদান</td></tr>
+    </tbody>
+  </table>
+
+  <h2>যোগাযোগ পরিকল্পনা — একটি অবমূল্যায়িত দিক</h2>
+  <div class="callout warn"><div class="ic">⚠️</div><p><strong>একটি গুরুত্বপূর্ণ বিবেচনা:</strong> একটি গুরুতর breach-এর সময়, যদি attacker এখনো অভ্যন্তরীণ ইমেইল/চ্যাট সিস্টেমে অ্যাক্সেস রাখেন, দলের যোগাযোগ (কে জানে, পরিকল্পনা কী) সেই একই সিস্টেমে আলোচনা করা attacker-কে সরাসরি তদন্তের অগ্রগতি জানিয়ে দিতে পারে। একটি প্রস্তুত IR পরিকল্পনায় একটি "out-of-band" (সম্পূর্ণ আলাদা) যোগাযোগ চ্যানেলের ব্যবস্থা থাকা উচিত।</p></div>
+
+  <h2>বহিরাগত বিশেষজ্ঞ ও কর্তৃপক্ষ</h2>
+  <p>অনেক ঘটনায়, একটি প্রতিষ্ঠান বহিরাগত ফরেনসিক পরামর্শক নিয়োগ করে, বিশেষত যদি অভ্যন্তরীণ দলের দক্ষতা বা ক্ষমতা সীমিত হয়। কিছু ক্ষেত্রে (ব্যক্তিগত ডেটা breach, নির্দিষ্ট ক্ষেত্রের নিয়ন্ত্রক প্রয়োজনীয়তা) আইন প্রয়োগকারী সংস্থা বা নিয়ন্ত্রক সংস্থাকে অবহিত করাও বাধ্যতামূলক হতে পারে — এই সিদ্ধান্ত Legal Counsel-এর পরামর্শে নেওয়া উচিত।</p>
+
+  <h2>RACI ম্যাট্রিক্স — স্পষ্ট দায়িত্ব বণ্টন</h2>
+  <div class="callout info"><div class="ic">💡</div><p>অনেক প্রতিষ্ঠান একটি <strong>RACI ম্যাট্রিক্স</strong> (কে Responsible, Accountable, Consulted, Informed) ব্যবহার করে আগে থেকেই স্পষ্ট করে রাখে — একটি ঘটনার সময় "কে সিদ্ধান্ত নেবেন" নিয়ে বিভ্রান্তি দূর করতে, যা সময়ক্ষেপণের একটি সাধারণ কারণ।</p></div>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>কেন একটি IR দলের একটি "out-of-band" যোগাযোগ চ্যানেল প্রস্তুত রাখা উচিত তা ব্যাখ্যা করুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>একটি কার্যকর IR দলে স্পষ্ট ভূমিকা (Incident Commander, Forensic Analyst, Communications Lead, Legal Counsel) থাকা উচিত। একটি আগে থেকে পরিকল্পিত, নিরাপদ যোগাযোগ চ্যানেল এবং স্পষ্ট দায়িত্ব বণ্টন (RACI) একটি ঘটনার সময় বিভ্রান্তি কমায়।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>CSIRT/CERT কী?</li>
+      <li>Incident Commander-এর ভূমিকা কী?</li>
+      <li>কেন একটি "out-of-band" যোগাযোগ চ্যানেল গুরুত্বপূর্ণ হতে পারে?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter02"><span>পূর্ববর্তী</span>অধ্যায় ০২ — IR Lifecycle (PICERL)</a>
+    <a class="next" href="/chapter04"><span>পরবর্তী</span>অধ্যায় ০৪ — Digital Forensics-র ভিত্তি</a>
+  </div>
+</section>
+
+
+<section class="chapter" id="chapter04">
+  <div class="eyebrow">অধ্যায় ০৪ · Forensics</div>
+  <h1>Digital Forensics-র ভিত্তি</h1>
+  <p class="sub">কীভাবে ডিজিটাল প্রমাণ এমনভাবে সংগ্রহ ও বিশ্লেষণ করা যায়, যা একটি তদন্ত বা আদালতে গ্রহণযোগ্য হয়।</p>
+
+  <h2>Digital Forensics কী</h2>
+  <p><strong>Digital Forensics</strong> হলো ডিজিটাল ডিভাইস থেকে প্রমাণ সংগ্রহ, সংরক্ষণ, বিশ্লেষণ, ও উপস্থাপনের একটি বৈজ্ঞানিক প্রক্রিয়া — এমনভাবে যা আইনত গ্রহণযোগ্য এবং পুনরুৎপাদনযোগ্য (অন্য একজন স্বাধীন বিশ্লেষক একই পদ্ধতি অনুসরণ করে একই ফলাফল পাবেন)।</p>
+
+  <h2>Forensics-র মূল নীতি</h2>
+  <table>
+    <thead><tr><th>নীতি</th><th>অর্থ</th></tr></thead>
+    <tbody>
+      <tr><td><strong>মূল প্রমাণ কখনো পরিবর্তন করবেন না</strong></td><td>সবসময় একটি forensic কপি/ইমেজের উপর কাজ করুন, মূল ডিভাইসে নয়</td></tr>
+      <tr><td><strong>প্রতিটি পদক্ষেপ ডকুমেন্টেড</strong></td><td>কে, কখন, কী করেছেন তার সম্পূর্ণ রেকর্ড রাখা (Chain of Custody, অধ্যায় ৫)</td></tr>
+      <tr><td><strong>পুনরুৎপাদনযোগ্যতা</strong></td><td>অন্য একজন বিশ্লেষক একই পদ্ধতি অনুসরণ করে একই উপসংহারে পৌঁছাতে পারবেন</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Order of Volatility — কোন প্রমাণ আগে সংগ্রহ করবেন</h2>
+  <div class="callout warn"><div class="ic">⚠️</div><p><strong>একটি গুরুত্বপূর্ণ ধারণা:</strong> বিভিন্ন ধরনের ডিজিটাল প্রমাণ ভিন্ন গতিতে "হারিয়ে যায়" — RAM-এর ডেটা একটি রিবুট বা পাওয়ার বন্ধ হওয়ার সাথে সাথেই সম্পূর্ণ মুছে যায়, কিন্তু একটি হার্ড ডিস্কের ডেটা তুলনামূলক স্থায়ী। <strong>Order of Volatility</strong> নীতি অনুযায়ী, সবচেয়ে "volatile" (দ্রুত হারিয়ে যাওয়া) প্রমাণ সবার আগে সংগ্রহ করা উচিত।</p></div>
+
+  <div class="codeblock">
+    <div class="cb-head"><span>ধারণাগত Order of Volatility (সবচেয়ে উদ্বায়ী থেকে কম উদ্বায়ী)</span><button class="copy-btn">কপি</button></div>
+    <pre><code>১. CPU Register/Cache
+২. RAM (Memory) — অধ্যায় ৭
+৩. নেটওয়ার্ক কানেকশন স্টেট
+৪. Running Process
+৫. Disk (হার্ড ড্রাইভ) — অধ্যায় ৮
+৬. Log ফাইল (দূরবর্তী সার্ভারে, যদি থাকে)
+৭. Physical/Archival ডেটা (ব্যাকআপ)</code></pre>
+  </div>
+
+  <h2>Forensic Soundness — একটি মূল মানদণ্ড</h2>
+  <p>একটি forensic প্রক্রিয়া "sound" (সুসংগত) বলা হয়, যদি এটি মূল প্রমাণের অখণ্ডতা (integrity) সংরক্ষণ করে, এবং প্রতিটি পদক্ষেপ যাচাইযোগ্য ও ডকুমেন্টেড হয়। এই মানদণ্ড পূরণ না হলে, একটি তদন্তের ফলাফল আদালতে প্রশ্নবিদ্ধ হতে পারে, এমনকি যদি প্রকৃত উপসংহার সঠিক হয়।</p>
+
+  <h2>Civil বনাম Criminal Forensics</h2>
+  <p>কিছু তদন্ত অভ্যন্তরীণ উদ্দেশ্যে (কী ভুল হয়েছিল বোঝা) পরিচালিত হয়, আর কিছু তদন্ত আইনি প্রক্রিয়ার অংশ হতে পারে (একটি ফৌজদারি মামলা) — পরবর্তী ক্ষেত্রে, প্রমাণের মানদণ্ড ও ডকুমেন্টেশন আরও কঠোর হওয়া প্রয়োজন।</p>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>কেন RAM-এর ডেটা হার্ড ডিস্কের ডেটার চেয়ে আগে সংগ্রহ করা উচিত তা Order of Volatility নীতি ব্যবহার করে ব্যাখ্যা করুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>Digital Forensics একটি বৈজ্ঞানিক, পুনরুৎপাদনযোগ্য প্রক্রিয়া, যা মূল প্রমাণ পরিবর্তন না করে একটি forensic কপিতে কাজ করে। Order of Volatility নীতি নির্ধারণ করে কোন প্রমাণ (RAM, তারপর Disk) আগে সংগ্রহ করতে হবে।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>Forensics-এ "মূল প্রমাণ কখনো পরিবর্তন করবেন না" নীতি কেন গুরুত্বপূর্ণ?</li>
+      <li>Order of Volatility কী?</li>
+      <li>Forensic Soundness কী বোঝায়?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter03"><span>পূর্ববর্তী</span>অধ্যায় ০৩ — IR টিম ও ভূমিকা</a>
+    <a class="next" href="/chapter05"><span>পরবর্তী</span>অধ্যায় ০৫ — Chain of Custody</a>
+  </div>
+</section>
+
+
+<section class="chapter" id="chapter05">
+  <div class="eyebrow">অধ্যায় ০৫ · Chain of Custody</div>
+  <h1>Chain of Custody</h1>
+  <p class="sub">প্রমাণের প্রতিটি মুহূর্তের একটি অবিচ্ছিন্ন, ডকুমেন্টেড রেকর্ড — আদালতে গ্রহণযোগ্যতার মূল ভিত্তি।</p>
+
+  <h2>Chain of Custody কী</h2>
+  <p><strong>Chain of Custody</strong> হলো একটি প্রমাণের (একটি হার্ড ড্রাইভ, একটি ফাইল, একটি স্ক্রিনশট) সংগ্রহ থেকে শুরু করে চূড়ান্ত উপস্থাপনা পর্যন্ত, প্রতিটি হাতবদল, অবস্থান, ও সময়ের একটি সম্পূর্ণ, অবিচ্ছিন্ন ডকুমেন্টেশন। যদি এই শৃঙ্খলে একটি ফাঁক থাকে, প্রমাণের বিশ্বাসযোগ্যতা প্রশ্নবিদ্ধ হয়ে যেতে পারে।</p>
+
+  <h2>একটি Chain of Custody ফর্মে কী থাকে</h2>
+  <table>
+    <thead><tr><th>তথ্য</th><th>কেন প্রয়োজন</th></tr></thead>
+    <tbody>
+      <tr><td>প্রমাণের বিবরণ (সিরিয়াল নম্বর, হ্যাশ)</td><td>নির্দিষ্টভাবে শনাক্তকরণ</td></tr>
+      <tr><td>সংগ্রহের তারিখ/সময় ও স্থান</td><td>কখন ও কোথা থেকে সংগ্রহ করা হয়েছিল</td></tr>
+      <tr><td>কে সংগ্রহ করেছেন</td><td>দায়িত্ব নির্ধারণ</td></tr>
+      <tr><td>প্রতিটি হস্তান্তরের রেকর্ড (কার কাছ থেকে কার কাছে, কখন)</td><td>প্রমাণ কখনো অননুমোদিত হাতে যায়নি তা নিশ্চিত করা</td></tr>
+      <tr><td>সংরক্ষণের অবস্থান (evidence locker)</td><td>প্রমাণ কখন কোথায় সংরক্ষিত ছিল</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Cryptographic Hash — Integrity যাচাইয়ের টুল</h2>
+  <p>Cryptography Basics ডকুমেন্টেশনের Hashing অধ্যায়ের একটি সরাসরি, ব্যবহারিক প্রয়োগ — একটি প্রমাণ সংগ্রহের সময়, তার একটি cryptographic hash (SHA-256) গণনা করা হয়। পরবর্তীতে, যেকোনো সময় একই hash পুনরায় গণনা করে মূল hash-এর সাথে মিলিয়ে দেখা যায় — যদি একটুও মেলে না, প্রমাণ কোনোভাবে পরিবর্তিত হয়েছে (Avalanche Effect, Cryptography Basics ডকুমেন্টেশনে আলোচিত)।</p>
+
+  <div class="codeblock">
+    <div class="cb-head"><span>ধারণাগত Hash যাচাই ওয়ার্কফ্লো</span><button class="copy-btn">কপি</button></div>
+    <pre><code>সংগ্রহের সময়: evidence.img-এর SHA-256 হ্যাশ গণনা → ডকুমেন্টেড
+বিশ্লেষণের আগে: একই ফাইলের হ্যাশ পুনরায় গণনা
+   যদি হ্যাশ মেলে  → প্রমাণ অপরিবর্তিত, বিশ্লেষণ চালিয়ে যাওয়া যাবে
+   যদি হ্যাশ না মেলে → প্রমাণ কোনোভাবে পরিবর্তিত হয়েছে, তদন্ত করতে হবে</code></pre>
+  </div>
+
+  <h2>একটি ফাঁকা Chain of Custody-র পরিণতি</h2>
+  <div class="callout danger"><div class="ic">🚨</div><p><strong>বাস্তব প্রভাব:</strong> যদি একটি Chain of Custody-তে একটি সময়কাল অব্যাখ্যাত/ডকুমেন্টবিহীন থেকে যায় (যেমন প্রমাণ একটি লক ছাড়া ড্রয়ারে ৩ দিন পড়ে ছিল), একজন আইনজীবী এটিকে "প্রমাণের সাথে কারসাজি হতে পারত" বলে যুক্তি দিতে পারেন — এমনকি যদি প্রকৃতপক্ষে কোনো কারসাজি না-ই হয়ে থাকে, এই সন্দেহই প্রমাণকে আদালতে দুর্বল বা অগ্রহণযোগ্য করে তুলতে পারে।</p></div>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>কেন একটি cryptographic hash প্রমাণের Integrity প্রমাণ করার একটি নির্ভরযোগ্য পদ্ধতি তা ব্যাখ্যা করুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>Chain of Custody একটি প্রমাণের প্রতিটি হাতবদল ও অবস্থানের অবিচ্ছিন্ন ডকুমেন্টেশন — একটি ফাঁক প্রমাণের বিশ্বাসযোগ্যতা প্রশ্নবিদ্ধ করে। Cryptographic Hash প্রমাণের Integrity প্রযুক্তিগতভাবে যাচাই করার একটি নির্ভরযোগ্য পদ্ধতি।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>Chain of Custody কী এবং কেন গুরুত্বপূর্ণ?</li>
+      <li>একটি cryptographic hash কীভাবে প্রমাণের integrity যাচাই করতে সাহায্য করে?</li>
+      <li>Chain of Custody-তে একটি ফাঁক কী পরিণতি তৈরি করতে পারে?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter04"><span>পূর্ববর্তী</span>অধ্যায় ০৪ — Digital Forensics-র ভিত্তি</a>
+    <a class="next" href="/chapter06"><span>পরবর্তী</span>অধ্যায় ০৬ — Evidence Collection ও Preservation</a>
+  </div>
+</section>
+
+
+<section class="chapter" id="chapter06">
+  <div class="eyebrow">অধ্যায় ০৬ · Evidence</div>
+  <h1>Evidence Collection ও Preservation</h1>
+  <p class="sub">প্রমাণ সংগ্রহের ব্যবহারিক পদ্ধতি — মূল ডেটা স্পর্শ না করে একটি নির্ভরযোগ্য কপি তৈরি করা।</p>
+
+  <h2>Forensic Imaging — মূল প্রমাণে হাত না দেওয়া</h2>
+  <p>অধ্যায় ৪-এ আলোচিত "মূল প্রমাণ কখনো পরিবর্তন করবেন না" নীতি বাস্তবায়নের জন্য, একজন ফরেনসিক বিশ্লেষক মূল ডিভাইসে সরাসরি কাজ করেন না — বরং একটি বিট-বাই-বিট, সম্পূর্ণ অভিন্ন <strong>Forensic Image (Disk Image)</strong> তৈরি করেন এবং সব বিশ্লেষণ সেই কপিতে করেন।</p>
+
+  <h2>Write Blocker — একটি অপরিহার্য হার্ডওয়্যার টুল</h2>
+  <div class="callout warn"><div class="ic">⚠️</div><p><strong>একটি সূক্ষ্ম কিন্তু গুরুত্বপূর্ণ ঝুঁকি:</strong> শুধু একটি হার্ড ড্রাইভ একটি কম্পিউটারে সংযুক্ত করলেও, অপারেটিং সিস্টেম স্বয়ংক্রিয়ভাবে কিছু মেটাডেটা (যেমন "last accessed" টাইমস্ট্যাম্প) পরিবর্তন করে দিতে পারে — এটি একটি অজান্তে ঘটা প্রমাণ-পরিবর্তন। একটি <strong>Write Blocker</strong> হার্ডওয়্যার ডিভাইস নিশ্চিত করে, ড্রাইভ থেকে ডেটা পড়া সম্ভব, কিন্তু কোনোভাবেই ড্রাইভে কিছু লেখা সম্ভব নয়।</p></div>
+
+  <h2>Live Acquisition বনাম Dead-Box Acquisition</h2>
+  <table>
+    <thead><tr><th>পদ্ধতি</th><th>বিবরণ</th><th>ট্রেড-অফ</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Live Acquisition</strong></td><td>সিস্টেম চালু থাকা অবস্থায় প্রমাণ সংগ্রহ (RAM সহ)</td><td>✅ Volatile ডেটা পাওয়া যায়, ❌ সংগ্রহের সময় সিস্টেমের সামান্য পরিবর্তন অনিবার্য</td></tr>
+      <tr><td><strong>Dead-Box Acquisition</strong></td><td>সিস্টেম বন্ধ করে ডিস্ক ইমেজ তৈরি করা</td><td>✅ আরও স্থিতিশীল, নিয়ন্ত্রিত প্রক্রিয়া, ❌ RAM-এর সব ডেটা হারিয়ে যায়</td></tr>
+    </tbody>
+  </table>
+  <p>Order of Volatility (অধ্যায় ৪) নীতি অনুযায়ী, প্রায়ই প্রথমে Live Acquisition (RAM সংগ্রহ, অধ্যায় ৭) করে, তারপর সিস্টেম বন্ধ করে Dead-Box Acquisition (ডিস্ক ইমেজিং, অধ্যায় ৮) করা একটি সাধারণ, ভারসাম্যপূর্ণ পদ্ধতি।</p>
+
+  <h2>Evidence Preservation — দীর্ঘমেয়াদী সংরক্ষণ</h2>
+  <div class="codeblock">
+    <div class="cb-head"><span>ধারণাগত Evidence Preservation চেকলিস্ট</span><button class="copy-btn">কপি</button></div>
+    <pre><code>১. মূল প্রমাণের একাধিক কপি তৈরি (একটি বিশ্লেষণের জন্য, একটি সংরক্ষণের জন্য)
+২. প্রতিটি কপির hash গণনা ও ডকুমেন্টেড (অধ্যায় ৫)
+৩. একটি সুরক্ষিত, অ্যাক্সেস-নিয়ন্ত্রিত "Evidence Locker"-এ সংরক্ষণ
+৪. Chain of Custody ফর্মে প্রতিটি অ্যাক্সেস রেকর্ড করা</code></pre>
+  </div>
+
+  <h2>সংগ্রহের অগ্রাধিকার নির্ধারণ</h2>
+  <p>একটি বড় পরিসরের ঘটনায়, সীমিত সময় ও রিসোর্সের মধ্যে, কোন সিস্টেম/ডিভাইস থেকে প্রথমে প্রমাণ সংগ্রহ করা হবে তা অগ্রাধিকার দেওয়া প্রয়োজন — সাধারণত সবচেয়ে গুরুত্বপূর্ণ/সরাসরি প্রভাবিত সিস্টেম এবং সবচেয়ে volatile ডেটাধারী সিস্টেমকে অগ্রাধিকার দেওয়া হয়।</p>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>কেন একটি Write Blocker ছাড়া একটি হার্ড ড্রাইভ সরাসরি একটি সাধারণ কম্পিউটারে সংযুক্ত করা ঝুঁকিপূর্ণ তা ব্যাখ্যা করুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>Forensic Imaging একটি বিট-বাই-বিট কপি তৈরি করে মূল প্রমাণ সুরক্ষিত রাখে — Write Blocker অজান্তে প্রমাণ পরিবর্তন প্রতিরোধ করে। Live ও Dead-Box Acquisition-এর মধ্যে সঠিক ভারসাম্য Order of Volatility নীতি অনুসরণ করে নির্ধারিত হয়।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>Write Blocker কী কাজ করে?</li>
+      <li>Live ও Dead-Box Acquisition-এর মধ্যে পার্থক্য কী?</li>
+      <li>কেন একাধিক কপি তৈরি করা একটি ভালো অনুশীলন?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter05"><span>পূর্ববর্তী</span>অধ্যায় ০৫ — Chain of Custody</a>
+    <a class="next" href="/chapter07"><span>পরবর্তী</span>অধ্যায় ০৭ — Memory Forensics</a>
+  </div>
+</section>
+
+
+<section class="chapter" id="chapter07">
+  <div class="eyebrow">অধ্যায় ০৭ · Memory</div>
+  <h1>Memory Forensics</h1>
+  <p class="sub">RAM-এ এমন প্রমাণ থাকে, যা ডিস্কে কখনো লেখা হয়নি — সবচেয়ে উদ্বায়ী কিন্তু সবচেয়ে মূল্যবান তথ্যের উৎস।</p>
+
+  <h2>কেন RAM বিশ্লেষণ গুরুত্বপূর্ণ</h2>
+  <p>অনেক আধুনিক malware ("fileless malware") কখনোই ডিস্কে কোনো ফাইল লেখে না — এটি সম্পূর্ণভাবে RAM-এর মধ্যে চলে, যা একটি traditional, শুধুমাত্র-ডিস্ক-কেন্দ্রিক ফরেনসিক তদন্তকে সম্পূর্ণভাবে এড়িয়ে যায়। এছাড়াও, encryption key, খোলা নেটওয়ার্ক কানেকশন, ও চলমান প্রসেসের তথ্য শুধুমাত্র RAM-এই পাওয়া যায়, ডিস্কে নয়।</p>
+
+  <h2>RAM থেকে কী পাওয়া যেতে পারে</h2>
+  <table>
+    <thead><tr><th>তথ্য</th><th>গুরুত্ব</th></tr></thead>
+    <tbody>
+      <tr><td>চলমান প্রসেস তালিকা</td><td>একটি সন্দেহজনক/লুকানো প্রসেস শনাক্তকরণ</td></tr>
+      <tr><td>খোলা নেটওয়ার্ক কানেকশন</td><td>একটি attacker-এর Command & Control (C2) সার্ভারের সাথে সংযোগ শনাক্ত</td></tr>
+      <tr><td>Encryption Key (এখনো decrypted অবস্থায়)</td><td>একটি encrypted ফাইল/ডিস্ক ডিক্রিপ্ট করতে সহায়ক হতে পারে</td></tr>
+      <tr><td>কমান্ড হিস্টরি/ক্লিপবোর্ড</td><td>attacker সম্প্রতি কী কমান্ড চালিয়েছেন তার প্রমাণ</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Memory Dump সংগ্রহের একটি ধারণাগত প্রক্রিয়া</h2>
+  <div class="codeblock">
+    <div class="cb-head"><span>ধারণাগত Memory Acquisition ওয়ার্কফ্লো</span><button class="copy-btn">কপি</button></div>
+    <pre><code>১. একটি বিশ্বস্ত, বিশেষায়িত টুল ব্যবহার করে RAM-এর একটি সম্পূর্ণ "dump" তৈরি করা
+   (এই টুলটি নিজেই RAM ব্যবহার করে, তাই সংগ্রহের সময় সামান্য পরিবর্তন অনিবার্য —
+   এটি ডকুমেন্টেড ও স্বীকৃত একটি সীমাবদ্ধতা)
+২. dump ফাইলের hash গণনা করা (অধ্যায় ৫)
+৩. একটি বিশ্লেষণ ফ্রেমওয়ার্ক দিয়ে dump বিশ্লেষণ (প্রসেস তালিকা, নেটওয়ার্ক কানেকশন বের করা)</code></pre>
+  </div>
+
+  <h2>Memory Forensics-র একটি গুরুত্বপূর্ণ সীমাবদ্ধতা</h2>
+  <div class="callout warn"><div class="ic">⚠️</div><p><strong>Volatility-র প্রভাব:</strong> অধ্যায় ৪-এ আলোচিত, RAM সবচেয়ে উদ্বায়ী প্রমাণ — একবার সিস্টেম বন্ধ (বা এমনকি শুধু রিস্টার্ট) হলে, RAM-এর সব ডেটা স্থায়ীভাবে হারিয়ে যায়, কোনো পুনরুদ্ধারের উপায় নেই। এই কারণেই, যদি Live Acquisition (অধ্যায় ৬) করার সুযোগ থাকে, RAM সংগ্রহকে সর্বোচ্চ অগ্রাধিকার দেওয়া উচিত।</p></div>
+
+  <h2>Rootkit ও Hidden Process শনাক্তকরণ</h2>
+  <p>কিছু উন্নত malware (Rootkit) নিজেকে স্বাভাবিক অপারেটিং সিস্টেম টুল থেকে লুকিয়ে রাখার চেষ্টা করে — কিন্তু একটি গভীর memory বিশ্লেষণ, যা সরাসরি RAM-এর কাঁচা ডেটা পরীক্ষা করে (অপারেটিং সিস্টেমের নিজস্ব, সম্ভাব্য-আপোসকৃত রিপোর্টিং মেকানিজমের উপর নির্ভর না করে), এই ধরনের লুকানো কার্যকলাপ প্রায়ই শনাক্ত করতে পারে।</p>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>কেন "fileless malware" traditional, শুধুমাত্র ডিস্ক-কেন্দ্রিক একটি ফরেনসিক তদন্তকে এড়িয়ে যেতে পারে তা ব্যাখ্যা করুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>Memory Forensics RAM থেকে চলমান প্রসেস, নেটওয়ার্ক কানেকশন, ও এমনকি encryption key-র মতো তথ্য উদ্ধার করে, যা ডিস্কে কখনো থাকে না। RAM-এর চরম উদ্বায়ী প্রকৃতির কারণে, এই সংগ্রহকে সর্বোচ্চ অগ্রাধিকার দেওয়া উচিত।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>কেন "fileless malware" ডিস্ক-কেন্দ্রিক তদন্তে অধরা থেকে যেতে পারে?</li>
+      <li>RAM থেকে কী ধরনের গুরুত্বপূর্ণ তথ্য পাওয়া যেতে পারে?</li>
+      <li>কেন Memory Dump সংগ্রহকে সবচেয়ে বেশি অগ্রাধিকার দেওয়া উচিত?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter06"><span>পূর্ববর্তী</span>অধ্যায় ০৬ — Evidence Collection ও Preservation</a>
+    <a class="next" href="/chapter08"><span>পরবর্তী</span>অধ্যায় ০৮ — Disk Forensics</a>
+  </div>
+</section>
+
+
+<section class="chapter" id="chapter08">
+  <div class="eyebrow">অধ্যায় ০৮ · Disk</div>
+  <h1>Disk Forensics</h1>
+  <p class="sub">একটি স্টোরেজ ডিভাইসের গভীরে — একজন ইউজার "মুছে ফেলা" ডেটাও প্রায়ই সম্পূর্ণভাবে হারিয়ে যায় না।</p>
+
+  <h2>"মুছে ফেলা" ফাইল আসলে কী হয়</h2>
+  <p>একটি সাধারণ ভুল ধারণা — একটি ফাইল "ডিলিট" করলে তা সম্পূর্ণ মুছে যায়। বাস্তবে, বেশিরভাগ ফাইল সিস্টেমে, ডিলিট করার সময় শুধু সেই ফাইলের জায়গাটিকে "খালি" হিসেবে চিহ্নিত করা হয় — প্রকৃত ডেটা ডিস্কে থেকেই যায়, যতক্ষণ না নতুন ডেটা দিয়ে সেই জায়গা পুনরায় লেখা (overwrite) হয়। <strong>File Carving</strong> কৌশল ব্যবহার করে এই "মুছে ফেলা" কিন্তু এখনো উপস্থিত ডেটা পুনরুদ্ধার করা প্রায়ই সম্ভব।</p>
+
+  <h2>File System Metadata-র ভূমিকা</h2>
+  <table>
+    <thead><tr><th>Metadata</th><th>কী প্রকাশ করতে পারে</th></tr></thead>
+    <tbody>
+      <tr><td>Created/Modified/Accessed Timestamp (MAC Time)</td><td>একটি ফাইল কখন তৈরি, পরিবর্তন, বা অ্যাক্সেস হয়েছিল — Timeline Reconstruction-এ ব্যবহৃত (অধ্যায় ১২)</td></tr>
+      <tr><td>File Permission ও Owner</td><td>কোন ইউজার অ্যাকাউন্ট ফাইলটি তৈরি/পরিবর্তন করেছিল</td></tr>
+      <tr><td>Deleted File Entry (unallocated space-এ)</td><td>একটি ফাইল মুছে ফেলার প্রমাণ, এমনকি যদি কন্টেন্ট পুনরুদ্ধারযোগ্য না-ও হয়</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Slack Space — একটি সূক্ষ্ম উৎস</h2>
+  <div class="callout info"><div class="ic">💡</div><p>একটি ফাইল সিস্টেম ডেটা নির্দিষ্ট-আকারের "ব্লক"-এ সংরক্ষণ করে — যদি একটি ফাইল তার বরাদ্দকৃত ব্লকের চেয়ে ছোট হয়, অবশিষ্ট জায়গা (<strong>Slack Space</strong>) প্রায়ই পূর্ববর্তী, মুছে ফেলা ডেটার অবশিষ্টাংশ ধারণ করে, যা একজন ফরেনসিক বিশ্লেষক বিশ্লেষণ করতে পারেন।</p></div>
+
+  <div class="codeblock">
+    <div class="cb-head"><span>ধারণাগত Disk Forensics ওয়ার্কফ্লো</span><button class="copy-btn">কপি</button></div>
+    <pre><code>১. Write Blocker ব্যবহার করে ডিস্কের একটি forensic image তৈরি (অধ্যায় ৬)
+২. ফাইল সিস্টেম কাঠামো বিশ্লেষণ (Partition Table, File Table)
+৩. Deleted File Recovery/File Carving চালানো
+৪. MAC Timestamp থেকে একটি প্রাথমিক টাইমলাইন তৈরি (অধ্যায় ১২)</code></pre>
+  </div>
+
+  <h2>Anti-Forensics — একটি বাস্তব চ্যালেঞ্জ</h2>
+  <div class="callout warn"><div class="ic">⚠️</div><p><strong>একজন দক্ষ attacker সচেতন থাকতে পারেন:</strong> কিছু উন্নত attacker Disk Forensics এড়াতে, নিরাপদ মুছে ফেলার টুল (secure wipe, যা ডেটা একাধিকবার overwrite করে) বা পুরো ডিস্ক এনক্রিপশন ব্যবহার করেন, যা পুনরুদ্ধারের সম্ভাবনা উল্লেখযোগ্যভাবে কমিয়ে দেয়। এই কারণেই অন্যান্য প্রমাণের উৎস (Memory, Network, Log) একত্রে ব্যবহার করা গুরুত্বপূর্ণ, শুধু Disk Forensics-এর উপর নির্ভর না করে।</p></div>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>কেন একটি "মুছে ফেলা" ফাইল প্রায়ই সম্পূর্ণ পুনরুদ্ধারযোগ্য থাকে তা ফাইল সিস্টেমের আচরণ ব্যবহার করে ব্যাখ্যা করুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>Disk Forensics File Carving-এর মাধ্যমে "মুছে ফেলা" ডেটা, এবং File System Metadata-র মাধ্যমে একটি টাইমলাইন পুনর্গঠন করে। Slack Space-এও পূর্ববর্তী ডেটার অবশিষ্টাংশ থাকতে পারে, যদিও secure wipe/encryption এই পুনরুদ্ধারকে কঠিন করে তুলতে পারে।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>একটি ফাইল "ডিলিট" করলে প্রকৃতপক্ষে কী ঘটে?</li>
+      <li>MAC Timestamp কী প্রকাশ করতে পারে?</li>
+      <li>Slack Space কী?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter07"><span>পূর্ববর্তী</span>অধ্যায় ০৭ — Memory Forensics</a>
+    <a class="next" href="/chapter09"><span>পরবর্তী</span>অধ্যায় ০৯ — Network Forensics</a>
+  </div>
+</section>
+
+
+<section class="chapter" id="chapter09">
+  <div class="eyebrow">অধ্যায় ০৯ · Network</div>
+  <h1>Network Forensics</h1>
+  <p class="sub">Network Security ডকুমেন্টেশনের Packet Analysis নীতির একটি তদন্ত-কেন্দ্রিক প্রয়োগ।</p>
+
+  <h2>Network Forensics কী বিশ্লেষণ করে</h2>
+  <p>একটি আক্রমণ প্রায়ই নেটওয়ার্কের মধ্য দিয়ে ঘটে — একটি initial access, data exfiltration, বা Command & Control (C2) যোগাযোগ। <strong>Network Forensics</strong> নেটওয়ার্ক ট্রাফিক বিশ্লেষণ করে এই কার্যকলাপের প্রমাণ খুঁজে বের করে।</p>
+
+  <h2>প্রধান ডেটা উৎস</h2>
+  <table>
+    <thead><tr><th>উৎস</th><th>বিবরণ</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Full Packet Capture (PCAP)</strong></td><td>সম্পূর্ণ নেটওয়ার্ক ট্রাফিকের একটি হুবহু রেকর্ড — সবচেয়ে বিস্তারিত, কিন্তু বিশাল স্টোরেজ প্রয়োজন</td></tr>
+      <tr><td><strong>NetFlow/Flow Data</strong></td><td>কোন IP কোন IP-র সাথে, কখন, কত ডেটা আদান-প্রদান করেছে তার একটি সংক্ষিপ্ত রেকর্ড (প্যাকেটের বিষয়বস্তু ছাড়া)</td></tr>
+      <tr><td><strong>Firewall/IDS Log</strong></td><td>Network Security ডকুমেন্টেশনে আলোচিত, ব্লক করা বা সন্দেহজনক ট্রাফিকের রেকর্ড</td></tr>
+      <tr><td><strong>DNS Log</strong></td><td>কোন ডোমেইন নাম অনুসন্ধান করা হয়েছিল — প্রায়ই C2 ডোমেইন শনাক্তে সহায়ক</td></tr>
+    </tbody>
+  </table>
+
+  <h2>C2 (Command & Control) ট্রাফিক শনাক্তকরণ</h2>
+  <div class="callout info"><div class="ic">💡</div><p>একটি আপোসকৃত সিস্টেম প্রায়ই একটি বহিরাগত "C2 সার্ভার"-এর সাথে নিয়মিত, পর্যায়ক্রমিক যোগাযোগ (<strong>beaconing</strong>) বজায় রাখে — এই পর্যায়ক্রমিক প্যাটার্ন (যেমন প্রতি ৬০ সেকেন্ডে একটি ছোট request) নেটওয়ার্ক ট্রাফিক বিশ্লেষণে একটি সাধারণ, চেনা সংকেত।</p></div>
+
+  <h2>Encrypted ট্রাফিকের চ্যালেঞ্জ</h2>
+  <div class="callout warn"><div class="ic">⚠️</div><p><strong>Network Security ডকুমেন্টেশনের TLS-এর একটি দ্বৈত প্রভাব:</strong> যদিও TLS ব্যবহারকারীদের নিরাপত্তার জন্য অপরিহার্য, এটি Network Forensics-কেও জটিল করে তোলে — একজন তদন্তকারী এনক্রিপ্টেড ট্রাফিকের প্রকৃত কন্টেন্ট সরাসরি দেখতে পারেন না। এই ক্ষেত্রে, Flow Data (কে কার সাথে, কখন, কত ডেটা) এবং Metadata (যেমন সার্টিফিকেটের তথ্য) এখনো মূল্যবান তথ্য প্রদান করতে পারে, যদিও কন্টেন্ট নিজে অদৃশ্য থাকে।</p></div>
+
+  <div class="codeblock">
+    <div class="cb-head"><span>ধারণাগত Beaconing প্যাটার্ন</span><button class="copy-btn">কপি</button></div>
+    <pre><code>Timeline বিশ্লেষণ:
+10:00:00 → Internal_Host → Unknown_External_IP (ছোট request)
+10:01:00 → Internal_Host → Unknown_External_IP (ছোট request)
+10:02:00 → Internal_Host → Unknown_External_IP (ছোট request)
+(ঠিক ৬০ সেকেন্ড ব্যবধানে পুনরাবৃত্তিমূলক প্যাটার্ন — সম্ভাব্য C2 beaconing)</code></pre>
+  </div>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>কেন TLS encryption Network Forensics তদন্তকারীদের জন্য একটি চ্যালেঞ্জ তৈরি করে, এবং এর পরেও কী ধরনের তথ্য এখনো বিশ্লেষণযোগ্য থাকে তা ব্যাখ্যা করুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>Network Forensics PCAP, Flow Data, ও Log বিশ্লেষণ করে আক্রমণের নেটওয়ার্ক-ভিত্তিক প্রমাণ খুঁজে বের করে — পর্যায়ক্রমিক beaconing প্যাটার্ন একটি সাধারণ C2 সংকেত। TLS এনক্রিপশন কন্টেন্ট দেখা কঠিন করে তোলে, কিন্তু Flow Data এখনো মূল্যবান তথ্য প্রদান করে।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>PCAP ও NetFlow Data-র মধ্যে পার্থক্য কী?</li>
+      <li>Beaconing কী এবং এটি কী নির্দেশ করতে পারে?</li>
+      <li>কেন এনক্রিপ্টেড ট্রাফিক Network Forensics-কে জটিল করে তোলে?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter08"><span>পূর্ববর্তী</span>অধ্যায় ০৮ — Disk Forensics</a>
+    <a class="next" href="/chapter10"><span>পরবর্তী</span>অধ্যায় ১০ — Log Analysis</a>
+  </div>
+</section>
+
+
+<section class="chapter" id="chapter10">
+  <div class="eyebrow">অধ্যায় ১০ · Logs</div>
+  <h1>Log Analysis</h1>
+  <p class="sub">Secure Coding Practices ডকুমেন্টেশনের Logging নীতির একটি তদন্ত-কেন্দ্রিক প্রয়োগ — লগ প্রায়ই সবচেয়ে সহজলভ্য প্রমাণের উৎস।</p>
+
+  <h2>কেন Log Analysis প্রায়ই প্রথম ধাপ</h2>
+  <p>Memory/Disk Forensics (অধ্যায় ৭-৮) সময়সাপেক্ষ ও বিশেষায়িত দক্ষতা প্রয়োজন — কিন্তু অনেক সিস্টেম ইতিমধ্যে log তৈরি করে, যা তাৎক্ষণিকভাবে পর্যালোচনাযোগ্য। এই কারণে, Identification ধাপে (অধ্যায় ২) প্রায়ই সবার আগে বিদ্যমান log পর্যালোচনা করা হয়।</p>
+
+  <h2>গুরুত্বপূর্ণ Log উৎস</h2>
+  <table>
+    <thead><tr><th>Log উৎস</th><th>কী প্রকাশ করে</th></tr></thead>
+    <tbody>
+      <tr><td>Authentication Log</td><td>কে, কখন লগইন করেছেন, ব্যর্থ লগইন প্রচেষ্টা (Secure Coding Practices ডকুমেন্টেশনে আলোচিত)</td></tr>
+      <tr><td>Web Server Log</td><td>কোন URL-এ, কখন, কোন IP থেকে request এসেছে</td></tr>
+      <tr><td>Application Log</td><td>অ্যাপ্লিকেশন-নির্দিষ্ট ত্রুটি/কার্যক্রম</td></tr>
+      <tr><td>Cloud Activity Log (CloudTrail-এর মতো)</td><td>Cloud Security ডকুমেন্টেশনে আলোচিত, কে কোন API call করেছেন</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Log Tampering — attacker-দের একটি সাধারণ কৌশল</h2>
+  <div class="callout danger"><div class="ic">🚨</div><p><strong>একটি গুরুত্বপূর্ণ ঝুঁকি:</strong> একজন দক্ষ attacker, সিস্টেম আপোস করার পর, প্রায়ই নিজের কার্যকলাপের প্রমাণ মুছে ফেলার চেষ্টা করেন — লগ এডিট/মুছে ফেলা। Cloud Security ডকুমেন্টেশনে আলোচিত নীতির মতো, লগ একটি পৃথক, কেন্দ্রীভূত, সীমিত-অ্যাক্সেস সিস্টেমে (log forwarding/SIEM) পাঠানো উচিত — যদি একটি স্থানীয় সিস্টেম আপোস হয়, কেন্দ্রীয় লগ এখনো অক্ষত থাকবে।</p></div>
+
+  <h2>Log Correlation — একাধিক উৎস একত্র করা</h2>
+  <div class="callout info"><div class="ic">💡</div><p>একটি একক log entry প্রায়ই সম্পূর্ণ চিত্র দেয় না — Network Security ডকুমেন্টেশনের SIEM অধ্যায়ের নীতি অনুযায়ী, একাধিক উৎসের log একত্র করে (<strong>Correlation</strong>) একটি সম্পূর্ণ গল্প তৈরি করা যায়। উদাহরণস্বরূপ, একটি সন্দেহজনক লগইন (Auth Log) + একটি অস্বাভাবিক ডেটা ডাউনলোড (Web Server Log) + একটি বহিরাগত সংযোগ (Network Log) — একসাথে একটি সুসংগত আক্রমণ-কাহিনী তৈরি করে।</p></div>
+
+  <div class="codeblock">
+    <div class="cb-head"><span>ধারণাগত Log Correlation উদাহরণ</span><button class="copy-btn">কপি</button></div>
+    <pre><code>09:58 - Auth Log:   admin অ্যাকাউন্টে একাধিক ব্যর্থ লগইন, তারপর সফল
+10:02 - Web Log:    admin অ্যাকাউন্ট দিয়ে /admin/export-data অ্যাক্সেস
+10:03 - Network Log: একই সার্ভার থেকে একটি অজানা বহিরাগত IP-তে বড় ডেটা ট্রান্সফার
+(তিনটি পৃথক উৎস একত্র করে একটি সম্ভাব্য breach-এর সুসংগত কাহিনী)</code></pre>
+  </div>
+
+  <h2>Log Retention — কতদিনের লগ রাখা উচিত</h2>
+  <p>অনেক ঘটনা আবিষ্কৃত হওয়ার আগেই (প্রায়ই মাসের পর মাস) ঘটে থাকতে পারে — যদি Log Retention নীতি খুব কম সময়ের হয় (যেমন শুধু ৭ দিন), প্রাথমিক compromise-এর প্রমাণ ইতিমধ্যে মুছে গিয়ে থাকতে পারে। একটি যুক্তিসঙ্গত retention সময়কাল (প্রায়ই ৯০+ দিন) নির্ধারণ একটি গুরুত্বপূর্ণ Preparation (অধ্যায় ১) সিদ্ধান্ত।</p>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>কেন লগ একটি কেন্দ্রীভূত, পৃথক সিস্টেমে পাঠানো উচিত, শুধু স্থানীয় সার্ভারে নয় তা ব্যাখ্যা করুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>Log Analysis প্রায়ই একটি তদন্তের প্রথম, সবচেয়ে সহজলভ্য ধাপ — কিন্তু attacker-রা প্রায়ই log tamper করার চেষ্টা করেন, তাই কেন্দ্রীভূত log forwarding গুরুত্বপূর্ণ। একাধিক উৎসের Log Correlation একটি সম্পূর্ণ আক্রমণ-কাহিনী তৈরি করতে সাহায্য করে।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>কেন Log Analysis প্রায়ই একটি তদন্তের প্রথম ধাপ?</li>
+      <li>Log Correlation কী, এবং এটি কেন কার্যকর?</li>
+      <li>কেন একটি খুব সংক্ষিপ্ত Log Retention নীতি ঝুঁকিপূর্ণ হতে পারে?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter09"><span>পূর্ববর্তী</span>অধ্যায় ০৯ — Network Forensics</a>
+    <a class="next" href="/chapter11"><span>পরবর্তী</span>অধ্যায় ১১ — Malware Triage</a>
+  </div>
+</section>
+
+
+<section class="chapter" id="chapter11">
+  <div class="eyebrow">অধ্যায় ১১ · Malware</div>
+  <h1>Malware Triage</h1>
+  <p class="sub">একটি সন্দেহজনক ফাইল পাওয়া গেলে, বিস্তারিত বিশ্লেষণের আগে, দ্রুত একটি প্রাথমিক মূল্যায়ন।</p>
+
+  <h2>Malware Triage কী এবং কেন</h2>
+  <p>একটি গুরুতর ঘটনার সময়, সময় সীমিত — <strong>Triage</strong> হলো একটি সন্দেহজনক ফাইল/প্রসেস সম্পর্কে দ্রুত, প্রাথমিক তথ্য সংগ্রহের প্রক্রিয়া, যাতে দলটি অগ্রাধিকার ঠিক করতে পারে এবং পরবর্তী পদক্ষেপ নির্ধারণ করতে পারে — এটি একটি সম্পূর্ণ গভীর বিশ্লেষণ (যা অনেক ঘন্টা/দিন নিতে পারে) নয়।</p>
+
+  <h2>Static বনাম Dynamic Malware বিশ্লেষণ</h2>
+  <p>Mobile Application Security ডকুমেন্টেশনে আলোচিত একই মৌলিক পার্থক্য এখানেও প্রযোজ্য:</p>
+  <table>
+    <thead><tr><th>পদ্ধতি</th><th>বিবরণ</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Static Analysis</strong></td><td>ফাইল না চালিয়ে পরীক্ষা — hash, strings, file structure বিশ্লেষণ</td></tr>
+      <tr><td><strong>Dynamic Analysis</strong></td><td>একটি নিয়ন্ত্রিত, বিচ্ছিন্ন পরিবেশে (Sandbox) ফাইল সত্যিকারভাবে চালিয়ে আচরণ পর্যবেক্ষণ</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Hash Reputation — একটি দ্রুত প্রথম ধাপ</h2>
+  <div class="callout info"><div class="ic">💡</div><p>একটি সন্দেহজনক ফাইলের cryptographic hash (অধ্যায় ৫) গণনা করে, একটি পাবলিক থ্রেট ইন্টেলিজেন্স ডেটাবেসে (যেমন VirusTotal) পরীক্ষা করা যায় — যদি এই একই hash আগে থেকেই পরিচিত malware হিসেবে চিহ্নিত থাকে, এটি একটি অত্যন্ত দ্রুত, নির্ভরযোগ্য প্রাথমিক নিশ্চিতকরণ।</p></div>
+
+  <h2>Sandbox বিশ্লেষণ — নিরাপদে পর্যবেক্ষণ</h2>
+  <div class="callout warn"><div class="ic">⚠️</div><p><strong>অত্যন্ত গুরুত্বপূর্ণ সতর্কতা:</strong> একটি সন্দেহজনক ফাইল কখনো একটি সাধারণ, নেটওয়ার্কে সংযুক্ত কম্পিউটারে চালানো উচিত নয় — এটি malware-কে আরও ছড়িয়ে পড়ার সুযোগ দিতে পারে। একটি সম্পূর্ণ বিচ্ছিন্ন, নিয়ন্ত্রিত <strong>Sandbox</strong> পরিবেশ (প্রায়ই একটি ডিসপোজেবল ভার্চুয়াল মেশিন) ব্যবহার করা আবশ্যক।</p></div>
+
+  <div class="codeblock">
+    <div class="cb-head"><span>ধারণাগত Malware Triage ওয়ার্কফ্লো</span><button class="copy-btn">কপি</button></div>
+    <pre><code>১. ফাইলের SHA-256 hash গণনা (অধ্যায় ৫)
+২. Hash Reputation চেক (পরিচিত malware কিনা)
+৩. Static Analysis: embedded string, metadata পরীক্ষা
+৪. যদি আরও বিশ্লেষণ প্রয়োজন হয়: একটি বিচ্ছিন্ন Sandbox-এ Dynamic Analysis
+৫. ফলাফল: কী ধরনের malware, কী করে, কার সাথে যোগাযোগ করে (C2, অধ্যায় ৯)</code></pre>
+  </div>
+
+  <h2>IOC (Indicator of Compromise) নিষ্কাশন</h2>
+  <p>একটি malware বিশ্লেষণের একটি গুরুত্বপূর্ণ ফলাফল হলো <strong>IOC</strong> — নির্দিষ্ট file hash, IP address, বা ডোমেইন নাম, যা এই নির্দিষ্ট আক্রমণের সাথে যুক্ত। এই IOC অন্যান্য সিস্টেমে একই আক্রমণের চিহ্ন খুঁজতে (Network/Log বিশ্লেষণে, অধ্যায় ৯-১০) ব্যবহৃত হয়।</p>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>কেন একটি সন্দেহজনক ফাইল কখনো একটি সাধারণ, নেটওয়ার্কে সংযুক্ত কম্পিউটারে চালানো উচিত নয় তা ব্যাখ্যা করুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>Malware Triage একটি দ্রুত প্রাথমিক মূল্যায়ন — Hash Reputation চেক ও Static Analysis দিয়ে শুরু হয়, এবং প্রয়োজনে একটি বিচ্ছিন্ন Sandbox-এ Dynamic Analysis করা হয়। এই প্রক্রিয়া থেকে প্রাপ্ত IOC অন্যান্য বিশ্লেষণে ব্যবহৃত হয়।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>Malware Triage কী, এবং এটি একটি সম্পূর্ণ বিশ্লেষণ থেকে কীভাবে আলাদা?</li>
+      <li>Hash Reputation চেক কীভাবে কাজ করে?</li>
+      <li>IOC কী এবং এটি কীভাবে ব্যবহৃত হয়?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter10"><span>পূর্ববর্তী</span>অধ্যায় ১০ — Log Analysis</a>
+    <a class="next" href="/chapter12"><span>পরবর্তী</span>অধ্যায় ১২ — Timeline Reconstruction</a>
+  </div>
+</section>
+
+
+<section class="chapter" id="chapter12">
+  <div class="eyebrow">অধ্যায় ১২ · Timeline</div>
+  <h1>Timeline Reconstruction</h1>
+  <p class="sub">একাধিক উৎস থেকে সংগৃহীত প্রমাণ একত্র করে, আক্রমণের একটি সম্পূর্ণ, সময়ানুক্রমিক গল্প তৈরি করা।</p>
+
+  <h2>Timeline Reconstruction কী</h2>
+  <p>আগের অধ্যায়গুলোতে (Memory, Disk, Network, Log) বিভিন্ন উৎস থেকে সংগৃহীত পৃথক প্রমাণের টুকরোগুলো, একটি একক, সময়ানুক্রমিক <strong>Timeline</strong>-এ একত্র করলে, "attacker কখন প্রবেশ করেছিলেন, কী করেছেন, কখন চলে গেছেন" — এই সম্পূর্ণ গল্পটি স্পষ্ট হয়ে ওঠে।</p>
+
+  <h2>Timeline তৈরির উৎস</h2>
+  <table>
+    <thead><tr><th>উৎস</th><th>অধ্যায়</th></tr></thead>
+    <tbody>
+      <tr><td>ফাইল সিস্টেম MAC Timestamp</td><td>অধ্যায় ৮</td></tr>
+      <tr><td>Authentication/Web/Application Log</td><td>অধ্যায় ১০</td></tr>
+      <tr><td>নেটওয়ার্ক কানেকশন টাইমস্ট্যাম্প</td><td>অধ্যায় ৯</td></tr>
+      <tr><td>Memory-তে পাওয়া প্রসেস তৈরির সময়</td><td>অধ্যায় ৭</td></tr>
+    </tbody>
+  </table>
+
+  <h2>একটি সরলীকৃত টাইমলাইন উদাহরণ</h2>
+  <div class="codeblock">
+    <div class="cb-head"><span>ধারণাগত Incident Timeline</span><button class="copy-btn">কপি</button></div>
+    <pre><code>09:45 - [Auth Log] admin অ্যাকাউন্টে ব্রুট-ফোর্স প্রচেষ্টা শুরু
+09:58 - [Auth Log] admin অ্যাকাউন্টে সফল লগইন
+10:02 - [Disk MAC] একটি নতুন, সন্দেহজনক ফাইল তৈরি (/tmp/.hidden)
+10:03 - [Network] সন্দেহজনক বহিরাগত IP-তে প্রথম সংযোগ (beaconing শুরু)
+11:30 - [Network] বড় পরিমাণ ডেটা exfiltration
+11:35 - [Auth Log] admin সেশন শেষ
+
+→ উপসংহার: ব্রুট-ফোর্স দিয়ে প্রাথমিক অ্যাক্সেস, malware স্থাপন, C2 সংযোগ, ডেটা চুরি</code></pre>
+  </div>
+
+  <h2>Timestamp Normalization — একটি গুরুত্বপূর্ণ কারিগরি বিষয়</h2>
+  <div class="callout warn"><div class="ic">⚠️</div><p><strong>একটি সাধারণ, সূক্ষ্ম ভুল:</strong> বিভিন্ন সিস্টেম ভিন্ন টাইমজোনে, বা সময়ের সাথে সামান্য "drift" (অসামঞ্জস্য) নিয়ে লগ রাখতে পারে। একাধিক উৎসের টাইমস্ট্যাম্প একত্র করার আগে, সবগুলোকে একটি একক, সাধারণ টাইমজোনে (সাধারণত UTC) <strong>Normalize</strong> করা আবশ্যক — অন্যথায় একটি ভুল ক্রম তৈরি হতে পারে, যা পুরো তদন্তের উপসংহারকে ভুল পথে পরিচালিত করতে পারে।</p></div>
+
+  <h2>Timeline Analysis টুলের ভূমিকা</h2>
+  <p>বিশেষায়িত ফরেনসিক টুল প্রায়ই বিভিন্ন উৎসের (ফাইল সিস্টেম, রেজিস্ট্রি, লগ) ডেটা স্বয়ংক্রিয়ভাবে একটি একক, sortable টাইমলাইনে একত্র করতে সাহায্য করে — ম্যানুয়ালি শত শত লগ এন্ট্রি মিলিয়ে দেখার চেয়ে এটি অনেক বেশি কার্যকর।</p>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>কেন একাধিক সিস্টেমের লগ একত্র করার আগে Timestamp Normalization (একটি সাধারণ টাইমজোনে রূপান্তর) গুরুত্বপূর্ণ তা ব্যাখ্যা করুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>Timeline Reconstruction একাধিক উৎসের (Memory, Disk, Network, Log) প্রমাণ একত্র করে একটি সম্পূর্ণ আক্রমণ-কাহিনী তৈরি করে। Timestamp Normalization একটি অপরিহার্য ধাপ, যা ছাড়া টাইমলাইন ভুল ক্রমে তৈরি হতে পারে।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>Timeline Reconstruction কী উদ্দেশ্যে ব্যবহৃত হয়?</li>
+      <li>Timeline তৈরির প্রধান উৎসগুলো কী কী?</li>
+      <li>কেন Timestamp Normalization প্রয়োজন?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter11"><span>পূর্ববর্তী</span>অধ্যায় ১১ — Malware Triage</a>
+    <a class="next" href="/chapter13"><span>পরবর্তী</span>অধ্যায় ১৩ — Containment, Eradication ও Recovery</a>
+  </div>
+</section>
+
+
+<section class="chapter" id="chapter13">
+  <div class="eyebrow">অধ্যায় ১৩ · Recovery</div>
+  <h1>Containment, Eradication ও Recovery</h1>
+  <p class="sub">PICERL Lifecycle-র (অধ্যায় ২) কেন্দ্রীয় তিনটি কার্যকরী ধাপ — তদন্ত থেকে বাস্তব সমাধানে রূপান্তর।</p>
+
+  <h2>Containment — ক্ষতি আর না বাড়তে দেওয়া</h2>
+  <p>অধ্যায় ২-এ আলোচিত Short-term ও Long-term Containment-এর ব্যবহারিক বাস্তবায়ন — এর লক্ষ্য হলো, তদন্ত চালিয়ে যাওয়ার পাশাপাশি, আক্রমণ যাতে আর না ছড়ায়।</p>
+
+  <table>
+    <thead><tr><th>Containment কৌশল</th><th>বিবরণ</th></tr></thead>
+    <tbody>
+      <tr><td>Network Isolation</td><td>সংক্রমিত সিস্টেমকে বাকি নেটওয়ার্ক থেকে বিচ্ছিন্ন করা (সম্পূর্ণ বন্ধ না করে)</td></tr>
+      <tr><td>Account Disabling</td><td>আপোসকৃত ইউজার অ্যাকাউন্ট সাময়িকভাবে নিষ্ক্রিয় করা</td></tr>
+      <tr><td>Firewall Rule আপডেট</td><td>C2 সার্ভারের সাথে যোগাযোগ ব্লক করা (অধ্যায় ৯-এ শনাক্তকৃত IOC ব্যবহার করে)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Eradication — মূল কারণ সম্পূর্ণ অপসারণ</h2>
+  <div class="callout warn"><div class="ic">⚠️</div><p><strong>একটি সাধারণ, গুরুতর ভুল:</strong> শুধু দৃশ্যমান malware ফাইল মুছে ফেলা যথেষ্ট নয় — যদি মূল দুর্বলতা (যেমন একটি patch না করা সফটওয়্যার, একটি দুর্বল পাসওয়ার্ড) ঠিক না করা হয়, attacker সহজেই একই পথে আবার প্রবেশ করতে পারেন। Eradication মানে শুধু উপসর্গ নয়, মূল কারণ (root cause) সম্পূর্ণভাবে দূর করা।</p></div>
+
+  <h2>Recovery — নিরাপদে স্বাভাবিক অবস্থায় ফেরা</h2>
+  <div class="codeblock">
+    <div class="cb-head"><span>ধারণাগত Recovery চেকলিস্ট</span><button class="copy-btn">কপি</button></div>
+    <pre><code>১. সিস্টেম পুনরুদ্ধার (clean backup থেকে, বা সম্পূর্ণ পুনর্নির্মাণ করে — শুধু "পরিষ্কার" করে নয়)
+২. সব পাসওয়ার্ড/credential রিসেট করা (বিশেষত যদি সেগুলো আপোস হয়ে থাকতে পারে)
+৩. পরিবর্তিত সিস্টেম নিবিড় পর্যবেক্ষণে রাখা (আবার আক্রান্ত হওয়ার লক্ষণের জন্য)
+৪. ধীরে ধীরে, নিয়ন্ত্রিতভাবে স্বাভাবিক কার্যক্রমে ফিরিয়ে আনা</code></pre>
+  </div>
+
+  <h2>"Rebuild from Scratch" — কখন প্রয়োজন</h2>
+  <div class="callout danger"><div class="ic">🚨</div><p><strong>একটি গুরুত্বপূর্ণ সিদ্ধান্ত:</strong> যদি একটি সিস্টেম গভীরভাবে আপোস হয়ে থাকে (বিশেষত যদি root/admin-level অ্যাক্সেস পাওয়া গিয়েছিল), শুধু malware মুছে ফেলে পুরনো সিস্টেম ব্যবহার চালিয়ে যাওয়া ঝুঁকিপূর্ণ হতে পারে — একটি লুকানো ব্যাকডোর থেকে যাওয়ার সম্ভাবনা থাকে। এই পরিস্থিতিতে, একটি সম্পূর্ণ "rebuild from scratch" (একটি বিশ্বস্ত ইমেজ থেকে পুনর্নির্মাণ) প্রায়ই সবচেয়ে নিরাপদ পথ।</p></div>
+
+  <h2>Post-Recovery Monitoring</h2>
+  <p>Recovery-র পরও, পুনরুদ্ধারকৃত সিস্টেম কিছু সময়ের জন্য (দিন থেকে সপ্তাহ) নিবিড় পর্যবেক্ষণে রাখা উচিত — Cloud Security ও Network Security ডকুমেন্টেশনে আলোচিত Monitoring/Alerting নীতি এখানে বিশেষভাবে প্রাসঙ্গিক, কারণ এটি নিশ্চিত করে যে attacker সত্যিই সম্পূর্ণভাবে অপসারিত হয়েছেন।</p>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>কেন শুধু malware ফাইল মুছে ফেলা, root cause ঠিক না করে, একটি অসম্পূর্ণ Eradication তা ব্যাখ্যা করুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>Containment ক্ষতি আর না বাড়তে দেয়, Eradication মূল কারণ সম্পূর্ণ অপসারণ করে, এবং Recovery নিয়ন্ত্রিতভাবে স্বাভাবিক কার্যক্রমে ফিরিয়ে আনে। গভীরভাবে আপোসকৃত সিস্টেমের জন্য প্রায়ই একটি সম্পূর্ণ পুনর্নির্মাণ সবচেয়ে নিরাপদ।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>Containment ও Eradication-এর মধ্যে মূল পার্থক্য কী?</li>
+      <li>কেন শুধু উপসর্গ অপসারণ যথেষ্ট নয়?</li>
+      <li>কখন একটি সম্পূর্ণ "rebuild from scratch" প্রয়োজনীয় হতে পারে?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter12"><span>পূর্ববর্তী</span>অধ্যায় ১২ — Timeline Reconstruction</a>
+    <a class="next" href="/chapter14"><span>পরবর্তী</span>অধ্যায় ১৪ — Incident Report লেখা</a>
+  </div>
+</section>
+
+
+<section class="chapter" id="chapter14">
+  <div class="eyebrow">অধ্যায় ১৪ · Reporting</div>
+  <h1>Incident Report লেখা</h1>
+  <p class="sub">Bug Bounty Methodology ডকুমেন্টেশনের Report Writing নীতির একটি প্রাতিষ্ঠানিক, তদন্ত-কেন্দ্রিক প্রয়োগ।</p>
+
+  <h2>কেন একটি লিখিত রিপোর্ট অপরিহার্য</h2>
+  <p>একটি সম্পূর্ণ তদন্তের ফলাফল, যদি লিখিতভাবে, স্পষ্টভাবে, এবং বিভিন্ন পাঠকের (প্রযুক্তিগত দল, ব্যবস্থাপনা, আইনি পরামর্শদাতা, সম্ভাব্যভাবে নিয়ন্ত্রক সংস্থা) জন্য উপযুক্তভাবে উপস্থাপন না করা হয়, তাহলে পুরো তদন্তের ব্যবহারিক মূল্য উল্লেখযোগ্যভাবে কমে যায়।</p>
+
+  <h2>একটি Incident Report-এর মূল অংশ</h2>
+  <table>
+    <thead><tr><th>অংশ</th><th>বিষয়বস্তু</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Executive Summary</strong></td><td>অ-প্রযুক্তিগত পাঠকদের জন্য, কী ঘটেছিল ও impact সংক্ষেপে</td></tr>
+      <tr><td><strong>Timeline</strong></td><td>অধ্যায় ১২-এ তৈরি করা সম্পূর্ণ, সময়ানুক্রমিক ঘটনাপ্রবাহ</td></tr>
+      <tr><td><strong>Root Cause Analysis</strong></td><td>ঠিক কীভাবে attacker প্রাথমিকভাবে প্রবেশ করেছিলেন</td></tr>
+      <tr><td><strong>Impact Assessment</strong></td><td>কোন ডেটা/সিস্টেম প্রভাবিত হয়েছে, এর ব্যবসায়িক/আইনি প্রভাব</td></tr>
+      <tr><td><strong>IOC তালিকা</strong></td><td>অধ্যায় ১১-এ শনাক্তকৃত hash, IP, ডোমেইন — ভবিষ্যতের সুরক্ষার জন্য</td></tr>
+      <tr><td><strong>Recommendations</strong></td><td>ভবিষ্যতে একই ঘটনা প্রতিরোধে সুনির্দিষ্ট পদক্ষেপ</td></tr>
+    </tbody>
+  </table>
+
+  <h2>বিভিন্ন পাঠকের জন্য বিভিন্ন স্তর</h2>
+  <div class="callout info"><div class="ic">💡</div><p>একটি কার্যকর রিপোর্ট বিভিন্ন পাঠকের চাহিদা মাথায় রাখে — একজন ব্যবস্থাপক Executive Summary-তে আগ্রহী, একজন ইঞ্জিনিয়ার বিস্তারিত Root Cause ও IOC-তে, এবং একজন আইনি পরামর্শদাতা Impact Assessment-এ। একটি ভালো রিপোর্ট এই স্তরগুলো স্পষ্টভাবে পৃথক করে উপস্থাপন করে।</p></div>
+
+  <h2>Factual ও Objective ভাষা — একটি গুরুত্বপূর্ণ নীতি</h2>
+  <div class="callout warn"><div class="ic">⚠️</div><p><strong>আইনি বিবেচনা:</strong> একটি Incident Report, বিশেষত একটি গুরুতর breach-এর পর, পরবর্তীতে একটি আইনি প্রক্রিয়ায় (litigation, regulatory investigation) পর্যালোচিত হতে পারে। তাই রিপোর্ট সবসময় বস্তুনিষ্ঠ, প্রমাণ-ভিত্তিক ভাষায় লেখা উচিত — অনুমান বা ব্যক্তিগত মতামতকে তথ্য হিসেবে উপস্থাপন না করে, এবং Legal Counsel (অধ্যায় ৩)-এর সাথে পরামর্শ করে।</p></div>
+
+  <h2>Recommendations — সবচেয়ে ব্যবহারিক অংশ</h2>
+  <p>একটি রিপোর্টের সবচেয়ে ব্যবহারিক মূল্য প্রায়ই এর Recommendations অংশে — Secure Coding Practices, Network Security, ও Cloud Security ডকুমেন্টেশনে আলোচিত নির্দিষ্ট প্রতিরোধমূলক নিয়ন্ত্রণ, যা এই নির্দিষ্ট ঘটনা থেকে শেখা শিক্ষার ভিত্তিতে সুপারিশ করা হয় (অধ্যায় ২-এর Lessons Learned ধাপের একটি প্রাতিষ্ঠানিক ফলাফল)।</p>
+
+  <div class="exercise">
+    <h4>অনুশীলন</h4>
+    <p>কেন একটি Incident Report-এ অনুমান বা ব্যক্তিগত মতামতকে তথ্য হিসেবে উপস্থাপন করা এড়ানো উচিত তা ব্যাখ্যা করুন।</p>
+  </div>
+
+  <div class="summary-box">
+    <h4>সারসংক্ষেপ</h4>
+    <p>একটি সম্পূর্ণ Incident Report-এ Executive Summary, Timeline, Root Cause, Impact Assessment, IOC, ও Recommendations থাকা উচিত — বিভিন্ন পাঠকের জন্য স্পষ্টভাবে স্তরবিন্যস্ত, এবং সবসময় বস্তুনিষ্ঠ, প্রমাণ-ভিত্তিক ভাষায় লেখা।</p>
+  </div>
+
+  <div class="qa">
+    <h3>Knowledge-check</h3>
+    <ol>
+      <li>Executive Summary কাদের জন্য লেখা হয়?</li>
+      <li>কেন রিপোর্টে বস্তুনিষ্ঠ, প্রমাণ-ভিত্তিক ভাষা ব্যবহার করা গুরুত্বপূর্ণ?</li>
+      <li>Recommendations অংশের ব্যবহারিক মূল্য কী?</li>
+    </ol>
+  </div>
+
+  <div class="pager">
+    <a class="prev" href="/chapter13"><span>পূর্ববর্তী</span>অধ্যায় ১৩ — Containment, Eradication ও Recovery</a>
+    <a class="next" href="/chapter15"><span>পরবর্তী</span>অধ্যায় ১৫ — শব্দকোষ ও চিট শিট / FAQ</a>
+  </div>
+</section>
+
+
+<section class="chapter" id="chapter15">
+  <div class="eyebrow">অধ্যায় ১৫ · Glossary</div>
+  <h1>শব্দকোষ ও চিট শিট / FAQ</h1>
+  <p class="sub">এই ডকুমেন্টেশনে ব্যবহৃত গুরুত্বপূর্ণ পরিভাষার একটি দ্রুত রেফারেন্স।</p>
+
+  <h2>মূল শব্দকোষ</h2>
+  <table>
+    <thead><tr><th>পরিভাষা</th><th>ব্যাখ্যা</th></tr></thead>
+    <tbody>
+      <tr><td><strong>PICERL</strong></td><td>IR Lifecycle-র ছয়টি ধাপ — Preparation, Identification, Containment, Eradication, Recovery, Lessons Learned</td></tr>
+      <tr><td><strong>CSIRT/CERT</strong></td><td>একটি প্রতিষ্ঠানের নিবেদিত Incident Response দল</td></tr>
+      <tr><td><strong>Chain of Custody</strong></td><td>প্রমাণের সংগ্রহ থেকে উপস্থাপনা পর্যন্ত একটি অবিচ্ছিন্ন, ডকুমেন্টেড রেকর্ড</td></tr>
+      <tr><td><strong>Order of Volatility</strong></td><td>কোন প্রমাণ কত দ্রুত হারিয়ে যায় তার ক্রম, যা সংগ্রহের অগ্রাধিকার নির্ধারণ করে</td></tr>
+      <tr><td><strong>Forensic Imaging</strong></td><td>মূল ডিভাইসের একটি বিট-বাই-বিট, অভিন্ন কপি</td></tr>
+      <tr><td><strong>Write Blocker</strong></td><td>একটি ডিভাইসে লেখা প্রতিরোধকারী হার্ডওয়্যার</td></tr>
+      <tr><td><strong>File Carving</strong></td><td>"মুছে ফেলা" কিন্তু এখনো উপস্থিত ডেটা পুনরুদ্ধারের কৌশল</td></tr>
+      <tr><td><strong>IOC</strong></td><td>Indicator of Compromise — একটি নির্দিষ্ট আক্রমণের সাথে যুক্ত hash/IP/ডোমেইন</td></tr>
+      <tr><td><strong>C2 (Command & Control)</strong></td><td>attacker-এর সার্ভার, যার সাথে আপোসকৃত সিস্টেম যোগাযোগ করে</td></tr>
+      <tr><td><strong>Beaconing</strong></td><td>একটি আপোসকৃত সিস্টেমের নিয়মিত, পর্যায়ক্রমিক C2 যোগাযোগ</td></tr>
+      <tr><td><strong>Triage</strong></td><td>একটি দ্রুত, প্রাথমিক মূল্যায়ন, গভীর বিশ্লেষণের আগে</td></tr>
+      <tr><td><strong>Sandbox</strong></td><td>একটি সম্পূর্ণ বিচ্ছিন্ন, নিয়ন্ত্রিত বিশ্লেষণ পরিবেশ</td></tr>
+      <tr><td><strong>Timeline Reconstruction</strong></td><td>একাধিক উৎসের প্রমাণ একত্র করে সময়ানুক্রমিক ঘটনাপ্রবাহ তৈরি</td></tr>
+    </tbody>
+  </table>
+
+  <h2>প্রায়শই জিজ্ঞাসিত প্রশ্ন</h2>
+  <details>
+    <summary>Incident Response ও Digital Forensics শেখার আগে কি অন্য কোনো ডকুমেন্টেশন জানা প্রয়োজন?</summary>
+    <p>প্রয়োজনীয় নয়, কিন্তু Network Security (TLS, Packet Analysis), Cryptography Basics (Hashing), ও Secure Coding Practices (Logging) জানা থাকলে এই ডকুমেন্টেশনের অনেক ধারণা আরও সহজে বোঝা যাবে।</p>
+  </details>
+  <details>
+    <summary>একজন শিক্ষার্থী হিসেবে ফরেনসিক দক্ষতা কীভাবে অনুশীলন করব?</summary>
+    <p>বিভিন্ন ওপেন-সোর্স ফরেনসিক চ্যালেঞ্জ (CTF-এর forensics বিভাগ) ও publicly available স্যাম্পল disk/memory image ব্যবহার করে অনুশীলন করা যায় — কখনো অনুমতি ছাড়া কোনো real সিস্টেমে এই কৌশল প্রয়োগ না করে।</p>
+  </details>
+  <details>
+    <summary>এই ডকুমেন্টেশনের সাথে এই সিরিজের অন্য কোন ডকুমেন্টেশন সম্পর্কিত?</summary>
+    <p>Hacking Tools (Digital Forensics-র প্রাথমিক পরিচিতি), Network Security (Packet Analysis, SIEM), Cryptography Basics (Hashing), Secure Coding Practices (Logging), ও Bug Bounty Methodology (Report Writing) — এই পাঁচটি ডকুমেন্টেশনের সাথে এই গাইডের ধারণা সরাসরি সংযুক্ত।</p>
+  </details>
+
+  <div class="summary-box">
+    <h4>কোর্স সম্পন্ন!</h4>
+    <p>অভিনন্দন — আপনি Incident Response ও Digital Forensics ডকুমেন্টেশনের সবগুলো অধ্যায় সম্পন্ন করেছেন। IR Lifecycle থেকে শুরু করে Chain of Custody, Memory/Disk/Network Forensics, Malware Triage, Timeline Reconstruction, ও একটি সম্পূর্ণ Incident Report লেখা পর্যন্ত — আপনি এখন একটি নিরাপত্তা ঘটনার প্রতি পদ্ধতিগতভাবে সাড়া দেওয়ার একটি দৃঢ় ভিত্তি অর্জন করেছেন।</p>
+  </div>
+
+  <div class="pager single">
+    <a class="single" href="/"><span>হোমে ফিরে যান</span>মূল পাতা</a>
+  </div>
+</section>
+
+      </div>
+    </div>
+    <footer class="site-footer">© learn.alamincyber.com — IR &amp; Forensics Documentation · শুধুমাত্র শিক্ষামূলক ও অনুমোদিত ব্যবহারের জন্য</footer>
+  </div>
+</div>
+
+<script>
+/* ===================== CHAPTER REGISTRY ===================== */
+var CHAPTERS = [
+  {id:"chapter01", num:"০১", title:"Incident Response-র ভিত্তি"},
+  {id:"chapter02", num:"০২", title:"IR Lifecycle (PICERL)"},
+  {id:"chapter03", num:"০৩", title:"IR টিম ও ভূমিকা"},
+  {id:"chapter04", num:"০৪", title:"Digital Forensics-র ভিত্তি"},
+  {id:"chapter05", num:"০৫", title:"Chain of Custody"},
+  {id:"chapter06", num:"০৬", title:"Evidence Collection ও Preservation"},
+  {id:"chapter07", num:"০৭", title:"Memory Forensics"},
+  {id:"chapter08", num:"০৮", title:"Disk Forensics"},
+  {id:"chapter09", num:"০৯", title:"Network Forensics"},
+  {id:"chapter10", num:"১০", title:"Log Analysis"},
+  {id:"chapter11", num:"১১", title:"Malware Triage"},
+  {id:"chapter12", num:"১২", title:"Timeline Reconstruction"},
+  {id:"chapter13", num:"১৩", title:"Containment, Eradication ও Recovery"},
+  {id:"chapter14", num:"১৪", title:"Incident Report লেখা"},
+  {id:"chapter15", num:"১৫", title:"শব্দকোষ ও চিট শিট / FAQ"}
+];
+var DOC_INDEX = "https://learn.alamincyber.com/documentation/";
+
+/* ===================== BUILD SIDEBAR ===================== */
+(function buildToc(){
+  var toc = document.getElementById("toc");
+  var liHome = document.createElement("li");
+  liHome.innerHTML = '<a href="/"><span class="num">●</span>IR &amp; Forensics Documentation Home</a>';
+  toc.appendChild(liHome);
+  CHAPTERS.forEach(function(ch){
+    var li = document.createElement("li");
+    li.innerHTML = '<a href="/'+ch.id+'" data-id="'+ch.id+'"><span class="num">'+ch.num+'</span>'+ch.title+'</a>';
+    toc.appendChild(li);
+  });
+})();
+
+/* ===================== ROUTING (clean root-relative paths, e.g. /chapter02) ===================== */
+function idToPath(route){ return route === "" ? "/" : "/" + route; }
+function currentRouteFromPath(path){
+  var p = path.replace(/\/+$/,"") || "/";
+  var m = p.match(/chapter(\d{2})/);
+  if (m) return "chapter" + m[1];
+  // Anything that isn't a recognizable /chapterNN path is treated as the landing
+  // page — this covers "/", "/index.html", a nested deployment folder like
+  // "/documentation/xss/", AND opening the file directly (file://...index.html,
+  // where location.pathname is the full filesystem path). A genuinely bad chapter
+  // number (e.g. /chapter99) still matches the regex above and correctly falls
+  // through to the not-found page via routeExists().
+  return "";
+}
+
+function routeExists(route){
+  if (route === "") return true;
+  return CHAPTERS.some(function(c){ return c.id === route; });
+}
+
+function showRoute(route, opts){
+  opts = opts || {};
+  var valid = routeExists(route) ? route : "__notfound__";
+  var sections = document.querySelectorAll(".chapter");
+  sections.forEach(function(s){ s.classList.remove("active"); });
+
+  var target;
+  if (valid === "") target = document.getElementById("landing");
+  else if (valid === "__notfound__") target = document.getElementById("notfound");
+  else target = document.getElementById(valid);
+
+  if (target) target.classList.add("active");
+
+  // sidebar active state
+  document.querySelectorAll(".toc a").forEach(function(a){
+    a.classList.toggle("active", a.getAttribute("data-id") === valid);
+  });
+
+  // topbar title + breadcrumb
+  var topTitle = document.getElementById("topTitle");
+  var breadcrumb = document.getElementById("breadcrumb");
+  if (valid === ""){
+    topTitle.textContent = "IR & Forensics Documentation";
+    breadcrumb.innerHTML = "";
+  } else if (valid === "__notfound__"){
+    topTitle.textContent = "পাওয়া যায়নি";
+    breadcrumb.innerHTML = '<a href="/">IR &amp; Forensics Documentation</a> / ৪০৪';
+  } else {
+    var ch = CHAPTERS.filter(function(c){return c.id===valid;})[0];
+    topTitle.textContent = "অধ্যায় "+ch.num+" — "+ch.title;
+    breadcrumb.innerHTML = '<a href="/">IR &amp; Forensics Documentation</a> / অধ্যায় '+ch.num;
+  }
+
+  document.title = (valid===""? "IR & Forensics Documentation" : (valid==="__notfound__" ? "404" : "অধ্যায় "+CHAPTERS.filter(function(c){return c.id===valid;})[0].num)) + " — Learn Cyber Security";
+
+  if (!opts.noScroll){
+    document.getElementById("content").scrollIntoView({block:"start"});
+    window.scrollTo(0,0);
+  }
+  closeSidebarMobile();
+}
+
+function navigateTo(route, push){
+  var path = idToPath(route);
+  if (push !== false && location.pathname !== path){
+    try {
+      history.pushState({route:route}, "", path);
+    } catch (e) {
+      // Some sandboxed/embedded preview contexts (e.g. an iframe loaded via
+      // srcdoc, whose real document URL is "about:srcdoc") throw a
+      // SecurityError here because the URL doesn't match the document's
+      // actual origin/path. On a real host (GitHub Pages etc.) this never
+      // happens. Fail silently so the app still renders the right chapter —
+      // only the address-bar URL won't update in that sandboxed case.
+    }
+  }
+  showRoute(route);
+}
+
+/* intercept internal nav clicks — any same-origin, root-relative link (href="/...") */
+document.addEventListener("click", function(e){
+  var a = e.target.closest('a[href^="/"]');
+  if (!a) return;
+  if (a.target === "_blank" || a.hasAttribute("download")) return;
+  var url = new URL(a.href, location.origin);
+  if (url.origin !== location.origin) return;
+  e.preventDefault();
+  navigateTo(currentRouteFromPath(url.pathname), true);
+});
+
+window.addEventListener("popstate", function(e){
+  var route = (e.state && typeof e.state.route === "string") ? e.state.route : currentRouteFromPath(location.pathname);
+  showRoute(route, {noScroll:true});
+});
+
+/* ===================== SIDEBAR TOGGLES ===================== */
+var sidebar = document.getElementById("sidebar");
+var scrim = document.getElementById("scrim");
+var mainWrap = document.getElementById("mainWrap");
+
+function openSidebarMobile(){
+  sidebar.classList.add("open");
+  scrim.classList.add("show");
+  document.getElementById("hamburgerBtn").setAttribute("aria-expanded","true");
+}
+function closeSidebarMobile(){
+  sidebar.classList.remove("open");
+  scrim.classList.remove("show");
+  document.getElementById("hamburgerBtn").setAttribute("aria-expanded","false");
+}
+document.getElementById("hamburgerBtn").addEventListener("click", function(){
+  if (sidebar.classList.contains("open")) closeSidebarMobile(); else openSidebarMobile();
+});
+scrim.addEventListener("click", closeSidebarMobile);
+
+document.getElementById("collapseBtn").addEventListener("click", function(){
+  sidebar.classList.toggle("collapsed");
+  mainWrap.classList.toggle("full");
+});
+
+document.addEventListener("keydown", function(e){
+  if (e.key === "Escape") closeSidebarMobile();
+});
+
+/* ===================== COPY CODE BUTTONS ===================== */
+document.addEventListener("click", function(e){
+  var btn = e.target.closest(".copy-btn");
+  if (!btn) return;
+  var block = btn.closest(".codeblock");
+  var codeEl = block.querySelector("pre code") || block.querySelector("pre");
+  var text = codeEl.textContent;
+  navigator.clipboard.writeText(text).then(function(){
+    var old = btn.textContent;
+    btn.textContent = "কপি হয়েছে ✓";
+    btn.classList.add("copied");
+    setTimeout(function(){ btn.textContent = old; btn.classList.remove("copied"); }, 1500);
+  }).catch(function(){
+    btn.textContent = "কপি ব্যর্থ";
+  });
+});
+
+/* initial load — runs last, after sidebar/scrim/listeners above are all set up,
+   since showRoute() -> closeSidebarMobile() depends on them existing */
+(function initRoute(){
+  var route = currentRouteFromPath(location.pathname);
+  // replace current history entry with a state object so popstate works immediately after.
+  // Wrapped in try/catch: a sandboxed preview iframe (document URL "about:srcdoc") throws
+  // a SecurityError here since the target URL can't match its real origin/path — harmless
+  // to skip in that case; on a real host (GitHub Pages etc.) this always succeeds.
+  try {
+    history.replaceState({route:route}, "", idToPath(route));
+  } catch (e) {}
+  showRoute(route, {noScroll:true});
+})();
+</script>
+</body>
+</html>
