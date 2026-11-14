@@ -37,6 +37,48 @@
       description: ''
     },
     {
+      title: 'Bug Bounty Methodology Documentation',
+      short: 'Bug Bounty Methodology',
+      url: '/documentation/Bug-Bounty/',
+      description: ''
+    },
+    {
+      title: 'Cloud Security Documentation',
+      short: 'Cloud Security',
+      url: '/documentation/Cloud-Security/',
+      description: ''
+    },
+    {
+      title: 'Cryptography Documentation',
+      short: 'Cryptography',
+      url: '/documentation/Cryptography/',
+      description: ''
+    },
+    {
+      title: 'Incident Response Documentation',
+      short: 'Incident Response',
+      url: '/documentation/Incident-Response/',
+      description: ''
+    },
+    {
+      title: 'Mobile Application Documentation',
+      short: 'Mobile Application',
+      url: '/documentation/Mobile-Application/',
+      description: ''
+    },
+    {
+      title: 'Network Security Documentation',
+      short: 'Network Security',
+      url: '/documentation/Network-Security/',
+      description: ''
+    },
+    {
+      title: 'Secure coding practice Documentation',
+      short: 'Secure coding practice',
+      url: '/documentation/Secure-coding-practice/',
+      description: ''
+    },
+    {
       title: 'SQL Injection',
       short: 'SQLi',
       url: '/documentation/Sqli/',
